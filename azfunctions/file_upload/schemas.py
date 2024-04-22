@@ -19,8 +19,8 @@ class FileUploadResponse(FileUploadBase):
     id: UUID = Field(default_factory=uuid4)
     url: str
     
-    class Config:
-        orm_mode = True
+    # class Config:
+    #     from_attributes = True
         
         
 class FileUploadResponses(BaseModel):

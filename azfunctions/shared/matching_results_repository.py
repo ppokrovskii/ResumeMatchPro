@@ -48,6 +48,13 @@ class MatchingResultsRepository:
         for item in items:
             self.container.delete_item(item, partition_key=item["user_id"])
         
+    def get_results_by_file_type_and_id(self, user_id, file_id, file_type):
+        if file_type == "CV":
+            return self.get_results_by_cv_id(user_id, file_id)
+        elif file_type == "JD":
+            return self.get_results_by_jd_id(user_id, file_id)
+        else:
+            raise ValueError("Invalid file type")
 
     def get_results_by_cv_id(self, user_id, cv_id):
         if isinstance(user_id, UUID):

@@ -5,7 +5,6 @@
 # Please refer to https://aka.ms/azure-functions-python-blueprints
 
 
-import base64
 import os
 import azure.functions as func
 import logging

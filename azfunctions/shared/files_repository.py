@@ -37,7 +37,7 @@ class FilesRepository:
         return FileMetadataDb(**result)
             
             
-    def get_files_from_db(self, user_id=None, file_type=None) -> list[FileMetadataDb]:
+    def get_files_from_db(self, user_id, file_type=None) -> list[FileMetadataDb]:
         query = "SELECT * FROM c"
         parameters = []
         if user_id:

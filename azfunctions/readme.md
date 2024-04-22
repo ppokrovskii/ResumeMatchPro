@@ -30,7 +30,7 @@
 - **Azure Services Used**:
   - **Azure Cosmos DB**: Retrieves CV and JD text.
   - **Azure OpenAI Service**: Performs text matching analysis.
-  - **Azure Cosmos DB** (Optionally): Stores matching results.
+  - **Azure Cosmos DB**: Stores matching results.
 
 ### 4. **User Files Function**
 
@@ -40,7 +40,16 @@
   - **Azure Easy Auth**: Authenticates the user.
   - **Azure Cosmos DB**: Queries for files associated with the authenticated user.
 
-### 5. **Authentication and Authorization**
+
+### 5. **Matching Results Function**
+
+- **Trigger**: HTTP Trigger
+- **Functionality**: Provides a list of matching results filtered by selected file and sorted by descending matching score. It queries the database using the user's identity to retrieve matching results
+- **Azure Services Used**: 
+- **Azure Easy Auth**: Authenticates the user.
+- **Azure Cosmos DB**: Queries for matching results associated with the authenticated user filtered by selected file.
+
+### 6. **Authentication and Authorization**
 
 - Integrated across applicable functions using **Azure Easy Auth** to secure API endpoints and ensure that users can only access their data.
 
