@@ -29,7 +29,7 @@ def run_around_tests(repository):
 def sample_matching_result() -> MatchingResultModel:
     jd_id=UUID("5b304304-74f8-49db-8532-84a720052066")
     cv_id=UUID("13152cb7-3290-4fb6-a97d-8d29684ecfc8")
-    user_id=UUID("b3f7b3b3-3b3b-3b3b-3b3b-3b3b3b3b3b3b")
+    user_id="123"
     return MatchingResultModel(
         user_id=user_id,
         cv=FileModel(id=cv_id, filename="cv.txt", type="CV", user_id="user_id", url="https://cv.com", text="Python Developer"),

@@ -11,7 +11,6 @@ from shared.document_intelligence_service import DocumentIntelligenceService
 from shared.docx_service import DocxService
 from shared.models import FileMetadataDb
 from shared.queue_service import QueueService
-from azure.identity import DefaultAzureCredential
 
 
 # create blueprint with Queue trigger
