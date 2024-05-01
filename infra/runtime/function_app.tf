@@ -1,3 +1,11 @@
+variable "AZURE_OPENAI_API_KEY" {
+    description = "Azure OpenAI API Key"
+}
+
+variable "AZURE_DOCUMENT_INTELLIGENCE_KEY" {
+    description = "Azure Document Intelligence Key"
+}
+
 # Create an Azure Function App
 resource "azurerm_linux_function_app" "resumematchpro" {
     name                      = "${var.project_name}-${terraform.workspace}-function-app"
@@ -20,9 +28,19 @@ resource "azurerm_linux_function_app" "resumematchpro" {
         "FUNCTIONS_WORKER_RUNTIME" = "python"
         # "WEBSITE_RUN_FROM_PACKAGE" = ""
         "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.ResumeMatchProInsights.instrumentation_key
+        "AZURE_STORAGE_CONNECTION_STRING" = azurerm_storage_account.storage.primary_connection_string
         "AzureWebJobsStorage" = azurerm_storage_account.storage.primary_connection_string
-        "COSMOSDB_URL" = azurerm_cosmosdb_account.cosmosdb.endpoint
-        "COSMOSDB_KEY" = azurerm_cosmosdb_account.cosmosdb.primary_key
+        
+        "AZURE_OPENAI_API_KEY" = var.AZURE_OPENAI_API_KEY
+        "AZURE_OPENAI_ENDPOINT" = "https://neogpt.openai.azure.com/"
+        "AZURE_OPENAI_DEPLOYMENT_NAME" = "gpt35turbo16k"
+
+        "AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT" = "https://docintpavelpweurope.cognitiveservices.azure.com/"
+        "AZURE_DOCUMENT_INTELLIGENCE_KEY" = var.AZURE_DOCUMENT_INTELLIGENCE_KEY
+
+        "COSMOS_URL" = azurerm_cosmosdb_account.cosmosdb.endpoint
+        "COSMOS_KEY" = azurerm_cosmosdb_account.cosmosdb.primary_key
+        "COSMOS_DB_NAME" = "${var.project_name}-${terraform.workspace}"
     }
 }
 
