@@ -56,7 +56,7 @@ jobs:
 
     - name: 'List Dependency Directory'
       run: |
-        ls -R './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/.python_packages'
+        find './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}' -type d
 
 
     - name: 'Run Azure Functions Action'
