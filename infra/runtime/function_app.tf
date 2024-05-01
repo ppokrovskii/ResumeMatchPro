@@ -1,16 +1,21 @@
 # Create an Azure Function App
 resource "azurerm_function_app" "resumematchpro" {
-    name                      = "${var.project_name}-${var.environment_name}-function-app"
+    name                      = "${var.project_name}-${terraform.workspace}-function-app"
     location                  = azurerm_resource_group.rg.location
     resource_group_name       = azurerm_resource_group.rg.name
     app_service_plan_id       = azurerm_app_service_plan.resumematchpro.id
     storage_account_name      = azurerm_storage_account.storage.name
     storage_account_access_key = azurerm_storage_account.storage.primary_access_key
+    version                   = "~4"
+    
+    app_settings = {
+        "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.ResumeMatchProInsights.instrumentation_key
+    }
 }
 
 # Create an App Service Plan
 resource "azurerm_app_service_plan" "resumematchpro" {
-    name                = "${var.project_name}-${var.environment_name}-asp"
+    name                = "${var.project_name}-${terraform.workspace}-asp"
     location            = azurerm_resource_group.rg.location
     resource_group_name = azurerm_resource_group.rg.name
     kind                = "FunctionApp"
