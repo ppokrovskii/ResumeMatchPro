@@ -8,4 +8,6 @@ def get_cosmos_db_client():
     db_name = os.environ.get("COSMOS_DB_NAME")
     # create a CosmosClient
     client = CosmosClient(url=url, credential=(cosmos_key))
+    # TODO create db if not exist
+    client.create_database_if_not_exists(db_name)
     return client.get_database_client(db_name)
