@@ -1,6 +1,6 @@
 // dataService.js
 
-const API_URL = 'YOUR_BACKEND_API_ENDPOINT'; // e.g., 'http://localhost:8000/api'
+const API_URL = 'https://resumematchpro-dev-function-app.azurewebsites.net/api'; // e.g., 'http://localhost:8000/api'
 
 /**
  * Helper function to get the stored auth token from local storage.
