@@ -4,6 +4,6 @@
 
 # Create resource group
 resource "azurerm_resource_group" "rg" {
-    name     = "${var.project_name}-${var.environment_name}-rg"
+    name     = "${var.project_name}-${terraform.workspace}-rg"
     location = "${var.location}"
 }

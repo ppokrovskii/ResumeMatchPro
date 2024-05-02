@@ -1,6 +1,6 @@
 # Create Cosmos DB
 resource "azurerm_cosmosdb_account" "cosmosdb" {
-    name                = "${var.project_name}-${var.environment_name}-cosmosdb"
+    name                = "${var.project_name}-${terraform.workspace}-cosmosdb"
     location            = azurerm_resource_group.rg.location
     resource_group_name = azurerm_resource_group.rg.name
     offer_type          = "Standard"
