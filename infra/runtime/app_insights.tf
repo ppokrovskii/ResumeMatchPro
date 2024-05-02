@@ -1,5 +1,5 @@
 resource "azurerm_application_insights" "ResumeMatchProInsights" {
-    name                = "ResumeMatchProInsights"
+    name                = "${var.project_name}-${terraform.workspace}-ResumeMatchProInsights"
     location            = var.location
     resource_group_name = azurerm_resource_group.rg.name
     application_type    = "other"  # other is for general application insights
