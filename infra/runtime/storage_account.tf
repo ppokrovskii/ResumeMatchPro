@@ -1,6 +1,6 @@
 # Create Blob Storage
 resource "azurerm_storage_account" "storage" {
-    name                     = "${var.project_name}${var.environment_name}storage"
+    name                     = "${var.project_name}${terraform.workspace}storage"
     resource_group_name      = azurerm_resource_group.rg.name
     location                 = azurerm_resource_group.rg.location
     account_tier             = "Standard"  
