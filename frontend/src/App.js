@@ -6,6 +6,7 @@ import AboutPage from './pages/AboutPage';
 import LoginForm from './components/Auth/LoginForm';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
+import FilesPage from './pages/FilesPage';
 
 // Adjusted RequireAuth component for private routes
 const RequireAuth = ({children}) => {
@@ -25,6 +26,7 @@ const App = () => {
                             <Route path="/about" element={<AboutPage/>}/>
                             {/*/!* Apply RequireAuth to protect the HomePage route *!/*/}
                             <Route path="/home" element={<RequireAuth><HomePage/></RequireAuth>}/>
+                            <Route path="/files" element={<FilesPage/>}/>
                             <Route path="/" element={<Navigate replace to="/about"/>}/>
                             {/* Default fallback to About Page */}
                             <Route path="*" element={<Navigate replace to="/about"/>}/>
