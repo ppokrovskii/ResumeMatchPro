@@ -6,8 +6,8 @@ const FilesPage = () => {
 
     useEffect(() => {
         const fetchFiles = async () => {
-            const data = await getFiles('1', 'CV');
-            setFiles(data);
+            const data = await getFiles('1', 'JD');
+            setFiles(data.files);
         };
 
         fetchFiles();
@@ -19,10 +19,11 @@ const FilesPage = () => {
             <p>
                 Below are the files available for download. Click on the file name to download the file.
             </p>
+            {files.length === 0 && <p>No files available</p>}
             <ul>
                 {files.map((file) => (
                     <li key={file.id}>
-                        <a href={file.url} download={file.name}>{file.name}</a>
+                        <a href={file.url} download={file.filename}>{file.filename}</a>
                     </li>
                 ))}
             </ul>
