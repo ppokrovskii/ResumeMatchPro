@@ -1,0 +1,38 @@
+/* File: src/pages/HomePage.module.css */
+
+.homePage {
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .fileSections {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+  }
+  
+  .fileSection {
+    flex: 1;
+    border: 1px solid #ccc;
+    margin: 0 10px;
+    padding: 10px;
+  }
+  
+  .fileSection h2 {
+    color: #333;
+  }
+  
+  .fileSection ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .fileSection ul li {
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .fileSection ul li:last-child {
+    border-bottom: none;
+  }
+  

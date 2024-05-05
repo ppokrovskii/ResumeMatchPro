@@ -1,0 +1,49 @@
+/* File: src/components/Header/Header.module.css */
+
+.appHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #333;
+  color: #fff;
+  /* increase vertical paddings */
+  padding: 20px 20px;
+}
+
+.headerLogo {
+  display: flex;
+  align-items: center;
+}
+
+.headerLogo img {
+  height: 50px;
+}
+
+.headerLogo a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.headerNav ul {
+  list-style: none;
+  display: flex;
+  margin: 0;
+  padding: 0;
+}
+
+.headerNav ul li {
+  margin: 0 10px;
+}
+
+.headerNav ul li a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.headerUser img {
+  height: 40px;
+  border-radius: 50%;
+}
