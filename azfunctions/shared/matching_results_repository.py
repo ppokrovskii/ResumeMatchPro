@@ -62,7 +62,8 @@ class MatchingResultsRepository:
         if isinstance(cv_id, UUID):
             # if the obj is uuid, we simply return the value of uuid
             cv_id = str(cv_id)
-        query = "SELECT * FROM c WHERE c.user_id = @user_id AND c.cv.id = @cv_id"
+        #  order by overall_match_percentage desc
+        query = "SELECT * FROM c WHERE c.user_id = @user_id AND c.cv.id = @cv_id order by c.overall_match_percentage desc"
         parameters = [{"name": "@user_id", "value": user_id}, {"name": "@cv_id", "value": cv_id}]
         items = list(self.container.query_items(query, parameters=parameters))
         return items
@@ -73,7 +74,7 @@ class MatchingResultsRepository:
         if isinstance(jd_id, UUID):
             # if the obj is uuid, we simply return the value of uuid
             jd_id = str(jd_id)
-        query = "SELECT * FROM c WHERE c.user_id = @user_id AND c.jd.id = @jd_id"
+        query = "SELECT * FROM c WHERE c.user_id = @user_id AND c.jd.id = @jd_id order by c.overall_match_percentage desc"
         parameters = [{"name": "@user_id", "value": user_id}, {"name": "@jd_id", "value": jd_id}]
         items = list(self.container.query_items(query, parameters=parameters))
         return items
