@@ -1,9 +1,9 @@
 import React from 'react';
 
-import { File } from '../../services/fileService';
+import { RmpFile } from '../../services/fileService';
 
 interface FilesListProps {
-  files: File[];
+  files: RmpFile[];
   onFileSelect: (fileId: string, fileType: string) => void;
   fileType: string;
 }

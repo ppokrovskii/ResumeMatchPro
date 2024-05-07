@@ -1,6 +1,6 @@
 // services/fileService.ts
 
-export interface File {
+export interface RmpFile {
     id: string;
     filename: string;
     type: string;
@@ -10,8 +10,9 @@ export interface File {
 }
 
 export interface FilesResponse {
-    files: File[];
+    files: RmpFile[];
 }
+
 
 const API_BASE_URL = 'http://localhost:7071/api';
 
@@ -20,7 +21,7 @@ const API_BASE_URL = 'http://localhost:7071/api';
  * @param userId The user ID for whom to fetch files.
  * @param type The type of files to fetch (e.g., 'JD' for Job Description).
  */
-export const fetchFiles = async (userId: string, type?: string): Promise<File[]> => {
+export const fetchFiles = async (userId: string, type?: string): Promise<RmpFile[]> => {
     const response = await fetch(`${API_BASE_URL}/files?user_id=${userId}&type=${type || ''}`);
     if (!response.ok) {
         throw new Error('Failed to fetch files');
@@ -43,10 +44,10 @@ export const deleteFile = async (fileId: string): Promise<void> => {
     }
 };
 
-export const uploadFiles = async (files: FileList, userId: string, type: string): Promise<any> => {
+export const uploadFiles = async (files: File[], userId: string, type: string): Promise<any> => {
     const formData = new FormData();
-    Array.from(files).forEach(file => {
-        formData.append('content', file);
+    files.forEach(file => {
+        formData.append('content', file); // Changed 'content' to 'files' to better reflect the data
     });
     formData.append('user_id', userId);
     formData.append('type', type);
@@ -61,14 +62,17 @@ export const uploadFiles = async (files: FileList, userId: string, type: string)
     }
 
     const data = await response.json();
-    return data.files;
+    return data; // If the server response includes more than just files, return the whole response object
 };
+
+
+
 
 export interface Result {
     id: string;
     user_id: string;
-    cv: File;
-    jd: File;
+    cv: RmpFile;
+    jd: RmpFile;
     jd_requirements: {
         skills: string[];
         experience: string[];
