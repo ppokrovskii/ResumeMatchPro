@@ -13,3 +13,8 @@ variable "location" {
     type    = string
     default = "UAE North"
 }
+
+variable "europe_location" {
+    type    = string
+    default = "West Europe"
+}
