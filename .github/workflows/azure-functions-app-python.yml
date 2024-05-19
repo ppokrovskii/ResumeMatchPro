@@ -21,6 +21,7 @@ name: Deploy Python project to Azure Function App
 on:
   push:
     branches: ["develop"]
+    paths: ["azfunctions/**" ]
 
 env:
   AZURE_FUNCTIONAPP_NAME: 'resumematchpro-dev-function-app'   # set this to your function app name on Azure
