@@ -1,0 +1,37 @@
+/* File: src/components/Footer/Footer.module.css */
+
+.appFooter {
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  padding: 20px;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
+
+.footerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footerLinks {
+  list-style: none;
+  display: flex;
+  padding: 0;
+}
+
+.footerLinks li {
+  padding: 0 15px;
+}
+
+.footerLinks li a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.footerCopy {
+  font-size: 0.9rem;
+}

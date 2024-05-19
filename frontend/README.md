@@ -1,70 +1,58 @@
-# Getting Started with Create React App
+# Resume Match Pro Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Welcome to the frontend repository for Resume Match Pro, a web application designed to help users tailor their CVs to specific job descriptions, ensuring a higher match rate with potential employers.
 
-## Available Scripts
+## Project Overview
 
-In the project directory, you can run:
+Resume Match Pro's frontend is built using React 18 with TypeScript, providing a robust, type-safe, and modern user interface. This application interacts with our backend services to manage file uploads, retrieve files, and get matching results for user CVs against job descriptions.
 
-### `npm start`
+## Architecture
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Main Components
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- **Pages**: Each page corresponds to a route in the application:
+  - **HomePage**: Dashboard where users can upload and manage their CVs and job descriptions.
+  - **AboutPage**: Provides information about the application and its features.
+  - **UserProfilePage**: Allows users to view and edit their profile details.
+  - **ResumeAnalysisPage**: Displays suggestions for tailoring CVs based on job descriptions.
 
-### `npm test`
+- **Components**: Reusable UI components including buttons, input fields, modals, etc.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **Hooks**: Custom React hooks for managing state and interactions with the backend APIs.
 
-### `npm run build`
+- **Context**: Utilized for global state management across the application, particularly for user authentication.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- **Services**: Abstract the HTTP requests to the backend. Includes:
+  - **fileService**: Handles uploading and fetching files.
+  - **resultService**: Retrieves analysis results after CVs are matched against job descriptions.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Integration with Backend
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The frontend interacts with the backend through three main API endpoints:
+- **GET /files**: Retrieve files that have been uploaded by the user.
+- **POST /files**: Allows users to upload CVs and job descriptions.
+- **GET /results**: Get matching results after the analysis of CVs against job descriptions.
 
-### `npm run eject`
+## Development Setup
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/yourrepository/resume-match-pro-frontend.git
+   ```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+2. **Navigate to the project directory**:
+    ```bash
+    cd resume-match-pro-frontend
+    ```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+3. **Install dependencies**:
+    ```bash
+    npm install
+    ```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+4. **Start the development server**:
+    ```bash
+    npm start
+    ```
 
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+5. **Open your browser** and navigate to `http://localhost:3000` to see the application running.
