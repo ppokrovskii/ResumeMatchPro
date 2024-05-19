@@ -15,6 +15,7 @@ name: Deploy web app to Azure Static Web Apps
 on:
   push:
     branches: [ "develop" ]
+    paths: ["folder1/**" ]
   # pull_request:
   #   types: [opened, synchronize, reopened, closed]
   #   branches: [ "develop" ]
