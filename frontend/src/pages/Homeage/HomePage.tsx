@@ -19,23 +19,18 @@ const HomePage = () => {
     setSelectedFile({ id: fileId, type: fileType });
   }
 
-  function onFilesUploaded(files: File[], fileType: string): void {
-    // convert the array of File objects to an array of RmpFile objects
-    const rmp_files = files.map(file => ({
-      id: file.name,
-      filename: file.name,
-      type: fileType,
-      user_id,
-      url: URL.createObjectURL(file),
-      text: '', // initialize the text to an empty string
-    } as RmpFile)); // Cast each object to RmpFile
-    // add the new files to the existing files
-    setFiles(prevFiles => [...prevFiles, ...rmp_files]);
-  }
+  
 
   return (
     <div>
-      <div style={{ display: 'flex', flexDirection: 'row' }}>
+      <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
+      <div style={{ width: '45%' }}>
+        <h2>CVs</h2>
+        {selectedFile && selectedFile?.type === 'JD' ? (<MatchingResults user_id={user_id} selectedFile={selectedFile}/>
+        ) : (
+          <FilesList files={files.filter(file => file.type === 'CV')} onFileSelect={handleFileSelect} fileType="CV" />
+                    )}
+      </div>
         <FilesList files={files.filter(file => file.type === 'CV')} onFileSelect={handleFileSelect} fileType="CV" />
         <FilesUpload onFilesUploaded={onFilesUploaded} fileType='CV' />
         <FilesList files={files.filter(file => file.type === 'JD')} onFileSelect={handleFileSelect} fileType="JD" />
