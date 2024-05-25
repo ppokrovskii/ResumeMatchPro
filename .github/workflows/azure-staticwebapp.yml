@@ -57,6 +57,7 @@ jobs:
           app_location: ${{ env.APP_LOCATION }}
           api_location: ${{ env.API_LOCATION }}
           app_artifact_location: ${{ env.APP_ARTIFACT_LOCATION }}
+          app_build_command: 'npm run build' # Static Web App build command to embed environment variables
           ###### End of Repository/Build Configurations ######
 
   # close_pull_request_job:
