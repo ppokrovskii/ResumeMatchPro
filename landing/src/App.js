@@ -1,10 +1,16 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Helmet } from "react-helmet";
+import { initGA, logPageView } from './analytics';
 
 // Screens
 import Landing from "./screens/Landing.jsx";
 
 export default function App() {
+  useEffect(() => {
+    initGA();
+    logPageView();
+  }, []);
+
   return (
     <>
       <Helmet>
