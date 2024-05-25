@@ -19,7 +19,7 @@ export const initGA = () => {
 };
 
 export const logPageView = () => {
-    if (process.env.NODE_ENV === 'prod') {
+    if (process.env.REACT_APP_ENV === 'prod') {
         ReactGA.send({ hitType: 'pageview', page: window.location.pathname + window.location.search });
     } else {
         console.log('GA page view not logged as not in prod');
