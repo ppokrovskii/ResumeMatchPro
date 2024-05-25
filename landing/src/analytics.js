@@ -5,7 +5,6 @@ export const initGA = () => {
     // if process.env.REACT_APP_GA_MEASUREMENT_ID variable is there then init reactga
     if (process.env.REACT_APP_GA_MEASUREMENT_ID) {
         ReactGA.initialize(process.env.REACT_APP_GA_MEASUREMENT_ID);
-        console.log('GA initialized');
     } else {
         console.log('GA not initialized as no measurement id');
     }
@@ -22,5 +21,7 @@ export const initGA = () => {
 export const logPageView = () => {
     if (process.env.NODE_ENV === 'prod') {
         ReactGA.send({ hitType: 'pageview', page: window.location.pathname + window.location.search });
+    } else {
+        console.log('GA page view not logged as not in prod');
     }
 };
