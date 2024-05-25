@@ -37,7 +37,7 @@ jobs:
       pull-requests: write # for Azure/static-web-apps-deploy to comment on PRs
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
-    environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}  # Set the github actions environment name to pick secrets from
+    environment: ${{ github.ref_name }}  # Set the github actions environment name to pick secrets from
     name: Build and Deploy Job
     steps:
       - uses: actions/checkout@v4
@@ -58,7 +58,7 @@ jobs:
           app_build_command: 'npm run build' # Static Web App build command to embed environment variables
         env: # Add environment variables here
           REACT_APP_GA_MEASUREMENT_ID: ${{ secrets.REACT_APP_GA_MEASUREMENT_ID }}
-          NODE_ENV: ${{ github.ref }}  # Set the node environment to enable/disable google analytics
+          NODE_ENV: ${{ github.env }}  # Set the node environment to enable/disable google analytics
 
           ###### End of Repository/Build Configurations ######
 
