@@ -1,11 +1,15 @@
 import React, { useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { initGA, logPageView } from './analytics';
+import useScript from './hooks/useScript';
+
 
 // Screens
 import Landing from "./screens/Landing.jsx";
 
 export default function App() {
+  useScript('https://js-eu1.hs-scripts.com/144653709.js', 'prod');
+
   useEffect(() => {
     initGA();
     logPageView();
