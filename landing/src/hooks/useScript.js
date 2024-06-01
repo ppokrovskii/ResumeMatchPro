@@ -4,9 +4,9 @@ import { useEffect } from 'react';
 // useEffect will run only if the process.env.REACT_APP_ENV is equal to env
 const useScript = (url, env = NaN) => {
     useEffect(() => {
-        console.debug('useScript: url:', url, 'env:', env, 'process.env.REACT_APP_ENV:', process.env.REACT_APP_ENV);
         // if process.env.REACT_APP_ENV is equal to env or env is NaN then only run the useEffect
-        if (process.env.REACT_APP_ENV === env || isNaN(env)) {
+        if (Number.isNaN(env) || process.env.REACT_APP_ENV === env) {
+            // console.info('useScript: loading url:', url, 'env:', env, 'process.env.REACT_APP_ENV:', process.env.REACT_APP_ENV, 'isNaN(prod):' , isNaN('prod'));
             const script = document.createElement('script');
 
             script.src = url;
@@ -17,26 +17,11 @@ const useScript = (url, env = NaN) => {
             return () => {
                 document.body.removeChild(script);
             }
+        } else
+        {
+            console.info('useScript: skipping url:', url, 'required env:', env, 'process.env.REACT_APP_ENV:', process.env.REACT_APP_ENV);
         }
     }, [url, env]);
 };
-
-
-// const useScript = (url, env=NaN) => {
-//   useEffect(() => {
-//     if (process.env.REACT_APP_ENV === env) {
-//         const script = document.createElement('script');
-
-//         script.src = url;
-//         script.async = true;
-
-//         document.body.appendChild(script);
-
-//         return () => {
-//         document.body.removeChild(script);
-//         }
-//     }
-//   }, [url]);
-// };
 
 export default useScript;
