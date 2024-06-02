@@ -10,7 +10,7 @@ import AddImage2 from "../../assets/img/add/2.png";
 import AddImage3 from "../../assets/img/add/3.png";
 import AddImage4 from "../../assets/img/add/4.png";
 
-export default function Services() {
+export default function Services({handleOpenContactForm}) {
   return (
     <Wrapper id="services">
       {/* <div className="lightBg" style={{ padding: "50px 0" }}>
@@ -67,7 +67,7 @@ export default function Services() {
                 </p>
                 <ButtonsRow className="flexNullCenter" style={{ margin: "30px 0"}}>
                   <div style={{ width: "190px" }}>
-                    <FullButton title="Start Free Trial" action={() => alert("clicked")} />
+                    <FullButton title="Get Early Access" action={handleOpenContactForm}/>
                   </div>
                   <div style={{ width: "190px", marginLeft: "15px" }}>
                     <FullButton title="Contact Us" color="#fff" action={() => alert("clicked")} border />

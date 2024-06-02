@@ -1,0 +1,30 @@
+/* src/components/Notification.css */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #4caf50;
+    color: white;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 1000;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  }
+  
+  .notification.show {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  
+  .notification.hide {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  

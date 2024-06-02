@@ -3,25 +3,13 @@ import styled from "styled-components";
 // Components
 import FullButton from "../Buttons/FullButton";
 // Assets
-import HeaderImage from "../../assets/img/Successful People in Business Suits Shaking Hands1.webp";
+import HeaderImage from "../../assets/img/Person is handing their resume to a holographic recruiter.webp";
 import QuotesIcon from "../../assets/svg/Quotes";
 import Dots from "../../assets/svg/Dots";
 
-export default function Header({ handleOpenContactForm }) {
+export default function MirroredHeader({ handleOpenContactForm }) {
   return (
-    <Wrapper id="home" className="container flexSpaceCenter originalHeader">
-      <LeftSide className="flexCenter">
-        <div>
-          <h1 className="extraBold font60">Speed Up Recruitment with AI-Driven CV Screening</h1>
-          <HeaderP className="font13 semiBold">
-            Leverage our advanced AI to quickly filter and match CVs with job descriptions, streamlining your hiring process.
-            Focus more on engaging candidates and less on sifting through CVs.
-          </HeaderP>
-          <BtnWrapper>
-            <FullButton title="Get Early Access" action={handleOpenContactForm} />
-          </BtnWrapper>
-        </div>
-      </LeftSide>
+    <Wrapper id="jobSeekers" className="container flexSpaceCenter mirroredHeader">
       <RightSide>
         <ImageWrapper>
           <Img className="radius8" src={HeaderImage} alt="office" style={{ zIndex: 9 }} />
@@ -31,9 +19,9 @@ export default function Header({ handleOpenContactForm }) {
             </QuotesWrapper>
             <div>
               <p className="font15 whiteColor">
-                <em>Leaders of companies that go from good to great start not with 'where' but with 'who.' They start with the people.</em>
+                <em>Success is where preparation and opportunity meet.</em>
               </p>
-              <p className="font13 orangeColor textRight" style={{ marginTop: '10px' }}>Jim Collins’ book "From Good to Great"</p>
+              <p className="font13 orangeColor textRight" style={{ marginTop: '10px' }}>Bobby Unser</p>
             </div>
           </QuoteWrapper>
           <DotsWrapper>
@@ -42,6 +30,18 @@ export default function Header({ handleOpenContactForm }) {
         </ImageWrapper>
         {/* <GreyDiv className="lightBg"></GreyDiv> */}
       </RightSide>
+      <LeftSide className="flexCenter">
+        <div>
+          <h1 className="extraBold font60">Increase Your Chances of Landing an Interview</h1>
+          <HeaderP className="font13 semiBold">
+          Use our advanced AI to tailor your resume to job descriptions, boosting your interview prospects.
+Focus more on preparing for interviews and less on manual resume adjustments.
+          </HeaderP>
+          <BtnWrapper>
+            <FullButton title="Get Early Access" action={handleOpenContactForm} />
+          </BtnWrapper>
+        </div>
+      </LeftSide>
     </Wrapper>
   );
 }
@@ -87,7 +87,8 @@ const HeaderP = styled.div`
   }
 `;
 const BtnWrapper = styled.div`
-  max-width: 190px;
+  ${'' /* max-width: 190px; */}
+  text-align: right;
   @media (max-width: 960px) {
     margin: 0 auto;
   }
@@ -97,7 +98,7 @@ const GreyDiv = styled.div`
   height: 700px;
   position: absolute;
   top: 0;
-  right: 0;
+  left: 0; /* Changed from right to left */
   z-index: 0;
   @media (max-width: 960px) {
     display: none;
@@ -105,7 +106,7 @@ const GreyDiv = styled.div`
 `;
 const ImageWrapper = styled.div`
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start; /* Changed from flex-end to flex-start */
   position: relative;
   z-index: 9;
   @media (max-width: 960px) {
@@ -121,13 +122,13 @@ const Img = styled.img`
 `;
 const QuoteWrapper = styled.div`
   position: absolute;
-  left: 0;
+  right: 0; /* Changed from left to right */
   bottom: 50px;
   max-width: 330px;
   padding: 30px;
   z-index: 99;
   @media (max-width: 960px) {
-    left: 20px;
+    right: 20px; /* Changed from left to right */
   }
   @media (max-width: 560px) {
     bottom: -50px;
@@ -135,16 +136,16 @@ const QuoteWrapper = styled.div`
 `;
 const QuotesWrapper = styled.div`
   position: absolute;
-  left: -20px;
+  right: -20px; /* Changed from left to right */
   top: -10px;
 `;
 const DotsWrapper = styled.div`
   position: absolute;
-  right: -100px;
+  left: -100px; /* Changed from right to left */
   bottom: 100px;
   z-index: 2;
   @media (max-width: 960px) {
-    right: 100px;
+    left: 100px; /* Changed from right to left */
   }
   @media (max-width: 560px) {
     display: none;

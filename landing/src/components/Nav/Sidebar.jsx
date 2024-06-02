@@ -4,15 +4,16 @@ import { Link } from "react-scroll";
 // Assets
 import CloseIcon from "../../assets/svg/CloseIcon";
 import LogoIcon from "../../assets/svg/Logo";
+import FullButton from "../Buttons/FullButton";
 
-export default function Sidebar({ sidebarOpen, toggleSidebar }) {
+export default function Sidebar({ sidebarOpen, toggleSidebar, handleOpenContactForm }) {
   return (
-    <Wrapper className="animate darkBg" sidebarOpen={sidebarOpen}>
+    <Wrapper className="animate whiteBg" sidebarOpen={sidebarOpen}>
       <SidebarHeader className="flexSpaceCenter">
         <div className="flexNullCenter">
           <LogoIcon />
-          <h1 className="whiteColor font20" style={{ marginLeft: "15px" }}>
-            fanatic
+          <h1 className="font20" style={{ marginLeft: "15px" }}>
+          {/* neoteq.dev */}
           </h1>
         </div>
         <CloseBtn onClick={() => toggleSidebar(!sidebarOpen)} className="animate pointer">
@@ -25,63 +26,35 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
           <Link
             onClick={() => toggleSidebar(!sidebarOpen)}
             activeClass="active"
-            className="whiteColor"
+            className=""
             style={{ padding: "10px 15px" }}
             to="home"
             spy={true}
             smooth={true}
             offset={-60}
           >
-            Home
+            For HR
           </Link>
         </li>
         <li className="semiBold font15 pointer">
           <Link
             onClick={() => toggleSidebar(!sidebarOpen)}
             activeClass="active"
-            className="whiteColor"
+            className=""
             style={{ padding: "10px 15px" }}
-            to="services"
+            to="jobSeekers"
             spy={true}
             smooth={true}
             offset={-60}
           >
-            Services
+            For Job Seekers
           </Link>
         </li>
         <li className="semiBold font15 pointer">
           <Link
             onClick={() => toggleSidebar(!sidebarOpen)}
             activeClass="active"
-            className="whiteColor"
-            style={{ padding: "10px 15px" }}
-            to="projects"
-            spy={true}
-            smooth={true}
-            offset={-60}
-          >
-            Projects
-          </Link>
-        </li>
-        <li className="semiBold font15 pointer">
-          <Link
-            onClick={() => toggleSidebar(!sidebarOpen)}
-            activeClass="active"
-            className="whiteColor"
-            style={{ padding: "10px 15px" }}
-            to="blog"
-            spy={true}
-            smooth={true}
-            offset={-60}
-          >
-            Blog
-          </Link>
-        </li>
-        <li className="semiBold font15 pointer">
-          <Link
-            onClick={() => toggleSidebar(!sidebarOpen)}
-            activeClass="active"
-            className="whiteColor"
+            className=""
             style={{ padding: "10px 15px" }}
             to="pricing"
             spy={true}
@@ -95,7 +68,7 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
           <Link
             onClick={() => toggleSidebar(!sidebarOpen)}
             activeClass="active"
-            className="whiteColor"
+            className=""
             style={{ padding: "10px 15px" }}
             to="contact"
             spy={true}
@@ -106,16 +79,14 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
           </Link>
         </li>
       </UlStyle>
-      <UlStyle className="flexSpaceCenter">
-        <li className="semiBold font15 pointer">
-          <a href="/" style={{ padding: "10px 30px 10px 0" }} className="whiteColor">
+      <UlStyle className="flexSpaceCenter flexColumn">
+        {/* <li className="semiBold font15 pointer">
+          <a href="/" style={{ padding: "10px 30px 10px 0" }} className="">
             Log in
           </a>
-        </li>
-        <li className="semiBold font15 pointer flexNullCenter">
-          <a href="/" className="radius8 lightBg" style={{ padding: "10px 15px" }}>
-            Start Free Trial
-          </a>
+        </li> */}
+        <li className="semiBold font15 pointer flexSpaceCenter">
+          <FullButton title="Get Early Access" action={handleOpenContactForm}/>
         </li>
       </UlStyle>
     </Wrapper>
