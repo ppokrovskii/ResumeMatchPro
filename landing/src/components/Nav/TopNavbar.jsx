@@ -9,7 +9,8 @@ import LogoIcon from "../../assets/svg/Logo";
 import BurgerIcon from "../../assets/svg/BurgerIcon";
 import FullButton from "../Buttons/FullButton";
 
-export default function TopNavbar() {
+export default function TopNavbar({ handleOpenContactForm }) {
+   
   const [y, setY] = useState(window.scrollY);
   const [sidebarOpen, toggleSidebar] = useState(false);
 
@@ -23,7 +24,7 @@ export default function TopNavbar() {
 
   return (
     <>
-      <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+      <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} handleOpenContactForm={handleOpenContactForm}/>
       {sidebarOpen && <Backdrop toggleSidebar={toggleSidebar} />}
       <Wrapper className="flexCenter animate whiteBg" style={y > 100 ? { height: "60px" } : { height: "80px" }}>
         <NavInner className="container flexSpaceCenter">
@@ -38,7 +39,7 @@ export default function TopNavbar() {
               </Link>
             </li>
             <li className="semiBold font15 pointer">
-              <Link activeClass="active" style={{ padding: "10px 15px" }} to="services" spy={true} smooth={true} offset={-80}>
+              <Link activeClass="active" style={{ padding: "10px 15px" }} to="jobSeekers" spy={true} smooth={true} offset={-80}>
                 For Job Seekers
               </Link>
             </li>
@@ -54,13 +55,13 @@ export default function TopNavbar() {
             </li>
           </UlWrapper>
           <UlWrapperRight className="flexNullCenter">
-            <li className="semiBold font15 pointer">
+            {/* <li className="semiBold font15 pointer">
               <a href="/" style={{ padding: "10px 30px 10px 0" }}>
                 Log in
               </a>
-            </li>
+            </li> */}
             <li className="semiBold pointer">
-              <FullButton title="Start Free Trial"/>
+              <FullButton title="Get Early Access" action={handleOpenContactForm}/>
             </li>
           </UlWrapperRight>
         </NavInner>

@@ -4,18 +4,19 @@ import styled from "styled-components";
 import ContactImg1 from "../../assets/img/contact-1.png";
 import ContactImg2 from "../../assets/img/contact-2.png";
 import ContactImg3 from "../../assets/img/contact-3.png";
+import FullButton from "../Buttons/FullButton";
 
-export default function Contact() {
+export default function Contact({handleOpenContactForm}) {
   return (
     <Wrapper id="contact">
       <div className="lightBg">
         <div className="container">
           <HeaderInfo>
-            <h1 className="font40 extraBold">Let's get in touch</h1>
+            <h1 className="font40 extraBold">Signup for an early access</h1> 
             <p className="font13">
-              Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut
+              Get notified when beta testing starts. Receive updates on our latest features and services.
               <br />
-              labore et dolore magna aliquyam erat, sed diam voluptua.
+              
             </p>
           </HeaderInfo>
           <div className="row" style={{ paddingBottom: "30px" }}>
@@ -30,7 +31,7 @@ export default function Contact() {
                 <textarea rows="4" cols="50" type="text" id="message" name="message" className="font20 extraBold" />
               </Form>
               <SumbitWrapper className="flex">
-                <ButtonInput type="submit" value="Send Message" className="pointer animate radius8" style={{ maxWidth: "220px" }} />
+                <FullButton title="Get Early Access" action={handleOpenContactForm}/>
               </SumbitWrapper>
             </div>
             <div className="col-xs-12 col-sm-12 col-md-6 col-lg-6 flex">
@@ -106,8 +107,8 @@ const ContactImgBox = styled.div`
   margin: 10px 30px 10px 0;
 `;
 const SumbitWrapper = styled.div`
-  @media (max-width: 991px) {
-    width: 100%;
+  @media (max-width: 220px) {
+    max-width: 220px
     margin-bottom: 50px;
   }
 `;
