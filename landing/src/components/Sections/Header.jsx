@@ -92,17 +92,17 @@ const BtnWrapper = styled.div`
     margin: 0 auto;
   }
 `;
-const GreyDiv = styled.div`
-  width: 30%;
-  height: 700px;
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 0;
-  @media (max-width: 960px) {
-    display: none;
-  }
-`;
+// const GreyDiv = styled.div`
+//   width: 30%;
+//   height: 700px;
+//   position: absolute;
+//   top: 0;
+//   right: 0;
+//   z-index: 0;
+//   @media (max-width: 960px) {
+//     display: none;
+//   }
+// `;
 const ImageWrapper = styled.div`
   display: flex;
   justify-content: flex-end;

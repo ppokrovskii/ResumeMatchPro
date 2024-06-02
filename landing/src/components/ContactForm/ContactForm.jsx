@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { submitContactDetails } from '../../services/contactService';
 import './ContactForm.css';
-import FullButton from '../Buttons/FullButton';
 
 const ContactForm = ({ isOpen, onClose, onSuccess }) => {
   const [email, setEmail] = useState('');
