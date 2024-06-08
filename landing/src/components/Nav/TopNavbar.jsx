@@ -44,8 +44,8 @@ export default function TopNavbar({ handleOpenContactForm }) {
               </Link>
             </li>
             <li className="semiBold font15 pointer">
-              <Link activeClass="active" style={{ padding: "10px 15px" }} to="pricing" spy={true} smooth={true} offset={-80}>
-                Pricing
+              <Link activeClass="active" style={{ padding: "10px 15px" }} to="projects" spy={true} smooth={true} offset={-80}>
+                How it works
               </Link>
             </li>
             <li className="semiBold font15 pointer">

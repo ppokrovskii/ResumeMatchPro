@@ -56,12 +56,12 @@ export default function Sidebar({ sidebarOpen, toggleSidebar, handleOpenContactF
             activeClass="active"
             className=""
             style={{ padding: "10px 15px" }}
-            to="pricing"
+            to="projects"
             spy={true}
             smooth={true}
             offset={-60}
           >
-            Pricing
+            How it works
           </Link>
         </li>
         <li className="semiBold font15 pointer">
