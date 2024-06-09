@@ -15,7 +15,7 @@
   
   .popup-form-content {
     background: white;
-    padding: 2rem 1rem 0.5rem 1rem;
+    padding: 2rem 2rem 0.5rem 2rem;
     /* margin: 2rem; */
     max-width: 500px;
     width: 100%;
@@ -45,6 +45,7 @@
     /* align center */
     display: flex;
     justify-content: center;
+    margin-top: 1rem;
   }
   
   .popup-form-content form div {
@@ -55,21 +56,31 @@
     width: 100%;
     padding: 0.4rem;
     box-sizing: border-box;
-    border-radius: 0.3rem; /* Added border-radius */
+    border-radius: 0.5rem;
+    border: 1px solid #888;
     font-family: inherit; /* Inherit font-family from body */
   }
   
   .popup-form-content form input:-webkit-autofill {
     -webkit-box-shadow: 0 0 0px 1000px white inset;
     box-shadow: 0 0 0px 1000px white inset;
+    border-radius: 0.5rem;
+    border: 1px solid #888;
     -webkit-text-fill-color: #000;
     font-family: inherit; /* Inherit font-family from body */
+  }
+
+  .popup-form-content form input:focus {
+    outline: none;
+    border: 1px solid #580cd2;
+
+    /* background-color: #000; */
   }
   
   .close-button {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 0.2rem;
+    right: 0.5rem;
     background: none;
     border: none;
     font-size: 24px;

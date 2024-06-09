@@ -4,10 +4,9 @@ import styled from "styled-components";
 import ProjectBox from "../Elements/ProjectBox";
 import FullButton from "../Buttons/FullButton";
 // Assets
-import ProjectImg1 from "../../assets/img/projects/rmp_design1.png";
-import ProjectImg2 from "../../assets/img/projects/rmp_design2.png";
-import ProjectImg3 from "../../assets/img/projects/rmp_design2.png";
-import HowItWorks from "./HowItWorks/HowItWorks";
+import ProjectImg1 from "../../assets/img/projects/rmp_design1_376x309.png";
+import ProjectImg2 from "../../assets/img/projects/rmp_design2_376x309.png";
+import ProjectImg3 from "../../assets/img/projects/rmp_design2_376x309.png";
 // import ProjectImg4 from "../../assets/img/projects/4.png";
 // import ProjectImg5 from "../../assets/img/projects/5.png";
 // import ProjectImg6 from "../../assets/img/projects/6.png";
@@ -16,17 +15,75 @@ import HowItWorks from "./HowItWorks/HowItWorks";
 export default function Projects({handleOpenContactForm}) {
   return (
     <Wrapper id="projects">
-    <div className="container">
-      <HeaderInfo>
-        <h1 className="font40 extraBold">How it works</h1>
-        <p className="font13">
-          Simply upload your files and relax, let our advanced AI do the heavy lifting!
-          {/* <br />
-          labore et dolore magna aliquyam erat, sed diam voluptua. */}
-        </p>
-      </HeaderInfo>
-      <HowItWorks/>
-    </div>
+      <div className="whiteBg">
+        <div className="container">
+          <HeaderInfo>
+            <h1 className="font40 extraBold">How it works</h1>
+            <p className="font13">
+              Simply upload your files and relax, let our advanced AI do the heavy lifting!
+              {/* <br />
+              labore et dolore magna aliquyam erat, sed diam voluptua. */}
+            </p>
+          </HeaderInfo>
+          <div className="row textCenter">
+            <div className="col-xs-12 col-sm-4 col-md-4 col-lg-4">
+              <ProjectBox
+                img={ProjectImg1}
+                title="Upload and Relax"
+                text="Effortlessly upload your CVs and JDs. Our platform supports various file formats, ensuring a seamless experience."
+                action={() => alert("clicked")}
+              />
+            </div>
+            <div className="col-xs-12 col-sm-4 col-md-4 col-lg-4">
+              <ProjectBox
+                img={ProjectImg2}
+                title="Match CVs to Job Descriptions"
+                text="Select a Job Description and instantly see which CVs are the best fit, ranked by our AI for precision."
+                action={() => alert("clicked")}
+              />
+            </div>
+            <div className="col-xs-12 col-sm-4 col-md-4 col-lg-4">
+              <ProjectBox
+                img={ProjectImg3}
+                title="Match Job Descriptions to CVs"
+                text="Choose a CV to find the most suitable Job Descriptions, saving you time and ensuring you find the perfect role for each candidate."
+                action={() => alert("clicked")}
+              />
+            </div>
+          </div>
+          {/* <div className="row textCenter">
+            <div className="col-xs-12 col-sm-4 col-md-4 col-lg-4">
+              <ProjectBox
+                img={ProjectImg4}
+                title="Awesome Project"
+                text="Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor."
+                action={() => alert("clicked")}
+              />
+            </div>
+            <div className="col-xs-12 col-sm-4 col-md-4 col-lg-4">
+              <ProjectBox
+                img={ProjectImg5}
+                title="Awesome Project"
+                text="Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor."
+                action={() => alert("clicked")}
+              />
+            </div>
+            <div className="col-xs-12 col-sm-4 col-md-4 col-lg-4">
+              <ProjectBox
+                img={ProjectImg6}
+                title="Awesome Project"
+                text="Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor."
+                action={() => alert("clicked")}
+              />
+            </div>
+          </div> */}
+          <div className="row flexCenter">
+            <div style={{ margin: "50px 0", width: "200px" }}>
+              <FullButton title="Get Early Access" action={handleOpenContactForm} />
+            </div>
+          </div>
+        </div>
+      </div>
       {/* <div className="lightBg">
         <div className="container">
           <Advertising className="flexSpaceCenter">

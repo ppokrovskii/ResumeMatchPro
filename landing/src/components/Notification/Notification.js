@@ -11,7 +11,7 @@ const Notification = ({ message, onClose }) => {
       setTimeout(() => {
         onClose();
       }, 500); // Duration of the hide animation
-    }, 10000); // 10 seconds
+    }, 5000); // 5 seconds
 
     return () => clearTimeout(timer);
   }, [onClose]);
