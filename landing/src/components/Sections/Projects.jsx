@@ -62,11 +62,15 @@ export default function Projects({handleOpenContactForm}) {
 
 const Wrapper = styled.section`
   width: 100%;
+  background: linear-gradient(to top left, rgba(88, 12, 210, 0.5), rgba(243, 189, 248), rgba(242, 179, 0, 0.3));
 `;
 const HeaderInfo = styled.div`
+  padding: 2rem 0 1rem 0;
   @media (max-width: 860px) {
     text-align: center;
+    margin-top: 50px;
   }
+  
 `;
 // const Advertising = styled.div`
 //   padding: 100px 0;
