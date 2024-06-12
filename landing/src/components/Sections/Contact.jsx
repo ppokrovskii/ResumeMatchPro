@@ -104,7 +104,7 @@ export default function Contact({ handleOpenContactForm }) {
                   className="font20 extraBold"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  required
+                  // required
                   autoComplete="tel"
                 />
                 <SubmitWrapper className="flex">
