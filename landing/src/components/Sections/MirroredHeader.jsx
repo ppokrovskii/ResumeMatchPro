@@ -91,6 +91,7 @@ const BtnWrapper = styled.div`
   text-align: right;
   @media (max-width: 960px) {
     margin: 0 auto;
+    text-align: center;
   }
 `;
 // const GreyDiv = styled.div`

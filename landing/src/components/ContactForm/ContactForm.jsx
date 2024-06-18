@@ -53,7 +53,7 @@ const ContactForm = ({ isOpen, onClose, onSuccess }) => {
         <button className="close-button" onClick={onClose}>×</button>
         <h2>Get notified when beta testing starts</h2>
         {success && <p>Contact details submitted successfully!</p>}
-        {error && <p class='redColor'>{error}</p>}
+        {error && <p className='redColor'>{error}</p>}
         <form onSubmit={handleSubmit}>
           <div>
             <label>First Name</label>
@@ -73,8 +73,8 @@ const ContactForm = ({ isOpen, onClose, onSuccess }) => {
             <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
           {/* align center */}
-          <div class="buttonHolder">
-            <button type="submit" disabled={isSubmitting} class='submit-button'>
+          <div className="buttonHolder">
+            <button type="submit" disabled={isSubmitting} className='submit-button'>
               {isSubmitting ? 'Submitting...' : 'Submit'}
             </button>
           </div>
