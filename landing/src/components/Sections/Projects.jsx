@@ -7,7 +7,7 @@ import FullButton from "../Buttons/FullButton";
 import ProjectImg1 from "../../assets/img/projects/rmp_design1.png";
 import ProjectImg2 from "../../assets/img/projects/rmp_design2.png";
 import ProjectImg3 from "../../assets/img/projects/rmp_design2.png";
-import HowItWorks from "./HowItWorks/HowItWorks";
+import HowItWorksV2 from "./HowItWorksV2/HowItWorksV2";
 // import ProjectImg4 from "../../assets/img/projects/4.png";
 // import ProjectImg5 from "../../assets/img/projects/5.png";
 // import ProjectImg6 from "../../assets/img/projects/6.png";
@@ -25,7 +25,7 @@ export default function Projects({handleOpenContactForm}) {
           labore et dolore magna aliquyam erat, sed diam voluptua. */}
         </p>
       </HeaderInfo>
-      <HowItWorks/>
+      <HowItWorksV2/>
     </div>
       {/* <div className="lightBg">
         <div className="container">
