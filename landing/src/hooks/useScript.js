@@ -19,7 +19,7 @@ const useScript = (url, env = NaN) => {
             }
         } else
         {
-            console.info('useScript: skipping url:', url, 'required env:', env, 'process.env.REACT_APP_ENV:', process.env.REACT_APP_ENV);
+            console.debug('useScript: skipping url:', url, 'required env:', env, 'process.env.REACT_APP_ENV:', process.env.REACT_APP_ENV);
         }
     }, [url, env]);
 };
