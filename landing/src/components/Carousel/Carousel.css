@@ -1,0 +1,41 @@
+/* Carousel.css */
+.slick-list {
+    overflow: visible !important; /* Make the overflow visible */
+  }
+  
+  .slick-slide {
+    transition: opacity 0.5s;
+  }
+  
+  .slick-slide:not(.slick-active) {
+    opacity: 0.2;
+  }
+  
+  .slick-slide.slick-current,
+  .slick-slide.slick-active {
+    opacity: 1;
+  }
+  
+  /* Custom arrow styles */
+.slick-prev,
+.slick-next {
+  /* width: 40px;
+  height: 40px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 20px; */
+  z-index: 3; /* Ensure arrows are above the slides */
+}
+
+.slick-prev {
+  left: calc(5vw); /* Adjust distance from center */
+}
+
+.slick-next {
+  right: calc(5vw); /* Adjust distance from center */
+}
+  
