@@ -10,26 +10,25 @@ import BurgerIcon from "../../assets/svg/BurgerIcon";
 import FullButton from "../Buttons/FullButton";
 
 export default function TopNavbar({ handleOpenContactForm }) {
-   
   const [y, setY] = useState(window.scrollY);
-  const [sidebarOpen, toggleSidebar] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    window.addEventListener("scroll", () => setY(window.scrollY));
+    const handleScroll = () => setY(window.scrollY);
+    window.addEventListener("scroll", handleScroll);
     return () => {
-      window.removeEventListener("scroll", () => setY(window.scrollY));
+      window.removeEventListener("scroll", handleScroll);
     };
   }, [y]);
 
-
   return (
     <>
-      <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} handleOpenContactForm={handleOpenContactForm}/>
-      {sidebarOpen && <Backdrop toggleSidebar={toggleSidebar} />}
+      <Sidebar sidebaropen={sidebarOpen} setSidebarOpen={setSidebarOpen} handleOpenContactForm={handleOpenContactForm} />
+      {sidebarOpen && <Backdrop toggleSidebar={setSidebarOpen} />}
       <Wrapper className="flexCenter animate whiteBg" style={y > 100 ? { height: "60px" } : { height: "80px" }}>
         <NavInner className="container flexSpaceCenter">
-        <LogoIcon />
-          <BurderWrapper className="pointer" onClick={() => toggleSidebar(!sidebarOpen)}>
+          <LogoIcon />
+          <BurderWrapper className="pointer" onClick={() => setSidebarOpen(!sidebarOpen)}>
             <BurgerIcon />
           </BurderWrapper>
           <UlWrapper className="flexNullCenter">
@@ -61,7 +60,7 @@ export default function TopNavbar({ handleOpenContactForm }) {
               </a>
             </li> */}
             <li className="semiBold pointer">
-              <FullButton title="Get Early Access" action={handleOpenContactForm}/>
+              <FullButton title="Get Early Access" action={handleOpenContactForm} />
             </li>
           </UlWrapperRight>
         </NavInner>
@@ -80,7 +79,7 @@ const Wrapper = styled.nav`
 const NavInner = styled.div`
   position: relative;
   height: 100%;
-`
+`;
 const BurderWrapper = styled.button`
   outline: none;
   border: 0px;
@@ -103,5 +102,3 @@ const UlWrapperRight = styled.ul`
     display: none;
   }
 `;
-
-

@@ -124,9 +124,9 @@ export default function Contact({ handleOpenContactForm }) {
                 </ContactImgBox>
               </div>
               <div style={{ width: "50%" }}>
-                <div style={{ marginTop: "100px" }}>
+                <ContactImgBox style={{ marginTop: "100px" }}>
                   <Image src={ContactImg3} alt="office" className="radius6" width="278" height="330" />
-                </div>
+                </ContactImgBox>
               </div>
             </div>
           </div>
@@ -142,7 +142,7 @@ const Wrapper = styled.section`
 
 const HeaderInfo = styled.div`
   padding: 70px 0 30px 0;
-  @media (max-width: 860px) {
+  @media (max-width: 960px) {
     text-align: center;
   }
 `;
@@ -172,15 +172,20 @@ const Form = styled.form`
     min-height: 100px;
   }
 
-  @media (max-width: 860px) {
+  @media (max-width: 960px) {
     padding: 30px 0;
   }
 `;
 
 const ContactImgBox = styled.div`
   max-width: 180px; 
-  align-self: flex-end; 
+  align-self: flex-end;
+  ${'' /* margin top take from props or 0px */}
+  marginTop: ${props => props.marginTop ? props.marginTop : 0}px;
   margin: 10px 30px 10px 0;
+  @media (max-width: 992px) {
+    display: none;
+  }
 `;
 
 const Image = styled.img`
