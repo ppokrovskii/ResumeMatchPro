@@ -13,7 +13,7 @@ const Carousel = ({ items }) => {
     slidesToShow: 1,
     slidesToScroll: 1,
     centerMode: true,
-    centerPadding: '15%', // Adjusted to show part of the next and previous slides
+    centerPadding: '17%', // Adjusted to show part of the next and previous slides
     nextArrow: <SampleNextArrow />,
     prevArrow: <SamplePrevArrow />,
   };
