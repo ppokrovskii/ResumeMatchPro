@@ -3,7 +3,7 @@ import styled from "styled-components";
 // Components
 import FullButton from "../Buttons/FullButton";
 // Assets
-import HeaderImage from "../../assets/img/Successful People in Business Suits Shaking Hands1.webp";
+import HeaderImage from "../../assets/img/Successful People in Business Suits Shaking Hands1_mj4.png";
 import QuotesIcon from "../../assets/svg/Quotes";
 import Dots from "../../assets/svg/Dots";
 
@@ -114,10 +114,11 @@ const ImageWrapper = styled.div`
   }
 `;
 const Img = styled.img`
-  @media (max-width: 560px) {
-    width: 80%;
-    height: auto;
-  }
+  width: 426px;
+  height: 607px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 6px;
 `;
 const QuoteWrapper = styled.div`
   position: absolute;

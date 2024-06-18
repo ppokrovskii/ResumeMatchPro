@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import ContactImg1 from "../../assets/img/Professionals looking at a laptop.webp";
-import ContactImg2 from "../../assets/img/Rocket ship.webp";
+import ContactImg1 from "../../assets/img/Professionals looking at a laptop_mj.png";
+import ContactImg2 from "../../assets/img/Rocket ship_mj.webp";
 import ContactImg3 from "../../assets/img/Finger pressing Join Now.webp";
-import FullButton from "../Buttons/FullButton";
+// import FullButton from "../Buttons/FullButton";
 import { submitContactDetails } from "../../services/contactService";
 
 export default function Contact({ handleOpenContactForm }) {

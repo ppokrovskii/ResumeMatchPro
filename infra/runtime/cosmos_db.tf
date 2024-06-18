@@ -14,6 +14,10 @@ resource "azurerm_cosmosdb_account" "cosmosdb" {
     #     failover_priority = 1 # The second region to failover to
     # }
 
+    capabilities {
+        name = "EnableServerless"
+    }
+
     consistency_policy {
         consistency_level = "Session"  # Strong, BoundedStaleness, Session, or Eventual
     }
