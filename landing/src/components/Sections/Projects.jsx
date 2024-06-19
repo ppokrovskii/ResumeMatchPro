@@ -1,12 +1,12 @@
 import React from "react";
 import styled from "styled-components";
 // Components
-import ProjectBox from "../Elements/ProjectBox";
-import FullButton from "../Buttons/FullButton";
+// import ProjectBox from "../Elements/ProjectBox";
+// import FullButton from "../Buttons/FullButton";
 // Assets
-import ProjectImg1 from "../../assets/img/projects/rmp_design1.png";
-import ProjectImg2 from "../../assets/img/projects/rmp_design2.png";
-import ProjectImg3 from "../../assets/img/projects/rmp_design2.png";
+// import ProjectImg1 from "../../assets/img/projects/rmp_design1.png";
+// import ProjectImg2 from "../../assets/img/projects/rmp_design2.png";
+// import ProjectImg3 from "../../assets/img/projects/rmp_design2.png";
 import HowItWorksV2 from "./HowItWorksV2/HowItWorksV2";
 // import ProjectImg4 from "../../assets/img/projects/4.png";
 // import ProjectImg5 from "../../assets/img/projects/5.png";
