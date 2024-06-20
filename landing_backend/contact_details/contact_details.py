@@ -53,3 +53,14 @@ def get_contact_details(req: func.HttpRequest) -> func.HttpResponse:
     many_contact_details_response = ManyContactDetailsResponse(contact_details=contact_details_responses)
     return func.HttpResponse(many_contact_details_response.model_dump_json(exclude_none=True), status_code=200, mimetype="application/json")
 
+
+# handle cors
+@contact_details_bp.route("contact_details", methods=["OPTIONS"])
+def handle_options(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('handle_options started')
+    ALLOW_ORIGIN = os.environ.get("ALLOW_ORIGIN", "*")
+    return func.HttpResponse(status_code=200, headers={
+        "Access-Control-Allow-Origin": "{ALLOW_ORIGIN}",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
+    })
