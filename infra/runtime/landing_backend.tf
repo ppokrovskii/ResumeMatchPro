@@ -16,7 +16,6 @@ resource "azurerm_linux_function_app" "landing_backend" {
       allowed_origins = ["https://${azurerm_static_web_app.landingpage.default_host_name}"]
     }
 
-    use_32_bit_worker_process = false
   }
 
   app_settings = {
