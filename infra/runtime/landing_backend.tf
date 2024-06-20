@@ -1,46 +1,40 @@
 # Create an Azure Function App
 resource "azurerm_linux_function_app" "landing_backend" {
-    name                      = "${var.project_name}-${terraform.workspace}-landing-backend"
-    location                  = azurerm_resource_group.rg.location
-    resource_group_name       = azurerm_resource_group.rg.name
-    service_plan_id           = azurerm_service_plan.resumematchpro.id
-    storage_account_name      = azurerm_storage_account.storage.name
-    storage_account_access_key = azurerm_storage_account.storage.primary_access_key
-    # version                   = "~3"
-    # os_type                   = "linux"
-    # runtime_stack             = "NODE|14-lts"
+  name                      = "${var.project_name}-${terraform.workspace}-landing-backend"
+  location                  = azurerm_resource_group.rg.location
+  resource_group_name       = azurerm_resource_group.rg.name
+  service_plan_id           = azurerm_service_plan.resumematchpro.id
+  storage_account_name      = azurerm_storage_account.storage.name
+  storage_account_access_key = azurerm_storage_account.storage.primary_access_key
 
-    site_config {
-        application_stack {
-            python_version = "3.11"
-        }
-
-        cors {
-            allowed_origins     = ["https://${azurerm_static_web_app.landingpage.default_host_name}"]
-        }
-
+  site_config {
+    application_stack {
+      python_version = "3.11"
     }
 
-    
-
-    app_settings = {
-        "FUNCTIONS_WORKER_RUNTIME" = "python"
-        # "WEBSITE_RUN_FROM_PACKAGE" = ""
-        "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.ResumeMatchProInsights.instrumentation_key
-        "AZURE_STORAGE_CONNECTION_STRING" = azurerm_storage_account.storage.primary_connection_string
-        "AzureWebJobsStorage" = azurerm_storage_account.storage.primary_connection_string
-        "ALLOW_ORIGIN" = "https://${azurerm_static_web_app.landingpage.default_host_name}"
-        "COSMOS_URL" = azurerm_cosmosdb_account.cosmosdb.endpoint
-        "COSMOS_KEY" = azurerm_cosmosdb_account.cosmosdb.primary_key
-        "COSMOS_DB_NAME" = "${var.project_name}-${terraform.workspace}-landing-backend"
+    cors {
+      allowed_origins = ["https://${azurerm_static_web_app.landingpage.default_host_name}"]
     }
 
-    
+    use_32_bit_worker_process = false
+  }
 
-    tags = {
-        environment = terraform.workspace
-    }
+  app_settings = {
+    "FUNCTIONS_WORKER_RUNTIME" = "python"
+    "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.ResumeMatchProInsights.instrumentation_key
+    "AZURE_STORAGE_CONNECTION_STRING" = azurerm_storage_account.storage.primary_connection_string
+    "AzureWebJobsStorage" = azurerm_storage_account.storage.primary_connection_string
+    "ALLOW_ORIGIN" = "https://${azurerm_static_web_app.landingpage.default_host_name}"
+    "COSMOS_URL" = azurerm_cosmosdb_account.cosmosdb.endpoint
+    "COSMOS_KEY" = azurerm_cosmosdb_account.cosmosdb.primary_key
+    "COSMOS_DB_NAME" = "${var.project_name}-${terraform.workspace}-landing-backend"
+  }
+
+  tags = {
+    environment = terraform.workspace
+  }
 }
+
 
 
 # Output Function App Name
