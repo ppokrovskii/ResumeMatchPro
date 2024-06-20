@@ -58,7 +58,7 @@ def get_contact_details(req: func.HttpRequest) -> func.HttpResponse:
 @contact_details_bp.route("contact_details", methods=["OPTIONS"])
 def handle_options(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('handle_options started')
-    ALLOW_ORIGIN = os.environ.get("ALLOW_ORIGIN", "https://example.com")
+    ALLOW_ORIGIN = os.environ.get("ALLOW_ORIGIN")
     return func.HttpResponse(status_code=200, headers={
         "Access-Control-Allow-Origin": ALLOW_ORIGIN,
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
