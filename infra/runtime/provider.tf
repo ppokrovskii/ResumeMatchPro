@@ -5,7 +5,19 @@ provider "azurerm" {
 provider "github" {
     token = var.github_token
     owner = var.github_owner
-    version = "~> 5.0"
+}
+
+terraform {
+    required_providers {
+        azurerm = {
+            source = "hashicorp/azurerm"
+            version = "~> 3.108.0"
+        }
+        github = {
+            source = "integrations/github"
+            version = "~> 6.0"
+        }
+    }
 }
 
 variable "github_token" {
