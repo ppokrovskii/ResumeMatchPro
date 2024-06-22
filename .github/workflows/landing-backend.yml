@@ -20,7 +20,7 @@ name: Deploy landing_backend to Azure Function App
 
 on:
   push:
-    branches: ["develop"]
+    branches: [ "main", "develop" ]
     paths: ["landing_backend/**", ".github/workflows/landing-backend.yml" ]
 
 env:
@@ -31,7 +31,7 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment: dev
+    environment: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}  # Set the github actions environment name to pick secrets from
     steps:
     - name: 'Checkout GitHub Action'
       uses: actions/checkout@v4
