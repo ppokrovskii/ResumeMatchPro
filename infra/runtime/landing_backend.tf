@@ -42,9 +42,9 @@ output "LANDING_BACKEND_FUNCTION_APP_NAME" {
 }
 
 # Output Function App URL
-output "LANDING_BACKEND_FUNCTION_APP_URL" {
-    value = azurerm_linux_function_app.landing_backend.default_hostname
-}
+# output "LANDING_BACKEND_FUNCTION_APP_URL" {
+#     value = azurerm_linux_function_app.landing_backend.default_hostname
+# }
 
 # Output Function App publish profile
 output "LANDING_BACKEND_GET_PUBLISHING_PROFILE_SCRIPT" {
