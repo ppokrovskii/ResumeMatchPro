@@ -1,5 +1,5 @@
   export const submitContactDetails = async (contactDetails) => {
-    const backendUrl = process.env.REACT_APP_BACKEND_URL;
+    const backendUrl = process.env.LANDING_REACT_APP_BACKEND_URL;
     try {
         const response = await fetch(`${backendUrl}/contact_details`, {
             method: 'POST',
