@@ -52,6 +52,7 @@ resource "azurerm_service_plan" "resumematchpro" {
     resource_group_name = azurerm_resource_group.rg.name
     os_type             = "Linux"
     sku_name            = "Y1"
+    
     # sku {
     #     tier = "Dynamic"
     #     size = "Y1"
@@ -70,7 +71,7 @@ output "FUNCTION_APP_URL" {
 }
 
 # Output Function App publish profile
-output "GET_PUBLISHING_PROFILE_SCRIPT" {
+output "AZFUNCTIONS_GET_PUBLISHING_PROFILE_SCRIPT" {
     value = "az functionapp deployment list-publishing-profiles --name ${azurerm_linux_function_app.resumematchpro.name} --resource-group ${azurerm_resource_group.rg.name} --xml"
     description = "Run this command in your shell to retrieve the Azure Function App's publishing profile."
 }

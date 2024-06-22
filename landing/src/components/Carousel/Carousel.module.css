@@ -1,0 +1,41 @@
+/* Carousel.module.css */
+.carouselContainer {
+    width: 100%;
+  }
+  
+  .carouselImage {
+    width: 45vw;
+    border-radius: 15px;
+    object-fit: contain; /* Maintain aspect ratio */
+    margin: 0 auto;
+    transition: opacity 0.5s;
+  }
+  
+  .carouselText {
+    margin-top: 10px;
+    font-size: 16px;
+    text-align: center;
+  }
+  
+  /* Add gradient transparency on the edges */
+.carouselContainer::before,
+.carouselContainer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 20%; /* Adjust the width to your preference */
+  z-index: 2;
+  pointer-events: none;
+}
+
+.carouselContainer::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+}
+
+.carouselContainer::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+}
+  

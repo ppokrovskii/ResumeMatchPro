@@ -16,7 +16,7 @@
 #
 # For more samples to get started with GitHub Action workflows to deploy to Azure: https://github.com/Azure/actions-workflow-samples/tree/master/FunctionApp
 
-name: Deploy Python project to Azure Function App
+name: Deploy azfunctions to Azure Function App
 
 on:
   push:
@@ -66,7 +66,7 @@ jobs:
       with:
         app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
         package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-        publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }} # Remove publish-profile to use Azure RBAC
+        publish-profile: ${{ secrets.AZFUNCTIONS_PUBLISHING_PROFILE }} # Remove publish-profile to use Azure RBAC
         scm-do-build-during-deployment: false
         enable-oryx-build: false
         respect-funcignore: true

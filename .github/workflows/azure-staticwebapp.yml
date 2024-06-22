@@ -10,7 +10,7 @@
 #
 # 3. Change the values for the APP_LOCATION, API_LOCATION and APP_ARTIFACT_LOCATION, AZURE_STATIC_WEB_APPS_API_TOKEN environment variables (below).
 #    For instructions on setting up the appropriate configuration values go to https://docs.microsoft.com/azure/static-web-apps/front-end-frameworks
-name: Deploy web app to Azure Static Web Apps
+name: Deploy landing frontend to Azure Static Web Apps
 
 on:
   push:
@@ -25,7 +25,7 @@ env:
   APP_LOCATION: "/landing" # location of your client code
   # API_LOCATION: "api" # location of your api source code - optional
   APP_ARTIFACT_LOCATION: "build" # location of client code build output
-  AZURE_STATIC_WEB_APPS_API_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }} # secret containing deployment token for your static web app
+  AZURE_STATIC_WEB_APPS_API_TOKEN: ${{ secrets.LANDING_AZURE_STATIC_WEB_APPS_API_TOKEN }} # secret containing deployment token for your static web app
 
 permissions:
   contents: read
@@ -58,6 +58,7 @@ jobs:
           app_build_command: 'npm run build' # Static Web App build command to embed environment variables
         env: # Add environment variables here
           REACT_APP_GA_MEASUREMENT_ID: ${{ secrets.REACT_APP_GA_MEASUREMENT_ID }}
+          REACT_APP_BACKEND_URL: ${{ vars.LANDING_REACT_APP_BACKEND_URL }}
           REACT_APP_ENV: ${{ github.ref_name == 'main' && 'prod' || 'dev' }} # Set the node environment to enable/disable google analytics
 
           ###### End of Repository/Build Configurations ######
