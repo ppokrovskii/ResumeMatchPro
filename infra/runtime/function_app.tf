@@ -42,6 +42,14 @@ resource "azurerm_linux_function_app" "resumematchpro" {
         "COSMOS_KEY" = azurerm_cosmosdb_account.cosmosdb.primary_key
         "COSMOS_DB_NAME" = "${var.project_name}-${terraform.workspace}"
     }
+
+    lifecycle {
+        ignore_changes = [
+            app_settings["APPINSIGHTS_INSTRUMENTATIONKEY"],
+            app_settings["AzureWebJobsStorage"]
+        ]
+    }
+
 }
 
 
