@@ -38,7 +38,9 @@ export default function MirroredHeader({ handleOpenContactForm }) {
 Focus more on preparing for interviews and less on manual resume adjustments.
           </HeaderP>
           <BtnWrapper>
-            <FullButton title="Get Early Access" action={handleOpenContactForm} />
+            <BtnWrapper2>
+              <FullButton title="Get Early Access" action={handleOpenContactForm} />
+            </BtnWrapper2>
           </BtnWrapper>
         </div>
       </LeftSide>
@@ -87,11 +89,19 @@ const HeaderP = styled.div`
   }
 `;
 const BtnWrapper = styled.div`
-  ${'' /* max-width: 190px; */}
-  text-align: right;
+  display: flex;
+  justify-content: flex-end;
   @media (max-width: 960px) {
-    margin: 0 auto;
-    text-align: center;
+    justify-content: center;
+  }
+`;
+
+const BtnWrapper2 = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  @media (max-width: 960px) {
+    min-width: 50%;
+    justify-content: center;
   }
 `;
 // const GreyDiv = styled.div`
@@ -117,7 +127,7 @@ const ImageWrapper = styled.div`
 `;
 const Img = styled.img`
   @media (max-width: 560px) {
-    width: 80%;
+    width: 100%;
     height: auto;
   }
 `;

@@ -58,62 +58,60 @@ export default function Contact({ handleOpenContactForm }) {
               <br />
             </p>
           </HeaderInfo>
-          <div className="row" style={{ paddingBottom: "30px" }}>
-            <div className="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-              <Form onSubmit={handleSubmit} autoComplete="on">
-                {success && <p>Contact details submitted successfully!</p>}
-                {error && <p className='redColor'>{error}</p>}
-                <label className="font13">First Name:</label>
-                <input
-                  type="text"
-                  id="fname"
-                  name="fname"
-                  className="font20 extraBold"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                  autoComplete="given-name"
-                />
-                <label className="font13">Last Name:</label>
-                <input
-                  type="text"
-                  id="lname"
-                  name="lname"
-                  className="font20 extraBold"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  required
-                  autoComplete="family-name"
-                />
-                <label className="font13">Email:</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  className="font20 extraBold"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
-                <label className="font13">Phone Number:</label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  className="font20 extraBold"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  // required
-                  autoComplete="tel"
-                />
-                <SubmitWrapper className="flex">
-                  <button type="submit" disabled={isSubmitting} className="submit-button">
-                    {isSubmitting ? 'Submitting...' : 'Get Early Access'}
-                  </button>
-                </SubmitWrapper>
-              </Form>
-            </div>
+          <FormWrapper style={{ paddingBottom: "30px" }}>
+            <Form onSubmit={handleSubmit} autoComplete="on">
+              {success && <p>Contact details submitted successfully!</p>}
+              {error && <p className='redColor'>{error}</p>}
+              <label className="font13">First Name:</label>
+              <input
+                type="text"
+                id="fname"
+                name="fname"
+                className="font20 extraBold"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+                autoComplete="given-name"
+              />
+              <label className="font13">Last Name:</label>
+              <input
+                type="text"
+                id="lname"
+                name="lname"
+                className="font20 extraBold"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+                autoComplete="family-name"
+              />
+              <label className="font13">Email:</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                className="font20 extraBold"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
+              <label className="font13">Phone Number:</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                className="font20 extraBold"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                // required
+                autoComplete="tel"
+              />
+              <SubmitWrapper className="flex">
+                <SubmitButton type="submit" disabled={isSubmitting} className="submit-button">
+                  {isSubmitting ? 'Submitting...' : 'Get Early Access'}
+                </SubmitButton>
+              </SubmitWrapper>
+            </Form>
             <div className="col-xs-12 col-sm-12 col-md-6 col-lg-6 flex">
               <div style={{ width: "50%" }} className="flexNullCenter flexColumn">
                 <ContactImgBox>
@@ -129,7 +127,7 @@ export default function Contact({ handleOpenContactForm }) {
                 </ContactImgBox>
               </div>
             </div>
-          </div>
+          </FormWrapper>
         </div>
       </div>
     </Wrapper>
@@ -147,8 +145,22 @@ const HeaderInfo = styled.div`
   }
 `;
 
+const FormWrapper = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: start;
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+`;
+
+
 const Form = styled.form`
   padding: 70px 0 30px 0;
+  ${'' /* width: 100vw; */}
 
   input,
   textarea {
@@ -180,8 +192,6 @@ const Form = styled.form`
 const ContactImgBox = styled.div`
   max-width: 180px; 
   align-self: flex-end;
-  ${'' /* margin top take from props or 0px */}
-  marginTop: ${props => props.marginTop ? props.marginTop : 0}px;
   margin: 10px 30px 10px 0;
   @media (max-width: 992px) {
     display: none;
@@ -197,8 +207,45 @@ const Image = styled.img`
 `;
 
 const SubmitWrapper = styled.div`
-  @media (max-width: 220px) {
-    max-width: 220px;
-    margin-bottom: 50px;
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
+  align-items: start;
+  margin-top: 30px;
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
 `;
+
+// Added submit-button class styling
+const SubmitButton = styled.button`
+  border: none;
+  background-color: #580cd2;
+  border-radius: 12px;
+  max-width: 180px;
+  width: 100%;
+  padding: 1vw 2vw;
+  outline: none;
+  color: #fff;
+  font-size: 16px;
+  
+  :hover {
+    background-color: ${(props) => (props.$border ? "transparent" : "#580cd2")};
+    border: 1px solid #7620ff;
+    color: ${(props) => (props.$color ? props.$color : "#fff")};
+  }
+
+  @media (max-width: 768px) {
+    font-size: 14px;
+    padding: 12px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    padding: 10px;
+    max-width: 180px;
+  }
+`;
+

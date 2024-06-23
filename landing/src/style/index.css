@@ -65,7 +65,7 @@
   }
   @media only screen and (max-width: 859px) {
     .container {
-      padding: 0 15px;
+      padding: 0;
     }
   }
   .regular {
