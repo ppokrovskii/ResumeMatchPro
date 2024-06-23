@@ -1,7 +1,7 @@
 .modal {
     display: flex;
     position: fixed;
-    min-width: 500px;
+    /* min-width: 500px; */
     z-index: 99;
     left: 0;
     bottom: 0;
@@ -27,7 +27,22 @@
   
   .buttonContainer {
     display: flex;
-    justify-content: space-between;
+    flex: 1 1 auto;
+    gap: 2vw;
+    /* hug content */
+    /* justify-content: flex-end; */
     margin-top: 20px;
   }
   
+  @media screen and (max-width: 600px){
+    .modal {
+      padding: 10vw;
+      min-width: reset;
+      justify-content: center;
+    }
+    .modalContent {
+      width: 100%;
+      /* border-radius: 0; */
+    }
+    
+  }
