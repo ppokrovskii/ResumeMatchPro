@@ -29,6 +29,13 @@ resource "azurerm_linux_function_app" "landing_backend" {
     "COSMOS_DB_NAME" = "${var.project_name}-${terraform.workspace}-landing-backend"
   }
 
+  lifecycle {
+        ignore_changes = [
+            app_settings["APPINSIGHTS_INSTRUMENTATIONKEY"],
+            app_settings["AzureWebJobsStorage"]
+        ]
+    }
+
   tags = {
     environment = terraform.workspace
   }

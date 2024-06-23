@@ -4,6 +4,7 @@ data "external" "landing_publishing_profile" {
 
   # No input is required, so this can be an empty map
   query = {}
+  depends_on = [azurerm_linux_function_app.landing_backend]
 }
 
 # Convert the publishing profile from JSON string to raw string
@@ -17,6 +18,7 @@ data "external" "azfunctions_publishing_profile" {
 
   # No input is required, so this can be an empty map
   query = {}
+  depends_on = [azurerm_linux_function_app.resumematchpro]
 }
 
 # Convert the publishing profile from JSON string to raw string
