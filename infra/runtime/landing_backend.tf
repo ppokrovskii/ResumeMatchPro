@@ -13,7 +13,7 @@ resource "azurerm_linux_function_app" "landing_backend" {
     }
 
     cors {
-      allowed_origins = ["https://${azurerm_static_web_app.landingpage.default_host_name}"]
+      allowed_origins = ["https://${azurerm_static_web_app.landingpage.default_host_name}", "https://${local.domain_name}"]
     }
 
   }
@@ -23,7 +23,7 @@ resource "azurerm_linux_function_app" "landing_backend" {
     "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.ResumeMatchProInsights.instrumentation_key
     "AZURE_STORAGE_CONNECTION_STRING" = azurerm_storage_account.storage.primary_connection_string
     "AzureWebJobsStorage" = azurerm_storage_account.storage.primary_connection_string
-    "ALLOW_ORIGIN" = "https://${azurerm_static_web_app.landingpage.default_host_name}"
+    # "ALLOW_ORIGIN" = "https://${azurerm_static_web_app.landingpage.default_host_name}/*|*.${azurerm_dns_zone.dns_zone.name}|${azurerm_dns_zone.dns_zone.name}/*"
     "COSMOS_URL" = azurerm_cosmosdb_account.cosmosdb.endpoint
     "COSMOS_KEY" = azurerm_cosmosdb_account.cosmosdb.primary_key
     "COSMOS_DB_NAME" = "${var.project_name}-${terraform.workspace}-landing-backend"

@@ -119,6 +119,7 @@ const Img = styled.img`
   object-fit: cover;
   object-position: center;
   border-radius: 6px;
+  @
 `;
 const QuoteWrapper = styled.div`
   position: absolute;
