@@ -1,0 +1,8 @@
+/* src/components/Buttons/Button.module.css */
+.primary {
+  @apply bg-bg-primary text-text-primary border-bg-primary py-2 px-4 rounded;
+}
+
+.secondary {
+  @apply bg-bg-secondary text-text-secondary border-2 border-text-secondary py-2 px-4 rounded;
+}

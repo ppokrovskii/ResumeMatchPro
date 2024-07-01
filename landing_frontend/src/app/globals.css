@@ -1,0 +1,63 @@
+/* app/globals.css */
+
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+/* Define default theme variables */
+:root {
+  --color-bg: #ffffff;
+  --color-bg-primary: #cb1be2;
+  --color-bg-contrast: #f0f0f0;
+  --color-bg-secondary: #e0e0e0;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #333333;
+  --color-text-regular: #000000;
+  --color-button-primary: #007bff;
+  --color-button-secondary: #6c757d;
+  --color-button-regular: #adb5bd;
+
+  /* Gradient colors */
+  --gradient-start: #000000;
+  --gradient-end: #7a7985;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #181818;
+    --color-bg-primary: #cb1be2;
+    --color-bg-contrast: #282828;
+    --color-bg-secondary: #383838;
+    --color-text-primary: #f8f9fa;
+    --color-text-secondary: #e9ecef;
+    --color-text-regular: #ffffff;
+    --color-button-primary: #1a73e8;
+    --color-button-secondary: #5a6268;
+    --color-button-regular: #ced4da;
+
+    /* Dark mode gradient colors */
+    --gradient-start: #ffffff; /* Adjust these values as needed */
+    --gradient-end: #7a7985;   /* Adjust these values as needed */
+  }
+}
+
+/* Import the MontserratAlt1 font */
+@font-face {
+  font-family: 'MontserratAlt1';
+  src: url('../fonts/MontserratAlt1-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+}
+
+/* 
+body {
+  color: rgb(var(--foreground-rgb));
+  background: var(--background);
+  font-family: sans-serif;
+} */
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
