@@ -59,7 +59,7 @@ const Header: React.FC = () => {
           {/* <div className='grow'>
              
         </div> */}
-          <ul className={`items-start ${styles.fadeInMoveRight} ${isOpen ? 'flex flex-col' : 'hidden'}`}>
+          <ul className={`items-start px-2 ${styles.fadeInMoveRight} ${isOpen ? 'flex flex-col' : 'hidden'}`}>
             {links.map((link, index) => (
               <li key={index} className='flex items-center py-2'>
                 <Link href={link.href} className="block px-2">

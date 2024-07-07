@@ -1,0 +1,31 @@
+.hr {
+    @apply container p-4 xl:px-16 flex flex-col items-center justify-center;
+}
+
+.textContainer {
+    @apply text-center;
+}
+
+.h1 {
+    @apply text-2xl sm:text-3xl lg:text-4xl font-semibold mb-4;
+}
+
+.p {
+    @apply mb-4;
+}
+
+/* 
+    16:9 Aspect Ratio - pb-[56.25%]
+    4:3 Aspect Ratio - pb-[75%]
+    3:2 Aspect Ratio - pb-[66.66%]
+    1:1 Aspect Ratio - pb-[100%]
+ */
+.imageContainer {
+    @apply relative w-full h-0 pb-[75%] overflow-hidden rounded-lg;
+}
+
+.img {
+    @apply mx-auto mb-4 object-cover rounded-lg absolute top-0 left-0 w-full h-full;
+    transform: translateY(10%);
+    /* object-position: top; */
+}

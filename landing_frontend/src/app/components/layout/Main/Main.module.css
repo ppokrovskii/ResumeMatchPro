@@ -1,0 +1,11 @@
+.main {
+    padding-top: 4rem;
+}
+
+.section {
+    @apply mx-auto;
+}
+
+.sectionContent {
+    @apply py-8 my-8 px-8 flex justify-center;
+}
