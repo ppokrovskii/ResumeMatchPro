@@ -17,6 +17,7 @@
   --color-one-200: #c2b2c2;
   --color-one-100: #dcdcdc;
   --color-two: #f3f4f6;
+  --color-two-rgb: 243, 244, 246;
   --color-two-900: #e8e9ea;
   --color-two-800: #dcdde0;
   --color-two-700: #d0d1d4;
@@ -77,6 +78,7 @@
     --color-one-200: #615d68;
     --color-one-100: #515b58;
     --color-two: #1A1A1A;
+    --color-two-rgb: 26, 26, 26;
     --color-two-900: #161616;
     --color-two-800: #0a0a0a;
     --color-two-700: #0d0d0d;

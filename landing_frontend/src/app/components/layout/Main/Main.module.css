@@ -7,5 +7,23 @@
 }
 
 .sectionContent {
-    @apply py-8 my-8 px-8 flex justify-center;
+    @apply my-8 px-8 flex justify-center;
+}
+
+.bgJobSeeker {
+    background-image: url('/images/JobSeeker_3.4.png');
+    background-size: cover;
+    background-position: top;
+}
+
+.heading {
+    @apply text-5xl sm:text-7xl lg:text-8xl font-semibold mb-4;
+}
+
+.paragraph {
+    @apply mb-4;
+}
+
+.button {
+    @apply grow;
 }

@@ -1,5 +1,5 @@
 .hr {
-    @apply container p-4 xl:px-16 flex flex-col items-center justify-center;
+    @apply container p-0 md:p-4 xl:px-16 flex flex-col items-center justify-center;
 }
 
 .textContainer {
@@ -25,7 +25,6 @@
 }
 
 .img {
-    @apply mx-auto mb-4 object-cover rounded-lg absolute top-0 left-0 w-full h-full;
-    transform: translateY(10%);
+    @apply mx-auto my-8 object-cover rounded-lg absolute top-0 left-0 w-full h-full;
     /* object-position: top; */
 }
