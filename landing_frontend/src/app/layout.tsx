@@ -17,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="font-worksans text-base sm:text-lg md:text-xl bg-default-bg text-text-regular">{children}</body>
+      <body className="font-worksans text-sm sm:text-lg md:text-xl bg-bg text-text">{children}</body>
     </html>
   );
 }

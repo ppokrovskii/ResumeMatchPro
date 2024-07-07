@@ -4,17 +4,26 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Define default and dark theme colors as variables
+        // regular
+        'text': 'var(--color-text)',
         'bg': 'var(--color-bg)',
-        'bg-primary': 'var(--color-bg-primary)',
-        'bg-contrast': 'var(--color-bg-contrast)',
-        'bg-secondary': 'var(--color-bg-secondary)',
+        'button-text': 'var(--color-button-text)',
+        'button-bg': 'var(--color-button-bg)',
+        // primary
         'text-primary': 'var(--color-text-primary)',
+        'bg-primary': 'var(--color-bg-primary)',
+        'button-text-primary': 'var(--color-button-text-primary)',
+        'button-bg-primary': 'var(--color-button-bg-primary)',
+        // secondary
         'text-secondary': 'var(--color-text-secondary)',
-        'text-regular': 'var(--color-text-regular)',
-        'button-primary': 'var(--color-button-primary)',
-        'button-secondary': 'var(--color-button-secondary)',
-        'button-regular': 'var(--color-button-regular)',
+        'bg-secondary': 'var(--color-bg-secondary)',
+        'button-text-secondary': 'var(--color-button-text-secondary)',
+        'button-bg-secondary': 'var(--color-button-bg-secondary)',
+        // accent
+        'text-accent': 'var(--color-text-accent)',
+        'bg-accent': 'var(--color-bg-accent)',
+        'button-text-accent': 'var(--color-button-text-accent)',
+        'button-bg-accent': 'var(--color-button-bg-accent)',
       },
       fontFamily: {
         sans: ['Roboto', 'sans-serif'],
@@ -22,6 +31,9 @@ module.exports = {
         worksans: ['Work Sans', 'sans-serif'],
         montserratAlt: ['MontserratAlt1', 'sans-serif'],
       },
+      spacing: {
+        '1': '4px',
+      }
     },
   },
   plugins: [

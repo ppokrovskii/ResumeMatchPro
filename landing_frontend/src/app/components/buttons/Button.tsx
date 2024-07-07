@@ -2,12 +2,15 @@
 import styles from './Button.module.css';
 
 type ButtonProps = {
-    variant?: 'primary' | 'secondary'; // Make the variant prop optional
+    variant?: 'regular' | 'primary' | 'secondary' | 'accent';
     children: React.ReactNode;
+    className?: string; // Add className prop to accept additional classes
 };
 
-const Button = ({ variant = 'primary', children }: ButtonProps) => { // Set 'primary' as the default value for variant
-    return <button className={styles[variant]}>{children}</button>;
+const Button = ({ variant = 'regular', children, className }: ButtonProps) => {
+    const buttonClasses = `${styles[variant]} py-2 px-4 rounded-xl ${className}`; // Concatenate the additional classes with the existing classes
+
+    return <button className={buttonClasses}>{children}</button>;
 };
 
 export default Button;

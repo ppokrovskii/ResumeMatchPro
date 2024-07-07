@@ -1,6 +1,6 @@
 
 import Nav from "./components/Nav";
-import Main from "./components/layout/Content/Content";
+import Main from "./components/layout/Main/Main";
 import Footer from "./components/layout/Footer/Footer";
 
 
@@ -8,10 +8,10 @@ import Footer from "./components/layout/Footer/Footer";
 
 export default function Home() {
   return (
-    <main className="w-full flex flex-col items-center justify-between min-h-screen ">
+    <div className="w-full bg-bg flex flex-col items-center justify-between min-h-screen ">
       <Nav/>
       <Main />
       <Footer />
-    </main>
+    </div>
   );
 }
