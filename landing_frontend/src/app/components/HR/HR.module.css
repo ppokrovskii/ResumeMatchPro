@@ -21,7 +21,7 @@
     1:1 Aspect Ratio - pb-[100%]
  */
 .imageContainer {
-    @apply relative w-full h-0 pb-[75%] overflow-hidden rounded-lg;
+    @apply relative w-full h-0 pb-[56.25%] overflow-hidden rounded-lg;
 }
 
 .img {

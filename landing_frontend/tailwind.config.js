@@ -1,5 +1,8 @@
 // tailwind.config.js
-module.exports = {
+const withMT = require("@material-tailwind/react/utils/withMT");
+
+
+module.exports = withMT({
   content: ["./src/**/*.{html,js,tsx}"],
   theme: {
     extend: {
@@ -51,4 +54,4 @@ module.exports = {
       addUtilities(newUtilities, ['responsive', 'hover'])
     }
   ],
-}
+});

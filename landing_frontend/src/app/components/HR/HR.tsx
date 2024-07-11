@@ -17,7 +17,7 @@ const HR = () => {
             </div>
             <div className={styles.imageContainer}>
                 <Image 
-                    src="/images/hr.png" 
+                    src="/images/HR_1.1.png" 
                     alt="HR" 
                     layout="fill" 
                     className={styles.img} 

@@ -1,0 +1,42 @@
+.carousel {
+    @apply rounded-xl max-w-4xl;
+}
+
+.carouselItem {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.image {
+    border-radius: 1rem; /* Adjust border radius as needed */
+}
+
+/* Target the carousel buttons (arrows) */
+.carousel :global(button) {
+    background-color: rgba(0, 0, 0, 0.5); /* Example background color */
+    color: white; /* Example arrow color */
+}
+
+.carousel :global(button:hover) {
+    background-color: rgba(0, 0, 0, 0.7); /* Darken on hover */
+}
+
+/* Target the span elements for paging dots */
+/* .carousel :global(span) {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.carousel :global(span.active) {
+    background-color: rgba(0, 0, 0, 0.8);
+} 
+*/
+
+/* Override the background colors for current and non-current dots */
+.carousel :global(span.bg-white) {
+    background-color: rgba(0, 0, 0, 0.8) !important; /* Change to your desired color for current dot */
+}
+
+.carousel :global(span.bg-white\/50) {
+    background-color: rgba(0, 0, 0, 0.5) !important; /* Change to your desired color for non-current dots */
+}

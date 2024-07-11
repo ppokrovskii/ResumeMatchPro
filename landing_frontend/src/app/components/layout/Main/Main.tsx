@@ -1,4 +1,5 @@
 import Button from "../../buttons/Button";
+import HowItWorks from "../../HowItWorks/HowItWorks";
 import HR from "../../HR/HR";
 import JobSeeker from "../../JobSeeker/JobSeeker";
 import styles from "./Main.module.css";
@@ -17,13 +18,7 @@ const Main = () => {
                 </div>
             </div>
             <div className={styles.section}>
-                <h1 className={styles.heading}>
-                    How it works
-                </h1>
-                <p className={styles.paragraph}>
-                    Simply upload your files and relax, let our advanced AI do the heavy lifting!
-                </p>
-                <Button className={styles.button} variant="primary">Get Early Access</Button>
+                <HowItWorks /> 
             </div>
             <div className={styles.section}>
                 <h1 className={styles.heading}>
