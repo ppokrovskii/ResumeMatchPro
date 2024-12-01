@@ -1,7 +1,7 @@
 import React from "react";
 // Sections
-import TopNavbar from "../components/Nav/TopNavbar";
-import Header from "../components/Sections/Header";
+import TopNavbar from "../components/Nav/TopNavbar/TopNavbar";
+import Header from "../components/Sections/Header/Header";
 import MirroredHeader from "../components/Sections/MirroredHeader";
 // import Services from "../components/Sections/Services";
 import Projects from "../components/Sections/Projects";

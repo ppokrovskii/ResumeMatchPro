@@ -162,6 +162,76 @@
         font-size: 0.875rem;
         padding: 0.75rem;
     }
+
+    /* Prevent zoom on input focus for iOS */
+    .input {
+        font-size: 1rem; /* Reduce font size on mobile to prevent zoom */
+        -webkit-text-size-adjust: 100%; /* Prevent iOS font scaling */
+    }
+
+    /* Force consistent viewport */
+    .wrapper {
+        min-height: -webkit-fill-available;
+        padding: 0 1rem; /* Reduce padding on mobile */
+    }
+
+    /* Prevent layout shifts */
+    .form {
+        width: 100%;
+        padding: 1.875rem 0;
+        /* Prevent margin collapse */
+        overflow: hidden;
+    }
+
+    /* Ensure inputs maintain their size */
+    .input {
+        -webkit-appearance: none; /* Remove default iOS styling */
+        appearance: none;
+        font-size: 16px !important; /* Prevent zoom on iOS */
+        margin-bottom: 1.5rem;
+        padding: 0.5rem 0;
+        min-height: 2.5rem; /* Ensure consistent height */
+    }
+
+    /* Prevent form elements from being affected by viewport changes */
+    .formWrapper {
+        padding-bottom: 1rem;
+        gap: 1rem;
+        width: 100%;
+        /* Prevent unwanted margin changes */
+        margin: 0;
+    }
+
+    /* Add consistent touch targets */
+    .submitButton {
+        min-height: 3rem; /* Ensure good touch target size */
+        padding: 0.75rem 1.5rem;
+        margin: 0;
+        /* Prevent iOS default button styling */
+        -webkit-appearance: none;
+        appearance: none;
+    }
+}
+
+/* Add viewport-specific fixes */
+@supports (-webkit-touch-callout: none) {
+    /* iOS-specific fixes */
+    .wrapper {
+        min-height: -webkit-fill-available;
+    }
+}
+
+/* Prevent content shift when virtual keyboard appears */
+@media (max-width: 62em) and (orientation: portrait) {
+    .form {
+        position: relative;
+        z-index: 1;
+    }
+
+    .input:focus {
+        position: relative;
+        z-index: 2;
+    }
 }
 
 @media (max-width: 30em) {
