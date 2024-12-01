@@ -1,0 +1,172 @@
+.wrapper {
+    width: 100%;
+    max-width: 1220px;
+    margin: 0 auto;
+    padding: 0px 30px;
+}
+
+.lightBg {
+    background-color: #f9f9f9;
+}
+
+.container {
+    max-width: 75rem;
+    margin: 0 auto;
+    padding: 0 0.9375rem;
+}
+
+.headerInfo {
+    padding: 4.375rem 0 1.875rem 0;
+}
+
+.title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 1.25rem;
+}
+
+.subtitle {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+}
+
+.formWrapper {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 1.875rem;
+    gap: 2.5rem;
+}
+
+.form {
+    padding: 4.375rem 0 1.875rem 0;
+    width: 45%;
+}
+
+.input {
+    width: 100%;
+    background-color: transparent;
+    border: 0;
+    outline: none;
+    box-shadow: none;
+    border-bottom: 0.0625rem solid #707070;
+    height: 1.875rem;
+    margin-bottom: 1.875rem;
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+
+.input:-webkit-autofill {
+    box-shadow: 0 0 0 62.5rem transparent inset !important;
+    -webkit-text-fill-color: #000 !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+.label {
+    font-size: 0.8125rem;
+    display: block;
+    margin-bottom: 0.3125rem;
+}
+
+.submitWrapper {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 1.875rem;
+}
+
+.submitButton {
+    border: none;
+    background-color: #580cd2;
+    border-radius: 0.75rem;
+    max-width: 12.25rem;
+    width: 100%;
+    padding: 1vw 2vw;
+    outline: none;
+    color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.submitButton:hover {
+    background-color: #7620ff;
+}
+
+.submitButton:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.imagesContainer {
+    display: flex;
+    width: 45%;
+}
+
+.imageColumn {
+    width: 50%;
+}
+
+.contactImgBox {
+    max-width: 11.25rem;
+    margin: 0.625rem 1.875rem 0.625rem 0;
+}
+
+.offsetImage {
+    margin-top: 6.25rem;
+}
+
+.image {
+    object-fit: cover;
+    object-position: center;
+    border-radius: 0.375rem;
+}
+
+.successMessage {
+    color: green;
+    margin-bottom: 0.9375rem;
+}
+
+.errorMessage {
+    color: red;
+    margin-bottom: 0.9375rem;
+}
+
+@media (max-width: 62em) {
+    .imagesContainer {
+        display: none;
+    }
+
+    .form {
+        width: 100%;
+    }
+
+    .headerInfo {
+        text-align: center;
+    }
+
+    .form {
+        padding: 1.875rem 0;
+    }
+
+    .formWrapper {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .submitWrapper {
+        justify-content: center;
+    }
+
+    .submitButton {
+        font-size: 0.875rem;
+        padding: 0.75rem;
+    }
+}
+
+@media (max-width: 30em) {
+    .submitButton {
+        font-size: 0.75rem;
+        padding: 0.625rem;
+    }
+}

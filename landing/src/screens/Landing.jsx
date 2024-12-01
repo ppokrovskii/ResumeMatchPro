@@ -8,7 +8,7 @@ import Projects from "../components/Sections/Projects";
 // import HowItWorks from "../components/Sections/HowItWorks/HowItWorks";
 // import Blog from "../components/Sections/Blog";
 // import Pricing from "../components/Sections/Pricing";
-import Contact from "../components/Sections/Contact";
+import Contact from "../components/Sections/Contact/Contact";
 import Footer from "../components/Sections/Footer"
 import ContactForm from "../components/ContactForm/ContactForm";
 import Notification from "../components/Notification/Notification";

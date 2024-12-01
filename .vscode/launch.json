@@ -9,13 +9,6 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "Attach to Python Functions azfunctions: python",
-            "type": "python",
-            "request": "attach",
-            "port": 9091,
-            "preLaunchTask": "func: host start azfunctions"
-        },
-        {
             "name": "Attach to Python Functions azfunctions: debugpy",
             "type": "debugpy",
             "request": "attach",
