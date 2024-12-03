@@ -1,0 +1,48 @@
+.wrapper {
+    width: 400px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    padding: 0 30px;
+    right: -400px;
+    z-index: 9999;
+    transition: right 0.3s ease-in-out;
+}
+
+.sidebarHeader {
+    padding: 20px 0;
+}
+
+.closeBtn {
+    border: 0;
+    outline: none;
+    background-color: transparent;
+    padding: 10px;
+    cursor: pointer;
+    color: #333333;
+}
+
+.closeBtn svg {
+    width: 12px;
+    height: 12px;
+}
+
+.closeBtn svg,
+.closeBtn svg g,
+.closeBtn svg path {
+    fill: inherit;
+}
+
+.ulStyle {
+    padding: 40px;
+}
+
+.ulStyle li {
+    margin: 20px 0;
+}
+
+@media (max-width: 400px) {
+    .wrapper {
+        width: 100%;
+    }
+} 

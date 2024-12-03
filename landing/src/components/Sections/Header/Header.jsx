@@ -9,7 +9,7 @@ import Dots from "../../../assets/svg/Dots";
 
 export default function Header({ handleOpenContactForm }) {
   return (
-    <section id="home" className={`${styles.wrapper} container flexSpaceCenter originalHeader`}>
+    <section id="home" className={`${styles.wrapper} container flexSpaceCenter`}>
       <div className={`${styles.leftSide} flexCenter`}>
         <div>
           <h1 className="extraBold font60">Speed Up Recruitment with AI-Driven CV Screening</h1>

@@ -2,6 +2,7 @@
     padding-top: 80px;
     width: 100%;
     min-height: 840px;
+    position: relative;
 }
 
 .leftSide {
@@ -15,10 +16,10 @@
 }
 
 .headerP {
-    composes: font13 semiBold from global;
+    font-size: 0.8125rem; /* 13px */
+    font-weight: 600;
     max-width: 470px;
     padding: 15px 0 50px 0;
-    line-height: 1.5rem;
 }
 
 .btnWrapper {

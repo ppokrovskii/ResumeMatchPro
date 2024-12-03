@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import styles from './TopNavbar.module.css';
 import { Link } from "react-scroll";
 // Components
-import Sidebar from "../Sidebar";
+import Sidebar from "../Sidebar/Sidebar";
 import Backdrop from "../../Elements/Backdrop";
 // Assets
 import LogoIcon from "../../../assets/svg/Logo";
