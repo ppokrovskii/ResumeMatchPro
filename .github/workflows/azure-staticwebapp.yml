@@ -64,18 +64,10 @@ jobs:
           app_build_command: 'npm run build'
         env:
           REACT_APP_GA_MEASUREMENT_ID: ${{ secrets.REACT_APP_GA_MEASUREMENT_ID }}
-          # Use environment-specific variables
           REACT_APP_BACKEND_URL: ${{ vars[format('LANDING_REACT_APP_BACKEND_URL_{0}', github.ref_name == 'main' && 'PROD' || 'DEV')] }}
           REACT_APP_ENV: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
           NODE_ENV: ${{ github.ref_name == 'main' && 'production' || 'development' }}
           REACT_APP_VERSION: ${{ github.sha }}
-      - name: Purge Azure CDN
-        run: |
-          curl -X POST "https://${{ secrets.AZURE_CDN_ENDPOINT }}.azureedge.net/api/purge" \
-          -H "Content-Type: application/json" \
-          -H "x-ms-version: 2019-12-31" \
-          -d '{"contentPaths":["/static/*"]}'
-        if: success()
 
   # close_pull_request_job:
   #   permissions:
