@@ -67,7 +67,7 @@ jobs:
           app_location: ${{ env.APP_LOCATION }}
           api_location: ${{ env.API_LOCATION }}
           app_artifact_location: ${{ env.APP_ARTIFACT_LOCATION }}
-          app_build_command: 'npm run build'
+          app_build_command: 'npm install && npm run build'
         env:
           REACT_APP_GA_MEASUREMENT_ID: ${{ secrets.REACT_APP_GA_MEASUREMENT_ID }}
           REACT_APP_BACKEND_URL: ${{ vars[format('LANDING_REACT_APP_BACKEND_URL_{0}', github.ref_name == 'main' && 'PROD' || 'DEV')] }}
