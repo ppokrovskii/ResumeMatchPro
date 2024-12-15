@@ -28,7 +28,12 @@ export default function Header({ handleOpenContactForm }) {
             className={`${styles.img} radius8`} 
             src={HeaderImage} 
             alt="office" 
-            style={{ zIndex: 9 }} 
+            loading="eager"
+            onError={(e) => {
+                e.target.style.width = '100%';
+                e.target.style.maxWidth = '426px';
+                e.target.style.height = 'auto';
+            }}
           />
           <div className={`${styles.quoteWrapper} flexCenter darkBg radius8`}>
             <div className={styles.quotesWrapper}>

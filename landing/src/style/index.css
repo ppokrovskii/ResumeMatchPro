@@ -1,3 +1,9 @@
+@font-face {
+    font-family: 'Khula';
+    font-display: swap;
+    /* other font properties */
+}
+
 :root {
   --container-width: 1220px;
   --white-color: #fff;
@@ -17,7 +23,7 @@ html {
 body {
     background: #fff;
     color: #0B093B;
-    font-family: 'Khula', sans-serif;
+    font-family: 'Khula', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     overflow-x: hidden;
     font-size: 16px;
     font-weight: 400;
@@ -81,11 +87,11 @@ body {
     width: 100%;
     max-width: 1220px;
     margin: 0 auto;
-    padding: 0px 30px;
+    padding: 0 clamp(1rem, 4vw, 30px);
   }
   @media only screen and (max-width: 859px) {
     .container {
-      padding: 0;
+      padding: 0 clamp(1rem, 4vw, 30px);
     }
   }
   .regular {
@@ -308,3 +314,15 @@ body {
   .textLight {
     color: #F5F5F5;
   }
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
