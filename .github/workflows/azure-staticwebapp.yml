@@ -22,9 +22,9 @@ on:
 
 # Environment variables available to all jobs and steps in this workflow
 env:
-  APP_LOCATION: "/landing" # location of your client code
+  APP_LOCATION: "landing"
   # API_LOCATION: "api" # location of your api source code - optional
-  APP_ARTIFACT_LOCATION: "build" # location of client code build output
+  APP_ARTIFACT_LOCATION: "build"
   AZURE_STATIC_WEB_APPS_API_TOKEN: ${{ secrets.LANDING_AZURE_STATIC_WEB_APPS_API_TOKEN }} # secret containing deployment token for your static web app
   REACT_APP_VERSION: ${{ github.sha }} # Add this line to use commit hash as version
 
@@ -46,12 +46,11 @@ jobs:
           submodules: true
       - name: Clean npm cache
         run: |
-          cd landing
           npm cache clean --force
           rm -rf node_modules
           rm -rf build
           npm install
-        working-directory: ${{ env.APP_LOCATION }}
+        working-directory: landing
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
