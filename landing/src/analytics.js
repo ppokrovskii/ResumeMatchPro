@@ -2,22 +2,16 @@
 import ReactGA from 'react-ga4';
 
 export const initGA = () => {
-    const consent = localStorage.getItem('cookie-consent');
-    // console.log('check', consent === 'accepted' && process.env.REACT_APP_GA_MEASUREMENT_ID);
-    // if process.env.REACT_APP_GA_MEASUREMENT_ID variable is there then init reactga
-    if (consent === 'accepted' && process.env.REACT_APP_GA_MEASUREMENT_ID) {
-        ReactGA.initialize(process.env.REACT_APP_GA_MEASUREMENT_ID);
+    const env = process.env.REACT_APP_ENV;
+    const measurementId = process.env.REACT_APP_GA_MEASUREMENT_ID;
+    
+    if (env === 'prod' && measurementId) {
+        // Initialize GA only in production
+        ReactGA.initialize(measurementId);
+        console.log('GA initialized in production');
     } else {
-        console.log('GA not initialized as no measurement id or user rejected cookies. consent:', consent);
+        console.log('GA not initialized in development');
     }
-    //   if (process.env.NODE_ENV === 'prod') {
-    //     ReactGA.initialize(process.env.REACT_APP_GA_MEASUREMENT_ID);
-    //     console.log('GA initialized');
-    //   } else
-    //   {
-    //     console.log('GA not initialized as not in prod');
-    //   }
-
 };
 
 export const logPageView = () => {

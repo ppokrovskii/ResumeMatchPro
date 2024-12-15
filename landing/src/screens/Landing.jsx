@@ -1,14 +1,14 @@
 import React from "react";
 // Sections
-import TopNavbar from "../components/Nav/TopNavbar";
-import Header from "../components/Sections/Header";
-import MirroredHeader from "../components/Sections/MirroredHeader";
+import TopNavbar from "../components/Nav/TopNavbar/TopNavbar";
+import Header from "../components/Sections/Header/Header";
+import MirroredHeader from "../components/Sections/MirroredHeader/MirroredHeader";
 // import Services from "../components/Sections/Services";
-import Projects from "../components/Sections/Projects";
+import Projects from "../components/Sections/Projects/Projects";
 // import HowItWorks from "../components/Sections/HowItWorks/HowItWorks";
 // import Blog from "../components/Sections/Blog";
 // import Pricing from "../components/Sections/Pricing";
-import Contact from "../components/Sections/Contact";
+import Contact from "../components/Sections/Contact/Contact";
 import Footer from "../components/Sections/Footer"
 import ContactForm from "../components/ContactForm/ContactForm";
 import Notification from "../components/Notification/Notification";

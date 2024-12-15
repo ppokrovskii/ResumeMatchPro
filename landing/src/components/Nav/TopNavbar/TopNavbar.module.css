@@ -1,0 +1,83 @@
+.wrapper {
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 999;
+    transition: height 0.3s ease-in-out;
+}
+
+.navInner {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    max-width: var(--container-width, 1220px);
+    margin: 0 auto;
+    padding: 0 clamp(1rem, 4vw, 2rem);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.burgerWrapper {
+    outline: none;
+    border: 0;
+    background-color: transparent;
+    height: 100%;
+    padding: 0 15px;
+    display: none;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.burgerWrapper:hover {
+    opacity: 0.7;
+}
+
+.ulWrapper {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    margin: 0 clamp(1rem, 3vw, 20px);
+    gap: 0.5rem;
+}
+
+.ulWrapper li {
+    white-space: nowrap;
+    padding: 0 clamp(0.5rem, 1.5vw, 10px);
+}
+
+.ulWrapperRight {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+/* Responsive Breakpoints */
+@media screen and (max-width: 1024px) {
+    .burgerWrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ulWrapper,
+    .ulWrapperRight {
+        display: none;
+    }
+}
+
+/* For larger screens */
+@media screen and (min-width: 1921px) {
+    .navInner {
+        max-width: 1400px;
+    }
+}
+
+/* Ensure minimum tap target size on mobile */
+@media (hover: none) and (pointer: coarse) {
+    .burgerWrapper {
+        min-height: 44px;
+        min-width: 44px;
+    }
+} 
