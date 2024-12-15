@@ -12,7 +12,7 @@ export default function Header({ handleOpenContactForm }) {
     <section id="home" className={`${styles.wrapper} container flexSpaceCenter`}>
       <div className={`${styles.leftSide} flexCenter`}>
         <div>
-          <h1 className="extraBold font60">Speed Up! Recruitment with AI-Driven CV Screening</h1>
+          <h1 className="extraBold font60">Speed Up Recruitment with AI-Driven CV Screening</h1>
           <div className={styles.headerP}>
             Leverage our advanced AI to quickly filter and match CVs with job descriptions, streamlining your hiring process.
             Focus more on engaging candidates and less on sifting through CVs.
