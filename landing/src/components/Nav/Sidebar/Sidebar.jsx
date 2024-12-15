@@ -1,7 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
-import styles from './Sidebar.module.css';
 import { Link } from "react-scroll";
+import styles from "./Sidebar.module.css";
 // Assets
 import CloseIcon from "../../../assets/svg/CloseIcon";
 import LogoIcon from "../../../assets/svg/Logo";
@@ -9,16 +9,13 @@ import FullButton from "../../Buttons/FullButton";
 
 export default function Sidebar({ sidebaropen, setSidebarOpen, handleOpenContactForm }) {
   return (
-    <nav className={`${styles.wrapper} animate whiteBg`} style={{ right: sidebaropen ? "0px" : "-400px" }}>
+    <nav className={`${styles.wrapper} animate whiteBg`} data-open={sidebaropen}>
       <div className={`${styles.sidebarHeader} flexSpaceCenter`}>
         <div className="flexNullCenter">
           <LogoIcon />
-          <h1 className="font20" style={{ marginLeft: "15px" }}>
-            {/* neoteq.dev */}
-          </h1>
         </div>
         <button 
-          onClick={() => setSidebarOpen((prev) => !prev)} 
+          onClick={() => setSidebarOpen(false)} 
           className={`${styles.closeBtn} animate pointer`}
         >
           <CloseIcon />
@@ -28,7 +25,7 @@ export default function Sidebar({ sidebaropen, setSidebarOpen, handleOpenContact
       <ul className={`${styles.ulStyle} flexNullCenter flexColumn`}>
         <li className="semiBold font15 pointer">
           <Link
-            onClick={() => setSidebarOpen((prev) => !prev)}
+            onClick={() => setSidebarOpen(false)}
             activeClass="active"
             style={{ padding: "10px 15px" }}
             to="home"
@@ -41,7 +38,7 @@ export default function Sidebar({ sidebaropen, setSidebarOpen, handleOpenContact
         </li>
         <li className="semiBold font15 pointer">
           <Link
-            onClick={() => setSidebarOpen((prev) => !prev)}
+            onClick={() => setSidebarOpen(false)}
             activeClass="active"
             style={{ padding: "10px 15px" }}
             to="jobSeekers"
@@ -54,7 +51,7 @@ export default function Sidebar({ sidebaropen, setSidebarOpen, handleOpenContact
         </li>
         <li className="semiBold font15 pointer">
           <Link
-            onClick={() => setSidebarOpen((prev) => !prev)}
+            onClick={() => setSidebarOpen(false)}
             activeClass="active"
             style={{ padding: "10px 15px" }}
             to="projects"
@@ -67,7 +64,7 @@ export default function Sidebar({ sidebaropen, setSidebarOpen, handleOpenContact
         </li>
         <li className="semiBold font15 pointer">
           <Link
-            onClick={() => setSidebarOpen((prev) => !prev)}
+            onClick={() => setSidebarOpen(false)}
             activeClass="active"
             style={{ padding: "10px 15px" }}
             to="contact"

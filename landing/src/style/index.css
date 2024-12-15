@@ -1,3 +1,12 @@
+:root {
+  --container-width: 1220px;
+  --white-color: #fff;
+  --text-color: #333333;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --primary-color: #7620FF;
+  --hover-bg: rgba(0, 0, 0, 0.05);
+}
+
 html {
     overflow-x: hidden;
     width: 100%;

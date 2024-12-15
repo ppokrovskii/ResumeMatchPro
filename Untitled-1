@@ -1,0 +1,41 @@
+# coding=utf-8
+
+import argparse
+from typing import List
+import evaluate
+import numpy as np
+import torch
+from datasets import DatasetDict, load_dataset
+from sklearn.model_selection import StratifiedKFold
+from torch.optim import AdamW
+from torch.utils.data import DataLoader
+from transformers import (
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    get_linear_schedule_with_warmup,
+    set_seed
+)
+from accelerate import Accelerator, DistributedType
+
+# Constants
+MAX_GPU_BATCH_SIZE = 16
+EVAL_BATCH_SIZE = 32
+
+def get_fold_dataloaders(
+    accelerator: Accelerator,
+    dataset: DatasetDict,
+    train_idxs: List[int],
+    valid_idxs: List[int],
+    batch_size: int = 16
+):
+    """Gets a set of train, valid, and test dataloaders for a particular fold
+    
+    Args:
+        accelerator (`Accelerator`): The main `Accelerator` object
+        train_idxs (list of `int`): The split indices for the training dataset
+        valid_idxs (list of `int`): The split indices for the validation dataset
+        batch_size (`int`): The size of the minibatch. Default is 16
+    """
+    # ... rest of the function remains the same ...
+
+# ... rest of the code remains the same ... 

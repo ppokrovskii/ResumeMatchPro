@@ -2,7 +2,7 @@ import React from "react";
 // Sections
 import TopNavbar from "../components/Nav/TopNavbar/TopNavbar";
 import Header from "../components/Sections/Header/Header";
-import MirroredHeader from "../components/Sections/MirroredHeader";
+import MirroredHeader from "../components/Sections/MirroredHeader/MirroredHeader";
 // import Services from "../components/Sections/Services";
 import Projects from "../components/Sections/Projects/Projects";
 // import HowItWorks from "../components/Sections/HowItWorks/HowItWorks";
