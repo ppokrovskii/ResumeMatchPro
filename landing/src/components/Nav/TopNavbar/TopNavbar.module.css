@@ -40,6 +40,7 @@
     white-space: nowrap;
     margin: 0 clamp(1rem, 3vw, 20px);
     gap: 0.5rem;
+    list-style-type: none;
 }
 
 .ulWrapper li {
@@ -51,6 +52,7 @@
     display: flex;
     align-items: center;
     white-space: nowrap;
+    list-style-type: none;
 }
 
 /* Responsive Breakpoints */
