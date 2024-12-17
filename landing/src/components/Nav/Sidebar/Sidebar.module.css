@@ -73,6 +73,7 @@
 /* Navigation Links */
 .ulStyle {
     padding: clamp(20px, 5vw, 40px);
+    list-style-type: none;
 }
 
 .ulStyle li {

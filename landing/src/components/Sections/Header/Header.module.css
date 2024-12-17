@@ -100,7 +100,7 @@
     }
 
     .quoteWrapper {
-        left: 20px;
+        display: none;
     }
 
     .dotsWrapper {
