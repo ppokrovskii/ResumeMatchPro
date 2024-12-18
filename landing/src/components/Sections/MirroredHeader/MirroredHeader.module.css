@@ -103,14 +103,14 @@
     .imageWrapper {
         width: auto;
         justify-content: center;
-        height: calc(min(45vh, 100vh - 350px));
+        height: calc(min(50vh, 100vh - 350px));
         display: flex;
         align-items: center;
     }
 
     .img {
-        height: calc(min(45vh, 100vh - 350px));
-        width: calc((min(45vh, 100vh - 350px)) * 295 / 420);
+        height: calc(min(50vh, 100vh - 350px));
+        width: calc((min(50vh, 100vh - 350px)) * 295 / 420);
         max-width: 90vw;
         object-fit: cover;
     }
@@ -175,14 +175,14 @@
     .imageWrapper {
         width: auto;
         justify-content: center;
-        height: calc(min(45vh, 100vh - 350px));
+        height: min(50vh, calc(100vw * 420/295));
         display: flex;
         align-items: center;
     }
 
     .img {
-        height: calc(min(45vh, 100vh - 350px));
-        width: calc((min(45vh, 100vh - 350px)) * 295 / 420);
+        height: min(50vh, calc(100vw * 420/295));
+        width: calc(min(50vh, calc(100vw * 420/295)) * 295/420);
         max-width: 90vw;
         object-fit: cover;
     }
