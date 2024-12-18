@@ -97,14 +97,14 @@
     .imageWrapper {
         width: auto;
         justify-content: center;
-        height: min(50vh, calc((100vh - 250px)));
+        height: calc(min(50vh, 100vh - 250px));
         display: flex;
         align-items: center;
     }
 
     .img {
-        height: min(50vh, calc((100vh - 250px)));
-        width: calc(min(50vh, calc((100vh - 250px))) * 295/420);
+        height: calc(min(50vh, 100vh - 250px));
+        width: calc((min(50vh, 100vh - 250px)) * 295 / 420);
         max-width: 90vw;
         object-fit: cover;
     }
