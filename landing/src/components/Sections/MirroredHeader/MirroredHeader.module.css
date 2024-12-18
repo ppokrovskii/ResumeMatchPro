@@ -78,6 +78,10 @@
         flex-direction: column;
         justify-content: center;
         gap: 20px;
+        min-height: 0;
+        height: auto;
+        max-height: calc(100vh - 80px);
+        overflow: hidden;
     }
 
     .leftSide,
@@ -99,14 +103,14 @@
     .imageWrapper {
         width: auto;
         justify-content: center;
-        height: 65vh;
+        height: min(50vh, calc((100vh - 250px)));
         display: flex;
         align-items: center;
     }
 
     .img {
-        height: 65vh;
-        width: calc(65vh * 295/420);
+        height: min(50vh, calc((100vh - 250px)));
+        width: calc(min(50vh, calc((100vh - 250px))) * 295/420);
         max-width: 90vw;
         object-fit: cover;
     }
