@@ -23,8 +23,8 @@
 }
 
 /* Additional size adjustments for very small screens */
-@media screen and (max-width: 360px) {
+@media screen and (max-width: 1024px) {
     .logo {
-        font-size: 16px;
+        font-size: clamp(28px, 3.5vw, 42px);
     }
 }
