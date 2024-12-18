@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-scroll";
 import styles from "./Footer.module.css"; // Import the CSS module
 // Assets
-import LogoImg from "../../../assets/svg/Logo";
+import Logo from "../../../assets/components/Logo/Logo";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -12,7 +12,7 @@ export default function Footer() {
       <div className="container">
         <div className={`${styles.innerWrapper} flexSpaceCenter`}>
           <Link className="flexCenter animate pointer" to="home" smooth={true} offset={-80}>
-            <LogoImg />
+            <Logo />
             <h1 className={`${styles.logoText} font15 extraBold whiteColor`}>
               {/* Add any text if needed */}
             </h1>

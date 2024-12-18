@@ -5,7 +5,7 @@ import { Link } from "react-scroll";
 import Sidebar from "../Sidebar/Sidebar";
 import Backdrop from "../../Elements/Backdrop";
 // Assets
-import LogoIcon from "../../../assets/svg/Logo";
+import Logo from "../../../assets/components/Logo/Logo";
 import BurgerIcon from "../../../assets/svg/BurgerIcon";
 import FullButton from "../../Buttons/FullButton";
 
@@ -35,7 +35,7 @@ export default function TopNavbar({ handleOpenContactForm }) {
         style={y > 100 ? { height: "60px" } : { height: "80px" }}
       >
         <div className={`${styles.navInner} container flexSpaceCenter`}>
-          <LogoIcon />
+          <Logo />
           <button 
             className={styles.burgerWrapper} 
             onClick={() => setSidebarOpen(!sidebarOpen)}

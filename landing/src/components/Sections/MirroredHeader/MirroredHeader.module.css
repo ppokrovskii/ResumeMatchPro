@@ -161,4 +161,68 @@
     .btnWrapper2 {
         display: none;
     }
+}
+
+/* Mobile optimizations */
+@media screen and (max-width: 430px) {
+  .wrapper {
+    min-height: auto;
+    padding-top: 40px;
+  }
+
+  .leftSide,
+  .rightSide {
+    width: 100%;
+    padding: 20px;
+  }
+
+  .headerP {
+    font-size: 14px;
+    line-height: 1.4;
+    padding: 10px 0 30px 0;
+    max-width: 100%;
+  }
+
+  .imageWrapper {
+    width: 100%;
+    max-width: 350px;
+    margin: 0 auto;
+  }
+
+  .img {
+    width: 100%;
+    height: auto;
+    max-width: 350px;
+    margin: 0 auto;
+  }
+
+  .quoteWrapper {
+    position: relative;
+    bottom: 0;
+    right: 0;
+    max-width: 100%;
+    margin: 20px auto;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Improve text readability */
+  h1 {
+    font-size: clamp(24px, 7vw, 32px);
+    line-height: 1.2;
+  }
+}
+
+/* Container width control */
+.wrapper > div {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Safe area insets for notched devices */
+@supports (padding: max(0px)) {
+  .wrapper {
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+  }
 } 
