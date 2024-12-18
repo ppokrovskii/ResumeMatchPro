@@ -1,7 +1,7 @@
 import * as React from "react";
-import styles from './SvgComponent.module.css';
+import styles from './Logo.module.css';
 
-function SvgComponent(props) {
+function Logo(props) {
   return (
     <div className={styles.logo}>
       ResumeMatchPro
@@ -9,4 +9,4 @@ function SvgComponent(props) {
   );
 }
 
-export default SvgComponent;
+export default Logo; 

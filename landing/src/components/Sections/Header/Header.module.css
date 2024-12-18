@@ -125,4 +125,47 @@
     .dotsWrapper {
         display: none;
     }
+}
+
+/* Debugging media query for iPhone 14 Pro Max */
+@media screen and (max-width: 430px) {
+  .wrapper {
+    min-height: auto;  /* Adjust height for mobile */
+    padding-top: 60px; /* Reduce top padding */
+  }
+
+  .leftSide {
+    width: 100%;
+    padding: 20px;
+  }
+
+  .headerP {
+    font-size: 14px;  /* Adjust font size for mobile */
+    padding: 10px 0 30px 0;  /* Reduce padding */
+    max-width: 100%;
+  }
+
+  .img {
+    width: 100%;
+    max-width: 350px;  /* Limit image width on mobile */
+    height: auto;
+    margin: 0 auto;
+  }
+
+  .quoteWrapper {
+    position: relative;  /* Change from absolute positioning */
+    bottom: 0;
+    left: 0;
+    max-width: 100%;
+    margin: 20px auto;
+    padding: 20px;
+  }
+}
+
+/* Safe area insets for notched devices */
+@supports (padding: max(0px)) {
+  .wrapper {
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+  }
 } 

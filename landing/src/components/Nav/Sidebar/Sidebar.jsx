@@ -4,7 +4,7 @@ import { Link } from "react-scroll";
 import styles from "./Sidebar.module.css";
 // Assets
 import CloseIcon from "../../../assets/svg/CloseIcon";
-import LogoIcon from "../../../assets/svg/Logo";
+import Logo from "../../../assets/components/Logo/Logo";
 import FullButton from "../../Buttons/FullButton";
 
 export default function Sidebar({ sidebaropen, setSidebarOpen, handleOpenContactForm }) {
@@ -12,7 +12,7 @@ export default function Sidebar({ sidebaropen, setSidebarOpen, handleOpenContact
     <nav className={`${styles.wrapper} animate whiteBg`} data-open={sidebaropen}>
       <div className={`${styles.sidebarHeader} flexSpaceCenter`}>
         <div className="flexNullCenter">
-          <LogoIcon />
+          <Logo />
         </div>
         <button 
           onClick={() => setSidebarOpen(false)} 
