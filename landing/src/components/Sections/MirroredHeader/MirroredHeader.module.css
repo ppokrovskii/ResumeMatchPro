@@ -30,7 +30,7 @@
 
 .img {
     width: auto;
-    height: 70vh;
+    height: 65vh;
     aspect-ratio: 295/420;
     object-fit: cover;
     object-position: center;
@@ -86,14 +86,14 @@
     .imageWrapper {
         width: auto;
         justify-content: center;
-        height: 70vh;
+        height: 65vh;
         display: flex;
         align-items: center;
     }
 
     .img {
-        height: 70vh;
-        width: calc(70vh * 295/420);
+        height: 65vh;
+        width: calc(65vh * 295/420);
         max-width: 90vw;
         object-fit: cover;
     }
