@@ -1,8 +1,8 @@
 import React from "react";
-import styles from './Projects.module.css';
-import HowItWorksV2 from "../HowItWorksV2/HowItWorksV2";
+import styles from './HowItWorks.module.css';
+import CarouselWrapper from "../../CarouselWrapper/CarouselWrapper";
 
-export default function Projects({handleOpenContactForm}) {
+export default function HowItWorks({handleOpenContactForm}) {
   return (
     <section id="projects" className={styles.wrapper}>
       <div className={styles.content}>
@@ -12,7 +12,7 @@ export default function Projects({handleOpenContactForm}) {
             Simply upload your files and relax, let our advanced AI do the heavy lifting!
           </p>
         </div>
-        <HowItWorksV2/>
+        <CarouselWrapper />
       </div>
     </section>
   );

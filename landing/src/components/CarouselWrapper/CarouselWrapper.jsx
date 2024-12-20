@@ -1,10 +1,10 @@
-import Carousel from '../../Carousel/Carousel';
-import styles from './HowItWorksV2.module.css';
-import ProjectImg1 from '../../../assets/img/projects/rmp_design1.png';
-import ProjectImg2 from '../../../assets/img/projects/rmp_design2.png';
-import ProjectImg3 from '../../../assets/img/projects/rmp_design3.png';
+import Carousel from '../Carousel/Carousel';
+import styles from './CarouselWrapper.module.css';
+import ProjectImg1 from '../../assets/img/projects/rmp_design1.png';
+import ProjectImg2 from '../../assets/img/projects/rmp_design2.png';
+import ProjectImg3 from '../../assets/img/projects/rmp_design3.png';
 
-const HowItWorksV2 = () => {
+const CarouselWrapper = () => {
   const items = [
     {
       image: ProjectImg1,
@@ -27,4 +27,4 @@ const HowItWorksV2 = () => {
   );
 }
 
-export default HowItWorksV2;
+export default CarouselWrapper; 
