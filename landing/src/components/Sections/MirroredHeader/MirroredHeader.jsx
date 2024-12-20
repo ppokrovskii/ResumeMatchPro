@@ -8,7 +8,7 @@ import HeaderImage from "../../../assets/img/Person is handing their resume to a
 import QuotesIcon from "../../../assets/svg/Quotes";
 import Dots from "../../../assets/svg/Dots";
 
-export default function MirroredHeader({ handleOpenContactForm }) {
+const MirroredHeader = ({ handleOpenContactForm }) => {
   return (
     <section id="jobSeekers" className={`${styles.wrapper} container flexSpaceCenter mirroredHeader`}>
       <div className={styles.rightSide}>
@@ -59,4 +59,6 @@ export default function MirroredHeader({ handleOpenContactForm }) {
 
 MirroredHeader.propTypes = {
   handleOpenContactForm: PropTypes.func.isRequired,
-}; 
+};
+
+export default MirroredHeader;

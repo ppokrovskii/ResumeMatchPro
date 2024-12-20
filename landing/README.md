@@ -1,7 +1,7 @@
 # Backlog
 
 - [x] Remove dots in the navbar and sidebar list.
-- [ ] Init page to fit mobile screen
+- [x] Init page to fit mobile screen
 - [ ] rename section files accordingly to section names
 - [x] quote on 2nd section to be above image
 - [ ] How it works on mobile.
