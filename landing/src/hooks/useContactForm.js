@@ -15,7 +15,12 @@ export const useContactForm = () => {
 
   const handleSuccessSubmitContactDetails = async (message) => {
     try {
-      const response = await submitContactDetails(message);
+      const response = await submitContactDetails({
+        email: message.email,
+        phone: message.phone,
+        first_name: message.first_name,
+        last_name: message.last_name
+      });
       if (response.ok) {
         setNotificationMessage('Contact details submitted successfully!');
       } else {

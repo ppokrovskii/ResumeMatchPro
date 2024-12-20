@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import styles from './ContactForm.module.css';
-import { submitContactDetails } from '../../services/contactService';
 
 const ContactForm = ({ isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -49,19 +48,13 @@ const ContactForm = ({ isOpen, onClose, onSuccess }) => {
     if (Object.keys(newErrors).length === 0) {
       setIsSubmitting(true);
       try {
-        const response = await submitContactDetails({
+        onSuccess({
           email: formData.email,
           phone: formData.phone,
           first_name: formData.first_name,
           last_name: formData.last_name
         });
-
-        if (response.ok) {
-          onSuccess('Thank you for your interest! We will contact you soon.');
-          setFormData({ first_name: '', last_name: '', email: '', phone: '' });
-        } else {
-          throw new Error('Failed to submit');
-        }
+        setFormData({ first_name: '', last_name: '', email: '', phone: '' });
       } catch (error) {
         console.error('Error submitting form:', error);
         setFormError(

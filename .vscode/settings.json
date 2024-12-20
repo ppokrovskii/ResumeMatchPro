@@ -18,5 +18,8 @@
     "jest.testMatch": [
         "**/__tests__/**/*.test.{js,jsx}",
         "**/*.test.{js,jsx}"
-    ]
+    ],
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+    }
 }
