@@ -7,7 +7,6 @@
     "debug.internalConsoleOptions": "neverOpen",
     "azureFunctions.projectLanguageModel": 2,
     "jest.rootPath": "landing",
-    "jest.jestCommandLine": "npm test -- --testMatch=\"**/__tests__/**/*.test.{js,jsx}\"",
     "jest.runMode": "watch",
     "python.testing.pytestArgs": [
         "."
@@ -17,6 +16,7 @@
     "search.useIgnoreFiles": false,
     "azureFunctions.projectSubpath": "azfunctions",
     "jest.testMatch": [
-        "**/__tests__/**/*.test.{js,jsx}"
+        "**/__tests__/**/*.test.{js,jsx}",
+        "**/*.test.{js,jsx}"
     ]
 }
