@@ -1,50 +1,103 @@
-import React, { useState } from "react";
+import React from "react";
+import PropTypes from 'prop-types';
 import styles from './Contact.module.css';
 import ContactImg1 from "../../../assets/img/Professionals looking at a laptop_mj.png";
 import ContactImg2 from "../../../assets/img/Rocket ship_mj.webp";
 import ContactImg3 from "../../../assets/img/Finger pressing Join Now.webp";
-import { submitContactDetails } from "../../../services/contactService";
+import { useContactForm } from './useContactForm';
 
-export default function Contact({ handleOpenContactForm }) {
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
+const FormField = ({ label, id, type = "text", value, onChange, required = true, autoComplete }) => (
+  <>
+    <label className={styles.label}>{label}:</label>
+    <input
+      type={type}
+      id={id}
+      name={id}
+      value={value}
+      onChange={onChange}
+      required={required}
+      autoComplete={autoComplete}
+      className={styles.input}
+    />
+  </>
+);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
-    setSuccess(false);
+const ImageGallery = () => (
+  <div className={styles.imagesContainer}>
+    <div className={styles.imageColumn}>
+      <div className={styles.contactImgBox}>
+        <img src={ContactImg1} alt="Professionals looking at a laptop" className={styles.image} width="180" height="204" />
+      </div>
+      <div className={styles.contactImgBox}>
+        <img src={ContactImg2} alt="Rocket ship" className={styles.image} width="180" height="295" />
+      </div>
+    </div>
+    <div className={styles.imageColumn}>
+      <div className={`${styles.contactImgBox} ${styles.offsetImage}`}>
+        <img src={ContactImg3} alt="Finger pressing Join Now" className={styles.image} width="278" height="330" />
+      </div>
+    </div>
+  </div>
+);
 
-    const contactDetails = {
-      email,
-      phone,
-      first_name: firstName,
-      last_name: lastName,
-    };
+const ContactForm = ({ onSubmit, formState, handleChange, isSubmitting }) => (
+  <form onSubmit={onSubmit} autoComplete="on" className={styles.form}>
+    <FormField
+      label="First Name"
+      id="fname"
+      value={formState.firstName}
+      onChange={(e) => handleChange('firstName', e.target.value)}
+      autoComplete="given-name"
+    />
+    
+    <FormField
+      label="Last Name"
+      id="lname"
+      value={formState.lastName}
+      onChange={(e) => handleChange('lastName', e.target.value)}
+      autoComplete="family-name"
+    />
+    
+    <FormField
+      label="Email"
+      id="email"
+      type="email"
+      value={formState.email}
+      onChange={(e) => handleChange('email', e.target.value)}
+      autoComplete="email"
+    />
+    
+    <FormField
+      label="Phone Number"
+      id="phone"
+      type="tel"
+      value={formState.phone}
+      onChange={(e) => handleChange('phone', e.target.value)}
+      required={false}
+      autoComplete="tel"
+    />
+    
+    <div className={styles.submitWrapper}>
+      <button 
+        type="submit" 
+        disabled={isSubmitting} 
+        className={styles.submitButton}
+      >
+        {isSubmitting ? 'Submitting...' : 'Get Early Access'}
+      </button>
+    </div>
+  </form>
+);
 
-    try {
-      const response = await submitContactDetails(contactDetails);
-      if (response.ok) {
-        setSuccess(true);
-        setEmail('');
-        setPhone('');
-        setFirstName('');
-        setLastName('');
-        handleOpenContactForm('Contact details submitted successfully!');
-      } else {
-        setError('Failed to submit contact details.');
-      }
-    } catch (err) {
-      setError('An error occurred while submitting contact details.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+const Contact = ({ handleOpenContactForm }) => {
+  const {
+    formState,
+    handleChange,
+    handleSubmit,
+    isSubmitting,
+    error,
+    success
+  } = useContactForm(handleOpenContactForm);
 
   return (
     <section className={styles.wrapper} id="contact">
@@ -58,86 +111,49 @@ export default function Contact({ handleOpenContactForm }) {
           </div>
           
           <div className={styles.formWrapper}>
-            <form onSubmit={handleSubmit} autoComplete="on" className={styles.form}>
+            <div className={styles.formContainer}>
               {success && <p className={styles.successMessage}>Contact details submitted successfully!</p>}
               {error && <p className={styles.errorMessage}>{error}</p>}
               
-              <label className={styles.label}>First Name:</label>
-              <input
-                type="text"
-                id="fname"
-                name="fname"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-                autoComplete="given-name"
-                className={styles.input}
+              <ContactForm
+                onSubmit={handleSubmit}
+                formState={formState}
+                handleChange={handleChange}
+                isSubmitting={isSubmitting}
               />
-              
-              <label className={styles.label}>Last Name:</label>
-              <input
-                type="text"
-                id="lname"
-                name="lname"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-                autoComplete="family-name"
-                className={styles.input}
-              />
-              
-              <label className={styles.label}>Email:</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                className={styles.input}
-              />
-              
-              <label className={styles.label}>Phone Number:</label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                autoComplete="tel"
-                className={styles.input}
-              />
-              
-              <div className={styles.submitWrapper}>
-                <button 
-                  type="submit" 
-                  disabled={isSubmitting} 
-                  className={styles.submitButton}
-                >
-                  {isSubmitting ? 'Submitting...' : 'Get Early Access'}
-                </button>
-              </div>
-            </form>
-
-            <div className={styles.imagesContainer}>
-              <div className={styles.imageColumn}>
-                <div className={styles.contactImgBox}>
-                  <img src={ContactImg1} alt="office" className={styles.image} width="180" height="204" />
-                </div>
-                <div className={styles.contactImgBox}>
-                  <img src={ContactImg2} alt="office" className={styles.image} width="180" height="295" />
-                </div>
-              </div>
-              <div className={styles.imageColumn}>
-                <div className={`${styles.contactImgBox} ${styles.offsetImage}`}>
-                  <img src={ContactImg3} alt="office" className={styles.image} width="278" height="330" />
-                </div>
-              </div>
             </div>
+            <ImageGallery />
           </div>
         </div>
       </div>
     </section>
   );
-} 
+};
+
+FormField.propTypes = {
+  label: PropTypes.string.isRequired,
+  id: PropTypes.string.isRequired,
+  type: PropTypes.string,
+  value: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+  required: PropTypes.bool,
+  autoComplete: PropTypes.string
+};
+
+ContactForm.propTypes = {
+  onSubmit: PropTypes.func.isRequired,
+  formState: PropTypes.shape({
+    firstName: PropTypes.string.isRequired,
+    lastName: PropTypes.string.isRequired,
+    email: PropTypes.string.isRequired,
+    phone: PropTypes.string.isRequired
+  }).isRequired,
+  handleChange: PropTypes.func.isRequired,
+  isSubmitting: PropTypes.bool.isRequired
+};
+
+Contact.propTypes = {
+  handleOpenContactForm: PropTypes.func.isRequired
+};
+
+export default Contact; 

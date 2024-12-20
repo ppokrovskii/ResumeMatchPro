@@ -1,5 +1,5 @@
 import React from "react";
-import styles from './Header.module.css';
+import styles from './ForHR.module.css';
 // Components
 import FullButton from "../../Buttons/FullButton";
 // Assets
@@ -7,7 +7,7 @@ import HeaderImage from "../../../assets/img/Successful People in Business Suits
 import QuotesIcon from "../../../assets/svg/Quotes";
 import Dots from "../../../assets/svg/Dots";
 
-export default function Header({ handleOpenContactForm }) {
+export default function ForHR({ handleOpenContactForm }) {
   return (
     <section id="home" className={`${styles.wrapper} container flexSpaceCenter`}>
       <div className={`${styles.leftSide} flexCenter`}>

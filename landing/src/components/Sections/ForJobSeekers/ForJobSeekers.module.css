@@ -1,5 +1,6 @@
 .wrapper {
     padding-top: 80px;
+    padding-bottom: 80px;
     width: 100%;
     max-height: 100vh;
     position: relative;
@@ -75,6 +76,7 @@
 @media (max-width: 1024px) {
     .wrapper {
         padding-top: 80px;
+        padding-bottom: 60px;
         flex-direction: column;
         justify-content: flex-start;
         gap: 15px;
@@ -147,6 +149,7 @@
 @media (max-width: 768px) {
     .wrapper {
         padding-top: 80px;
+        padding-bottom: 40px;
         flex-direction: column;
         justify-content: flex-start;
         gap: 15px;

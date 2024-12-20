@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import styles from "./MirroredHeader.module.css";
+import styles from "./ForJobSeekers.module.css";
 // Components
 import FullButton from "../../Buttons/FullButton";
 // Assets
@@ -8,9 +8,9 @@ import HeaderImage from "../../../assets/img/Person is handing their resume to a
 import QuotesIcon from "../../../assets/svg/Quotes";
 import Dots from "../../../assets/svg/Dots";
 
-export default function MirroredHeader({ handleOpenContactForm }) {
+const ForJobSeekers = ({ handleOpenContactForm }) => {
   return (
-    <section id="jobSeekers" className={`${styles.wrapper} container flexSpaceCenter mirroredHeader`}>
+    <section id="jobSeekers" className={`${styles.wrapper} container flexSpaceCenter`}>
       <div className={styles.rightSide}>
         <div className={styles.imageWrapper}>
           <img 
@@ -57,6 +57,8 @@ export default function MirroredHeader({ handleOpenContactForm }) {
   );
 }
 
-MirroredHeader.propTypes = {
+ForJobSeekers.propTypes = {
   handleOpenContactForm: PropTypes.func.isRequired,
-}; 
+};
+
+export default ForJobSeekers; 
