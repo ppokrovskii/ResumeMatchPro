@@ -38,7 +38,8 @@
     "test:coverage": "react-scripts test --env=jsdom --coverage --watchAll=false",
     "test:watch": "react-scripts test --env=jsdom --watch",
     "test:ci": "react-scripts test --env=jsdom --ci --coverage --watchAll=false",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "prepare": "cd .. && husky install landing/.husky"
   },
   "eslintConfig": {
     "extends": [
@@ -79,5 +80,11 @@
     "moduleNameMapper": {
       "\\.(css|less|scss|sass)$": "identity-obj-proxy"
     }
+  },
+  "lint-staged": {
+    "src/**/*.{js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }
