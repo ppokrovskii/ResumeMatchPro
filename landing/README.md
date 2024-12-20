@@ -2,10 +2,10 @@
 
 - [x] Remove dots in the navbar and sidebar list.
 - [x] Init page to fit mobile screen
-- [ ] rename section files accordingly to section names
+- [x] rename section files accordingly to section names
 - [x] quote on 2nd section to be above image
 - [ ] How it works on mobile.
-- [ ] Align footer center on mobile.
+- [x] Align footer center on mobile.
 - [ ] Get Early Access button in Sign Up section do not submit form but opens modal with form.
 
 # Run the app
