@@ -8,7 +8,7 @@ import { useContactForm } from './useContactForm';
 
 const FormField = ({ label, id, type = "text", value, onChange, required = true, autoComplete }) => (
   <>
-    <label className={styles.label}>{label}:</label>
+    <label htmlFor={id} className={styles.label}>{label}:</label>
     <input
       type={type}
       id={id}
@@ -41,7 +41,12 @@ const ImageGallery = () => (
 );
 
 const ContactForm = ({ onSubmit, formState, handleChange, isSubmitting }) => (
-  <form onSubmit={onSubmit} autoComplete="on" className={styles.form}>
+  <form 
+    onSubmit={onSubmit} 
+    autoComplete="on" 
+    className={styles.form}
+    data-testid="contact-form"
+  >
     <FormField
       label="First Name"
       id="fname"
@@ -97,7 +102,7 @@ const Contact = ({ handleOpenContactForm }) => {
     isSubmitting,
     error,
     success
-  } = useContactForm(handleOpenContactForm);
+  } = useContactForm();
 
   return (
     <section className={styles.wrapper} id="contact">
