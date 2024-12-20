@@ -6,7 +6,8 @@
 - [x] quote on 2nd section to be above image
 - [ ] How it works on mobile.
 - [x] Align footer center on mobile.
-- [ ] Get Early Access button in Sign Up section do not submit form but opens modal with form.
+- [x] Get Early Access button in Sign Up section do not submit form but opens modal with form.
+- [ ] load images faster
 
 # Run the app
 `npm start`
