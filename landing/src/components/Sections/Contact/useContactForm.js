@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { submitContactDetails } from "../../../services/contactService";
 
-export const useContactForm = (handleOpenContactForm) => {
+export const useContactForm = () => {
   const [formState, setFormState] = useState({
     firstName: '',
     lastName: '',
@@ -42,7 +42,6 @@ export const useContactForm = (handleOpenContactForm) => {
           email: '',
           phone: ''
         });
-        handleOpenContactForm('Contact details submitted successfully!');
       } else {
         setError('Failed to submit contact details.');
       }

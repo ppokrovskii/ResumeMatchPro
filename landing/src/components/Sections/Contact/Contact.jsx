@@ -97,7 +97,7 @@ const Contact = ({ handleOpenContactForm }) => {
     isSubmitting,
     error,
     success
-  } = useContactForm(handleOpenContactForm);
+  } = useContactForm();
 
   return (
     <section className={styles.wrapper} id="contact">
