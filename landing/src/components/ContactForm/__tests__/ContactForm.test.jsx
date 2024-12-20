@@ -2,9 +2,6 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ContactForm from '../ContactForm';
-import { submitContactDetails } from '../../../services/contactService';
-
-jest.mock('../../../services/contactService');
 
 describe('ContactForm Modal', () => {
   const mockOnClose = jest.fn();
@@ -94,11 +91,9 @@ describe('ContactForm Modal', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /submit/i }));
 
-    await waitFor(() => {
-      expect(screen.getByLabelText(/first name/i)).toHaveValue('');
-      expect(screen.getByLabelText(/last name/i)).toHaveValue('');
-      expect(screen.getByLabelText(/email/i)).toHaveValue('');
-      expect(screen.getByLabelText(/phone/i)).toHaveValue('');
-    });
+    await waitFor(() => expect(screen.getByLabelText(/first name/i)).toHaveValue(''));
+    await waitFor(() => expect(screen.getByLabelText(/last name/i)).toHaveValue(''));
+    await waitFor(() => expect(screen.getByLabelText(/email/i)).toHaveValue(''));
+    await waitFor(() => expect(screen.getByLabelText(/phone/i)).toHaveValue(''));
   });
 }); 

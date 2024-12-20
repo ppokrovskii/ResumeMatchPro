@@ -7,7 +7,16 @@
     "debug.internalConsoleOptions": "neverOpen",
     "azureFunctions.projectLanguageModel": 2,
     "jest.rootPath": "landing",
-    "jest.runMode": "watch",
+    "jest.testMatch": [
+        "**/__tests__/**/*.{js,jsx,ts,tsx}",
+        "**/*.{spec,test}.{js,jsx,ts,tsx}"
+    ],
+    "jest.autoRun": {
+        "watch": true,
+        "onStartup": ["all-tests"]
+    },
+    "jest.jestCommandLine": "npm test --",
+    "jest.debugMode": true,
     "python.testing.pytestArgs": [
         "."
     ],
@@ -15,10 +24,6 @@
     "python.testing.pytestEnabled": true,
     "search.useIgnoreFiles": false,
     "azureFunctions.projectSubpath": "azfunctions",
-    "jest.testMatch": [
-        "**/__tests__/**/*.test.{js,jsx}",
-        "**/*.test.{js,jsx}"
-    ],
     "editor.codeActionsOnSave": {
         "source.fixAll.eslint": "explicit"
     }

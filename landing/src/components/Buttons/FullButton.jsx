@@ -4,7 +4,7 @@ import styled from "styled-components";
 export default function FullButton({ title, action, border, borderWidth = "1px", color = "#fff", backgroundColor = "#580cd2" }) {
   return (
     <Wrapper
-      className="animate pointer"
+      className="pointer"
       onClick={action ? () => action() : null}
       $border={border}
       $borderWidth={borderWidth}
@@ -28,9 +28,7 @@ const Wrapper = styled.button`
   font-size: 16px;
   
   :hover {
-    background-color: ${(props) => (props.$border ? "transparent" : "#580cd2")};
-    border: 1px solid #7620ff;
-    color: ${(props) => (props.$color ? props.$color : "#fff")};
+    opacity: 0.9;
   }
 
   @media (max-width: 768px) {
