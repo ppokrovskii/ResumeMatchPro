@@ -42,10 +42,10 @@ const ImageGallery = () => (
 
 const ContactForm = ({ onSubmit, formState, handleChange, isSubmitting }) => (
   <form 
-    role="form"
     onSubmit={onSubmit} 
     autoComplete="on" 
     className={styles.form}
+    data-testid="contact-form"
   >
     <FormField
       label="First Name"

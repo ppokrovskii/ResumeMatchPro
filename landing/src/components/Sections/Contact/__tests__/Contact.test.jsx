@@ -79,7 +79,7 @@ describe('Contact Component', () => {
   it('validates required fields', async () => {
     render(<Contact handleOpenContactForm={mockHandleOpenContactForm} />);
 
-    const form = screen.getByRole('form');
+    const form = screen.getByTestId('contact-form');
     const submitButton = screen.getByRole('button', { name: /get early access/i });
     
     // Check form validity before submission
