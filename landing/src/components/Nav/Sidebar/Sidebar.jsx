@@ -5,7 +5,6 @@ import styles from "./Sidebar.module.css";
 // Assets
 import CloseIcon from "../../../assets/svg/CloseIcon";
 import Logo from "../../../assets/components/Logo/Logo";
-import FullButton from "../../Buttons/FullButton";
 
 export default function Sidebar({ sidebaropen, setSidebarOpen, handleOpenContactForm }) {
   return (
@@ -76,9 +75,17 @@ export default function Sidebar({ sidebaropen, setSidebarOpen, handleOpenContact
           </Link>
         </li>
       </ul>
-      <ul className={`${styles.ulStyle} flexSpaceCenter flexColumn`}>
-        <li className="semiBold font15 pointer flexSpaceCenter">
-          <FullButton title="Get Early Access" action={handleOpenContactForm} />
+      <ul className={`${styles.ulStyle} ${styles.buttonContainer}`}>
+        <li className="semiBold font15 pointer">
+          <button 
+            onClick={() => {
+              setSidebarOpen(false);
+              handleOpenContactForm();
+            }}
+            className={styles.submitButton}
+          >
+            Get Early Access
+          </button>
         </li>
       </ul>
     </nav>

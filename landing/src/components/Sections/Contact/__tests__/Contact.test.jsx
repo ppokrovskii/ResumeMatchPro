@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Contact from '../Contact';
 import { submitContactDetails } from '../../../../services/contactService';
@@ -17,12 +17,10 @@ describe('Contact Component', () => {
   it('renders contact form with all fields', async () => {
     render(<Contact handleOpenContactForm={mockHandleOpenContactForm} />);
     
-    await waitFor(() => {
-      expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/last name/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/phone number/i)).toBeInTheDocument();
-    });
+    await screen.findByLabelText(/first name/i);
+    await screen.findByLabelText(/last name/i);
+    await screen.findByLabelText(/email/i);
+    await screen.findByLabelText(/phone number/i);
   });
 
   it('submits form data correctly without opening ContactForm modal', async () => {
@@ -30,14 +28,12 @@ describe('Contact Component', () => {
 
     render(<Contact handleOpenContactForm={mockHandleOpenContactForm} />);
 
-    await act(async () => {
-      await userEvent.type(screen.getByLabelText(/first name/i), 'John');
-      await userEvent.type(screen.getByLabelText(/last name/i), 'Doe');
-      await userEvent.type(screen.getByLabelText(/email/i), 'john@example.com');
-      await userEvent.type(screen.getByLabelText(/phone/i), '1234567890');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'John');
+    await userEvent.type(screen.getByLabelText(/last name/i), 'Doe');
+    await userEvent.type(screen.getByLabelText(/email/i), 'john@example.com');
+    await userEvent.type(screen.getByLabelText(/phone/i), '1234567890');
 
-      fireEvent.click(screen.getByRole('button', { name: /get early access/i }));
-    });
+    fireEvent.click(screen.getByRole('button', { name: /get early access/i }));
 
     await waitFor(() => {
       expect(submitContactDetails).toHaveBeenCalledWith({
@@ -50,9 +46,7 @@ describe('Contact Component', () => {
 
     expect(mockHandleOpenContactForm).not.toHaveBeenCalled();
 
-    await waitFor(() => {
-      expect(screen.getByText(/contact details submitted successfully/i)).toBeInTheDocument();
-    });
+    await screen.findByText(/contact details submitted successfully/i);
   });
 
   it('shows error message on submission failure', async () => {
@@ -60,18 +54,14 @@ describe('Contact Component', () => {
 
     render(<Contact handleOpenContactForm={mockHandleOpenContactForm} />);
 
-    await act(async () => {
-      await userEvent.type(screen.getByLabelText(/first name/i), 'John');
-      await userEvent.type(screen.getByLabelText(/last name/i), 'Doe');
-      await userEvent.type(screen.getByLabelText(/email/i), 'john@example.com');
-      await userEvent.type(screen.getByLabelText(/phone/i), '1234567890');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'John');
+    await userEvent.type(screen.getByLabelText(/last name/i), 'Doe');
+    await userEvent.type(screen.getByLabelText(/email/i), 'john@example.com');
+    await userEvent.type(screen.getByLabelText(/phone/i), '1234567890');
 
-      fireEvent.click(screen.getByRole('button', { name: /get early access/i }));
-    });
+    fireEvent.click(screen.getByRole('button', { name: /get early access/i }));
 
-    await waitFor(() => {
-      expect(screen.getByText(/an error occurred/i)).toBeInTheDocument();
-    });
+    await screen.findByText(/an error occurred/i);
 
     expect(mockHandleOpenContactForm).not.toHaveBeenCalled();
   });
@@ -86,12 +76,10 @@ describe('Contact Component', () => {
     expect(form.checkValidity()).toBe(false);
     expect(submitButton).not.toBeDisabled();
 
-    await waitFor(() => {
-      expect(screen.getByLabelText(/first name/i)).toBeInvalid();
-      expect(screen.getByLabelText(/last name/i)).toBeInvalid();
-      expect(screen.getByLabelText(/email/i)).toBeInvalid();
-      expect(screen.getByLabelText(/phone/i)).not.toBeInvalid();
-    });
+    await waitFor(() => expect(screen.getByLabelText(/first name/i)).toBeInvalid());
+    await waitFor(() => expect(screen.getByLabelText(/last name/i)).toBeInvalid());
+    await waitFor(() => expect(screen.getByLabelText(/email/i)).toBeInvalid());
+    await waitFor(() => expect(screen.getByLabelText(/phone/i)).not.toBeInvalid());
 
     expect(submitContactDetails).not.toHaveBeenCalled();
   });

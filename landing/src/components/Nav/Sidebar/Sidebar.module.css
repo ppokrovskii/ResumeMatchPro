@@ -125,4 +125,41 @@
     .wrapper {
         display: none;
     }
+}
+
+/* Add these styles at the end of the file */
+.submitButton {
+    border: none;
+    border-radius: 1rem;
+    background-color: #580cd2;
+    max-width: 220px;
+    width: 100%;
+    padding: 10px;
+    outline: none;
+    color: #fff;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.submitButton:hover {
+    background-color: #7620FF;
+}
+
+.submitButton:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+/* Add these new styles */
+.buttonContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.buttonContainer li {
+    width: 100%;
+    display: flex;
+    justify-content: center;
 } 
