@@ -2,7 +2,7 @@ import React from "react";
 // Sections
 import TopNavbar from "../components/Nav/TopNavbar/TopNavbar";
 import ForHR from "../components/Sections/ForHR/ForHR";
-import MirroredHeader from "../components/Sections/MirroredHeader/MirroredHeader";
+import ForJobSeekers from "../components/Sections/ForJobSeekers/ForJobSeekers";
 // import Services from "../components/Sections/Services";
 import Projects from "../components/Sections/Projects/Projects";
 // import HowItWorks from "../components/Sections/HowItWorks/HowItWorks";
@@ -43,7 +43,7 @@ export default function Landing() {
         <Notification message={notificationMessage} onClose={handleNotificationClose} />
       )}
       <ForHR handleOpenContactForm={handleOpenContactForm}/>
-      <MirroredHeader handleOpenContactForm={handleOpenContactForm}/>
+      <ForJobSeekers handleOpenContactForm={handleOpenContactForm}/>
       {/* <Services handleOpenContactForm={handleOpenContactForm}/> */}
       <Projects handleOpenContactForm={handleOpenContactForm}/>
       {/* <HowItWorks /> */}
