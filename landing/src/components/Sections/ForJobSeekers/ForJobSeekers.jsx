@@ -16,7 +16,8 @@ const ForJobSeekers = ({ handleOpenContactForm }) => {
           <img 
             className={`${styles.img} radius8`} 
             src={HeaderImage} 
-            alt="office" 
+            alt="Person handing resume to holographic recruiter" 
+            loading="lazy"
             style={{ zIndex: 9 }} 
           />
           <div className={`${styles.quoteWrapper} flexCenter darkBg radius8`}>
