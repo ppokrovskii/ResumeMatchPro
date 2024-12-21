@@ -14,20 +14,24 @@ export interface FilesResponse {
 }
 
 
-const API_BASE_URL = 'http://localhost:7071/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:7071/api';
 
 /**
  * Fetches files based on the user ID and type.
  * @param userId The user ID for whom to fetch files.
  * @param type The type of files to fetch (e.g., 'JD' for Job Description).
  */
-export const fetchFiles = async (userId: string, type?: string): Promise<RmpFile[]> => {
-    const response = await fetch(`${API_BASE_URL}/files?user_id=${userId}&type=${type || ''}`);
-    if (!response.ok) {
-        throw new Error('Failed to fetch files');
+export const fetchFiles = async (userId: string): Promise<RmpFile[]> => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/files/${userId}`);
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching files:', error);
+        return []; // Return empty array on error instead of throwing
     }
-    const data: FilesResponse = await response.json();
-    return data.files;
 };
 
 /**

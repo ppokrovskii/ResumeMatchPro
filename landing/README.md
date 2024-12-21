@@ -5,9 +5,10 @@
 - [x] rename section files accordingly to section names
 - [x] quote on 2nd section to be above image
 - [ ] How it works on mobile.
+- [ ] fix mobile horizontal view
 - [x] Align footer center on mobile.
 - [x] Get Early Access button in Sign Up section do not submit form but opens modal with form.
-- [ ] load images faster
+- [x] load images faster
 
 # Run the app
 `npm start`
