@@ -1,7 +1,7 @@
 import React from "react";
 import PropTypes from 'prop-types';
 import styles from './Contact.module.css';
-import ContactImg1 from "../../../assets/img/Professionals looking at a laptop_mj.png";
+import ContactImg1 from "../../../assets/img/Professionals looking at a laptop_mj-min.webp";
 import ContactImg2 from "../../../assets/img/Rocket ship_mj.webp";
 import ContactImg3 from "../../../assets/img/Finger pressing Join Now.webp";
 import { useContactForm } from './useContactForm';
@@ -26,15 +26,36 @@ const ImageGallery = () => (
   <div className={styles.imagesContainer}>
     <div className={styles.imageColumn}>
       <div className={styles.contactImgBox}>
-        <img src={ContactImg1} alt="Professionals looking at a laptop" className={styles.image} width="180" height="204" />
+        <img 
+          src={ContactImg1} 
+          alt="Professionals looking at a laptop" 
+          className={styles.image} 
+          width="180" 
+          height="204"
+          loading="lazy" 
+        />
       </div>
       <div className={styles.contactImgBox}>
-        <img src={ContactImg2} alt="Rocket ship" className={styles.image} width="180" height="295" />
+        <img 
+          src={ContactImg2} 
+          alt="Rocket ship" 
+          className={styles.image} 
+          width="180" 
+          height="295"
+          loading="lazy" 
+        />
       </div>
     </div>
     <div className={styles.imageColumn}>
       <div className={`${styles.contactImgBox} ${styles.offsetImage}`}>
-        <img src={ContactImg3} alt="Finger pressing Join Now" className={styles.image} width="278" height="330" />
+        <img 
+          src={ContactImg3} 
+          alt="Finger pressing Join Now" 
+          className={styles.image} 
+          width="278" 
+          height="330"
+          loading="lazy" 
+        />
       </div>
     </div>
   </div>

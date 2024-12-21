@@ -3,7 +3,7 @@ import styles from './ForHR.module.css';
 // Components
 import FullButton from "../../Buttons/FullButton";
 // Assets
-import HeaderImage from "../../../assets/img/Successful People in Business Suits Shaking Hands1_mj4.png";
+import HeaderImage from "../../../assets/img/Successful People in Business Suits Shaking Hands1_mj4-min.webp";
 import QuotesIcon from "../../../assets/svg/Quotes";
 import Dots from "../../../assets/svg/Dots";
 
@@ -27,8 +27,8 @@ export default function ForHR({ handleOpenContactForm }) {
           <img 
             className={`${styles.img} radius8`} 
             src={HeaderImage} 
-            alt="office" 
-            loading="eager"
+            alt="Business people shaking hands" 
+            loading="lazy"
             onError={(e) => {
                 e.target.style.width = '100%';
                 e.target.style.maxWidth = '426px';
