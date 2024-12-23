@@ -7,6 +7,22 @@
       }
     },
     {
+      "route": "/app/*",
+      "rewrite": "https://polite-pond-023717e03.4.azurestaticapps.net/:splat",
+      "allowedRoles": ["anonymous", "authenticated"],
+      "environment": {
+        "dev": true
+      }
+    },
+    {
+      "route": "/app/*",
+      "rewrite": "https://prod-app-12345.azurestaticapps.net/:splat",
+      "allowedRoles": ["anonymous", "authenticated"],
+      "environment": {
+        "production": true
+      }
+    },
+    {
       "route": "/*",
       "headers": {
         "cache-control": "no-cache, no-store, must-revalidate"
