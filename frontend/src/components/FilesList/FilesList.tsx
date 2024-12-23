@@ -10,7 +10,12 @@ interface FilesListProps {
   handleFilesUploaded: (files: File[], fileType: string) => void;
 }
 
-const FilesList: React.FC<FilesListProps> = ({ files, onFileSelect, fileType, setFiles, handleFilesUploaded }) => {
+const FilesList: React.FC<FilesListProps> = ({ 
+  files, 
+  onFileSelect, 
+  fileType, 
+  handleFilesUploaded 
+}) => {
   return (
     <div>
       <ul>
@@ -24,7 +29,10 @@ const FilesList: React.FC<FilesListProps> = ({ files, onFileSelect, fileType, se
           </li>
         ))}
       </ul>
-      <FilesUpload onFilesUploaded={(files) => handleFilesUploaded(files, fileType)} fileType={fileType} />
+      <FilesUpload 
+        onFilesUploaded={(files) => handleFilesUploaded(files, fileType)} 
+        fileType={fileType} 
+      />
     </div>
   );
 };
