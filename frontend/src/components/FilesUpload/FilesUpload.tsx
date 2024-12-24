@@ -30,7 +30,7 @@ const FilesUpload: React.FC<FilesUploadProps> = ({ onFilesUploaded, fileType }) 
     return (
         <Upload.Dragger
             multiple
-            accept=".pdf,.docx" // Specify accepted file types
+            accept=".pdf,.docx"
             customRequest={handleUpload}
             className="drop-area"
         >
