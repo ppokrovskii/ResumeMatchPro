@@ -49,12 +49,12 @@ output "LANDING_BACKEND_FUNCTION_APP_NAME" {
 }
 
 # Output Function App URL
-# output "LANDING_BACKEND_FUNCTION_APP_URL" {
-#     value = azurerm_linux_function_app.landing_backend.default_hostname
-# }
+output "LANDING_BACKEND_FUNCTION_APP_URL" {
+    value = "https://${azurerm_linux_function_app.landing_backend.default_hostname}/api"
+}
 
 # Output Function App publish profile
-output "LANDING_BACKEND_GET_PUBLISHING_PROFILE_SCRIPT" {
+output "GET_LANDING_BACKEND_PUBLISHING_PROFILE" {
     value = "az functionapp deployment list-publishing-profiles --name ${azurerm_linux_function_app.landing_backend.name} --resource-group ${azurerm_resource_group.rg.name} --xml"
     description = "Run this command in your shell to retrieve the Azure Function App's publishing profile."
 }
