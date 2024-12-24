@@ -5,37 +5,52 @@ import MatchingResults from '../../components/MatchingResults/MatchingResults';
 import FilesUpload from '../../components/FilesUpload/FilesUpload';
 
 
-const HomePage = () => {
+const HomePage: React.FC = () => {
 
-  const [files, setFiles] = useState<RmpFile[]>([]); // Specify the type of the state variable as an array of File objects
-  const [selectedFile, setSelectedFile] = useState<{ id: string; type: string } | null>(null);
-  const user_id = '1'; // Replace with the actual user ID
+  const [files, setFiles] = useState<RmpFile[]>([]);
+  const [selectedFile, setSelectedFile] = useState<RmpFile | null>(null);
+  const user_id = "some-user-id"; // Replace with actual user ID logic
 
   useEffect(() => {
-    fetchFiles(user_id).then((response: RmpFile[]) => setFiles(response)); // Specify the type of the response from fetchFiles
+    fetchFiles(user_id).then((response: RmpFile[]) => setFiles(response));
   }, []);
 
-  function handleFileSelect(fileId: string, fileType: string): void {
-    setSelectedFile({ id: fileId, type: fileType });
-  }
+  const handleFileSelect = (file: RmpFile) => {
+    setSelectedFile(file);
+  };
 
-  
+  const handleFilesUploaded = (uploadedFiles: File[], fileType: string) => {
+    const rmp_files = uploadedFiles.map(file => ({
+      id: `temp-${Date.now()}-${file.name}`,
+      filename: file.name,
+      type: fileType,
+      user_id: user_id,
+      url: URL.createObjectURL(file),
+      text: ''
+    } as RmpFile));
+    setFiles(prevFiles => [...prevFiles, ...rmp_files]);
+  };
 
   return (
     <div>
-      <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
-      <div style={{ width: '45%' }}>
-        <h2>CVs</h2>
-        {selectedFile && selectedFile?.type === 'JD' ? (<MatchingResults user_id={user_id} selectedFile={selectedFile}/>
-        ) : (
-          <FilesList files={files.filter(file => file.type === 'CV')} onFileSelect={handleFileSelect} fileType="CV" />
-                    )}
+      <div>
+        <FilesList 
+          files={files.filter(file => file.type === 'CV')} 
+          onFileSelect={handleFileSelect} 
+          fileType="CV"
+          setFiles={setFiles}
+          handleFilesUploaded={handleFilesUploaded}
+        />
+        <FilesUpload onFilesUploaded={(files) => handleFilesUploaded(files, 'CV')} fileType='CV' />
+        <FilesList 
+          files={files.filter(file => file.type === 'JD')} 
+          onFileSelect={handleFileSelect} 
+          fileType="JD"
+          setFiles={setFiles}
+          handleFilesUploaded={handleFilesUploaded}
+        />
       </div>
-        <FilesList files={files.filter(file => file.type === 'CV')} onFileSelect={handleFileSelect} fileType="CV" />
-        <FilesUpload onFilesUploaded={onFilesUploaded} fileType='CV' />
-        <FilesList files={files.filter(file => file.type === 'JD')} onFileSelect={handleFileSelect} fileType="JD" />
-      </div>
-      <FilesUpload onFilesUploaded={onFilesUploaded} fileType='JD' />
+      <FilesUpload onFilesUploaded={(files) => handleFilesUploaded(files, 'JD')} fileType='JD' />
       {selectedFile && selectedFile.id && <MatchingResults user_id={user_id} selectedFile={selectedFile} />}
     </div>
   );

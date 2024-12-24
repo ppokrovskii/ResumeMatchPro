@@ -17,4 +17,4 @@
     "rewrite": "/index.html",
     "exclude": ["/static/*", "/images/*", "/*.{png,jpg,gif,ico,svg}"]
   }
-} 
+}

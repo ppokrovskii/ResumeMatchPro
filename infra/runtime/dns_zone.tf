@@ -75,6 +75,47 @@ resource "azurerm_dns_cname_record" "dev_cname_record" {
 #   }
 # }
 
+# Frontend app DNS records
+resource "azurerm_dns_cname_record" "frontend_app_prod" {
+  count               = terraform.workspace == "prod" ? 1 : 0
+  name                = "app"
+  zone_name           = azurerm_dns_zone.dns_zone.name
+  resource_group_name = azurerm_resource_group.resumematchpro_dns_rg.name
+  ttl                 = 300
+  record              = azurerm_static_web_app.frontend.default_host_name
+}
+
+resource "azurerm_dns_cname_record" "frontend_app_dev" {
+  count               = terraform.workspace != "prod" ? 1 : 0
+  name                = "app.dev"
+  zone_name           = azurerm_dns_zone.dns_zone.name
+  resource_group_name = azurerm_resource_group.resumematchpro_dns_rg.name
+  ttl                 = 300
+  record              = azurerm_static_web_app.frontend.default_host_name
+}
+
+# Add custom domains to the frontend static web app
+resource "azurerm_static_web_app_custom_domain" "frontend_prod_domain" {
+  count               = terraform.workspace == "prod" ? 1 : 0
+  static_web_app_id   = azurerm_static_web_app.frontend.id
+  domain_name         = "app.${azurerm_dns_zone.dns_zone.name}"
+  validation_type     = "cname-delegation"
+  depends_on          = [azurerm_dns_cname_record.frontend_app_prod]
+}
+
+resource "azurerm_static_web_app_custom_domain" "frontend_dev_domain" {
+  count               = terraform.workspace != "prod" ? 1 : 0
+  static_web_app_id   = azurerm_static_web_app.frontend.id
+  domain_name         = "app.dev.${azurerm_dns_zone.dns_zone.name}"
+  validation_type     = "cname-delegation"
+  depends_on          = [azurerm_dns_cname_record.frontend_app_dev]
+
+  # Add a delay to allow DNS propagation using PowerShell
+  provisioner "local-exec" {
+    command = "powershell -Command Start-Sleep -Seconds 60"
+  }
+}
+
 output "DNS_SERVERS_SCRIPT" {
     value = "az network dns zone show --resource-group ${azurerm_resource_group.resumematchpro_dns_rg.name} --name ${azurerm_dns_zone.dns_zone.name} --query nameServers"  # --output tsv
     description = "Run this command in your shell to retrieve the DNS zone's name servers."

@@ -2,8 +2,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Layout, Menu } from 'antd';
-import { HomeOutlined, InfoCircleOutlined, UserOutlined } from '@ant-design/icons';
+import { UserOutlined } from '@ant-design/icons';
 import 'antd/dist/reset.css';
 import styles from './Header.module.css';
 
@@ -11,7 +10,6 @@ const Header: React.FC = () => {
   return (
     <header className={styles.appHeader}>
       <div className={styles.headerLogo}>
-        {/* header text Resume Match Pro */}
         <Link to="/">Resume Match Pro</Link>
       </div>
       <nav className={styles.headerNav}>
