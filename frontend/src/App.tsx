@@ -1,4 +1,5 @@
 // File: src/app/App.tsx
+// Test comment for commit hooks
 
 import { MsalProvider } from '@azure/msal-react';
 import React from 'react';
