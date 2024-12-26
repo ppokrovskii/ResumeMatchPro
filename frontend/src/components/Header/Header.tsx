@@ -4,15 +4,10 @@ import { useMsal } from '@azure/msal-react';
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './Header.module.css';
 
-interface MsalError extends Error {
-  errorCode?: string;
-}
-
 const Header: React.FC = () => {
   const { instance, accounts } = useMsal();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const debugPanelRef = useRef<HTMLDivElement>(null);
   const isDevelopment = process.env.NODE_ENV === 'development';
 
@@ -72,52 +67,6 @@ const Header: React.FC = () => {
     };
   }, []);
 
-  const handleLogin = async () => {
-    if (isLoggingIn) {
-      // eslint-disable-next-line no-console
-      console.log('Login already in progress...');
-      return;
-    }
-
-    try {
-      setIsLoggingIn(true);
-      // eslint-disable-next-line no-console
-      console.log('Attempting login...');
-      
-      // Check if there's an interaction in progress
-      if (instance.getActiveAccount() === null) {
-        try {
-          await instance.handleRedirectPromise();
-        } catch (e) {
-          // eslint-disable-next-line no-console
-          console.log('No redirect promise to handle');
-        }
-      }
-
-      await instance.loginRedirect();
-      // eslint-disable-next-line no-console
-      console.log('Login redirect initiated');
-    } catch (error) {
-      const msalError = error as MsalError;
-      console.error('Login error:', msalError);
-      if (msalError.errorCode === 'interaction_in_progress') {
-        // eslint-disable-next-line no-console
-        console.log('Attempting to handle existing interaction...');
-        try {
-          await instance.handleRedirectPromise();
-          if (!accounts.length) {
-            // If still not authenticated after handling redirect, try login again
-            await instance.loginRedirect();
-          }
-        } catch (redirectError) {
-          console.error('Error handling redirect:', redirectError);
-        }
-      }
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
-
   const handleLogout = async () => {
     try {
       await instance.logoutRedirect({
@@ -148,42 +97,32 @@ const Header: React.FC = () => {
         >
           Debug Info
         </button>
-        {accounts.length > 0 ? (
-          <div className={styles.userMenu}>
-            <button 
-              onClick={toggleDropdown}
-              className={styles.userButton}
-            >
-              {accounts[0].name || 'User'}{isAdmin ? ' (Admin)' : ''}
-            </button>
-            {isDropdownOpen && (
-              <div className={styles.dropdown}>
-                {isAdmin && (
-                  <button 
-                    onClick={() => {/* Navigate to admin panel */}}
-                    className={styles.dropdownItem}
-                  >
-                    Admin Panel
-                  </button>
-                )}
+        <div className={styles.userMenu}>
+          <button 
+            onClick={toggleDropdown}
+            className={styles.userButton}
+          >
+            {accounts[0]?.name || 'User'}{isAdmin ? ' (Admin)' : ''}
+          </button>
+          {isDropdownOpen && (
+            <div className={styles.dropdown}>
+              {isAdmin && (
                 <button 
-                  onClick={handleLogout}
+                  onClick={() => {/* Navigate to admin panel */}}
                   className={styles.dropdownItem}
                 >
-                  Log Out
+                  Admin Panel
                 </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <button 
-            onClick={handleLogin}
-            className={styles.userButton}
-            disabled={isLoggingIn}
-          >
-            {isLoggingIn ? 'Signing in...' : 'Sign In'}
-          </button>
-        )}
+              )}
+              <button 
+                onClick={handleLogout}
+                className={styles.dropdownItem}
+              >
+                Log Out
+              </button>
+            </div>
+          )}
+        </div>
       </nav>
       {showDebug && (
         <div ref={debugPanelRef} className={styles.debugInfo}>

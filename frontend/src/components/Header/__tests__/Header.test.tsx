@@ -20,35 +20,7 @@ describe('Header', () => {
     jest.clearAllMocks();
   });
 
-  it('shows Debug Info button when not authenticated', () => {
-    // Mock unauthenticated state
-    (useMsal as jest.Mock).mockReturnValue({
-      instance: {
-        getConfiguration: () => ({
-          auth: {
-            authority: 'test-authority',
-            redirectUri: 'test-redirect-uri',
-          }
-        }),
-        getActiveAccount: () => null,
-        logoutRedirect: jest.fn(),
-      },
-      accounts: [],
-    });
-
-    render(<Header />);
-    
-    expect(screen.getByText('Debug Info')).toBeInTheDocument();
-    expect(screen.getByText('Sign In')).toBeInTheDocument();
-    expect(screen.queryByText('Debug Information')).not.toBeInTheDocument();
-
-    // Click Debug Info button
-    fireEvent.click(screen.getByText('Debug Info'));
-    expect(screen.getByText('Debug Information')).toBeInTheDocument();
-  });
-
-  it('shows Debug Info button when authenticated', () => {
-    // Mock authenticated state
+  it('shows user menu with user name', () => {
     const mockAccount = {
       name: 'Test User',
       homeAccountId: 'test-id',
@@ -82,9 +54,17 @@ describe('Header', () => {
     expect(screen.getByText('Debug Information')).toBeInTheDocument();
   });
 
-  it('shows Debug Info button in production mode', () => {
-    // Set NODE_ENV to production for this test
-    process.env = { ...originalEnv, NODE_ENV: 'production' };
+  it('shows admin indicator for admin users', () => {
+    const mockAccount = {
+      name: 'Test User',
+      homeAccountId: 'test-id',
+      environment: 'test-env',
+      tenantId: 'test-tenant',
+      username: 'test@example.com',
+      idTokenClaims: {
+        extension_IsAdmin: true,
+      },
+    };
 
     (useMsal as jest.Mock).mockReturnValue({
       instance: {
@@ -94,19 +74,53 @@ describe('Header', () => {
             redirectUri: 'test-redirect-uri',
           }
         }),
-        getActiveAccount: () => null,
+        getActiveAccount: () => mockAccount,
         logoutRedirect: jest.fn(),
       },
-      accounts: [],
+      accounts: [mockAccount],
     });
 
     render(<Header />);
     
+    expect(screen.getByText('Test User (Admin)')).toBeInTheDocument();
     expect(screen.getByText('Debug Info')).toBeInTheDocument();
-    expect(screen.queryByText('Debug Information')).not.toBeInTheDocument();
+
+    // Open user menu
+    fireEvent.click(screen.getByText('Test User (Admin)'));
+    expect(screen.getByText('Admin Panel')).toBeInTheDocument();
+  });
+
+  it('shows debug panel with environment information', () => {
+    const mockAccount = {
+      name: 'Test User',
+      homeAccountId: 'test-id',
+      environment: 'test-env',
+      tenantId: 'test-tenant',
+      username: 'test@example.com',
+    };
+
+    (useMsal as jest.Mock).mockReturnValue({
+      instance: {
+        getConfiguration: () => ({
+          auth: {
+            authority: 'test-authority',
+            redirectUri: 'test-redirect-uri',
+          }
+        }),
+        getActiveAccount: () => mockAccount,
+        logoutRedirect: jest.fn(),
+      },
+      accounts: [mockAccount],
+    });
+
+    render(<Header />);
 
     // Click Debug Info button
     fireEvent.click(screen.getByText('Debug Info'));
+    
     expect(screen.getByText('Debug Information')).toBeInTheDocument();
+    expect(screen.getByText('Authentication State')).toBeInTheDocument();
+    expect(screen.getByText('Environment Variables')).toBeInTheDocument();
+    expect(screen.getByText('MSAL Configuration')).toBeInTheDocument();
   });
 }); 
