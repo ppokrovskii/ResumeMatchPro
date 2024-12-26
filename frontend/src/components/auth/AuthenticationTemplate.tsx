@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { AccountInfo, BrowserAuthError } from '@azure/msal-browser';
 import { useMsal } from '@azure/msal-react';
 import React, { ReactNode, useEffect } from 'react';

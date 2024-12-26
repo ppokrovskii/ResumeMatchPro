@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { Configuration } from '@azure/msal-browser';
 
 // B2C Policy/User Flow names
