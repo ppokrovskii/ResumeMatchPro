@@ -101,7 +101,11 @@ const Header: React.FC = () => {
           <h4>Environment Variables</h4>
           <pre>
             {JSON.stringify({
-              REACT_APP_BASE_URL: process.env.REACT_APP_BASE_URL || 'not set'
+              REACT_APP_BASE_URL: process.env.REACT_APP_BASE_URL || 'not set',
+              REACT_APP_API_URL: process.env.REACT_APP_API_URL || 'not set',
+              REACT_APP_B2C_TENANT: process.env.REACT_APP_B2C_TENANT || 'not set',
+              REACT_APP_B2C_CLIENT_ID: process.env.REACT_APP_B2C_CLIENT_ID || 'not set',
+              REACT_APP_B2C_AUTHORITY_DOMAIN: process.env.REACT_APP_B2C_AUTHORITY_DOMAIN || 'not set'
             }, null, 2)}
           </pre>
           <h4>User Claims</h4>
