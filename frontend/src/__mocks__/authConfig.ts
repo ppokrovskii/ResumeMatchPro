@@ -1,6 +1,6 @@
 import { Configuration } from '@azure/msal-browser';
 
-const baseUrl = process.env.REACT_APP_BASE_URL || 'http://localhost:3000';
+const baseUrl = process.env.REACT_APP_BASE_URL || 'provide_base_url';
 
 export const msalConfig: Configuration = {
   auth: {
