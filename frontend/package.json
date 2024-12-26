@@ -26,7 +26,18 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "test:ci": "react-scripts test --watchAll=false --ci --coverage",
-    "eject": "react-scripts eject"
+    "test:precommit": "react-scripts test --watchAll=false --passWithNoTests --findRelatedTests",
+    "eject": "react-scripts eject",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
+    "prepare": "husky install",
+    "pre-commit": "lint-staged && npm run test:ci"
+  },
+  "lint-staged": {
+    "src/**/*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "npm run test:precommit"
+    ]
   },
   "eslintConfig": {
     "extends": [
@@ -47,6 +58,8 @@
     ]
   },
   "devDependencies": {
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "husky": "^8.0.0",
+    "lint-staged": "^13.0.0"
   }
 }

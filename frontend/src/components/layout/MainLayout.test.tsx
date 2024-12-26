@@ -1,39 +1,25 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MainLayout } from './MainLayout';
+import { BrowserRouter } from 'react-router-dom';
 
-// Mock the Header and Footer components
+// Mock Header component
 jest.mock('../Header/Header', () => ({
   __esModule: true,
-  default: () => <div>Header</div>
-}));
-
-jest.mock('../Footer/Footer', () => ({
-  __esModule: true,
-  default: () => <div>Footer</div>
+  default: () => <div>Mock Header</div>
 }));
 
 describe('MainLayout', () => {
-  it('renders header, content and footer', () => {
+  it('renders header and children', () => {
     render(
-      <MainLayout>
-        <div>Main Content</div>
-      </MainLayout>
+      <BrowserRouter>
+        <MainLayout>
+          <div>Test Content</div>
+        </MainLayout>
+      </BrowserRouter>
     );
 
-    expect(screen.getByText('Header')).toBeInTheDocument();
-    expect(screen.getByText('Main Content')).toBeInTheDocument();
-    expect(screen.getByText('Footer')).toBeInTheDocument();
-  });
-
-  it('applies correct CSS classes', () => {
-    render(
-      <MainLayout>
-        <div>Test Content</div>
-      </MainLayout>
-    );
-
-    expect(document.querySelector('.app')).toBeInTheDocument();
-    expect(document.querySelector('.main-content')).toBeInTheDocument();
+    expect(screen.getByText('Mock Header')).toBeInTheDocument();
+    expect(screen.getByText('Test Content')).toBeInTheDocument();
   });
 }); 

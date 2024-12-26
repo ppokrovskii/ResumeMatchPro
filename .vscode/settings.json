@@ -26,5 +26,23 @@
     "azureFunctions.projectSubpath": "azfunctions",
     "editor.codeActionsOnSave": {
         "source.fixAll.eslint": "explicit"
+    },
+    "eslint.validate": [
+        "javascript",
+        "javascriptreact",
+        "typescript",
+        "typescriptreact"
+    ],
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "eslint.alwaysShowStatus": true,
+    "editor.formatOnPaste": true,
+    "eslint.run": "onSave",
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "[typescript]": {
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    },
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint"
     }
 }

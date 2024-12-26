@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import FilesUpload from '../FilesUpload';
 import { uploadFiles } from '../../../services/fileService';
 
@@ -43,11 +43,13 @@ describe('FilesUpload Component', () => {
     const uploadArea = screen.getByText(/click or drag file to this area to upload/i);
     uploadArea.click();
 
-    // Wait for async operations
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await waitFor(() => {
+      expect(uploadFiles).toHaveBeenCalledWith([mockFile], '1', 'CV');
+    });
 
-    expect(uploadFiles).toHaveBeenCalledWith([mockFile], '1', 'CV');
-    expect(mockOnFilesUploaded).toHaveBeenCalledWith(mockResponse.files, 'CV');
+    await waitFor(() => {
+      expect(mockOnFilesUploaded).toHaveBeenCalledWith(mockResponse.files, 'CV');
+    });
   });
 
   test('handles upload error', async () => {
@@ -61,11 +63,13 @@ describe('FilesUpload Component', () => {
     const uploadArea = screen.getByText(/click or drag file to this area to upload/i);
     uploadArea.click();
 
-    // Wait for async operations
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await waitFor(() => {
+      expect(uploadFiles).toHaveBeenCalledWith([mockFile], '1', 'CV');
+    });
 
-    expect(uploadFiles).toHaveBeenCalledWith([mockFile], '1', 'CV');
-    expect(consoleErrorSpy).toHaveBeenCalledWith('Error uploading files:', mockError);
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error uploading files:', mockError);
+    });
 
     consoleErrorSpy.mockRestore();
   });

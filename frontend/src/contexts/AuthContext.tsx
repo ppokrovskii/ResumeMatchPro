@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect } from 'react';
+import { createContext, useContext } from 'react';
 import { PublicClientApplication, EventType, AuthenticationResult } from '@azure/msal-browser';
 import { msalConfig } from '../authConfig';
 
