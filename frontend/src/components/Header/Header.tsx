@@ -97,7 +97,14 @@ const Header: React.FC = () => {
       </nav>
       {isDevelopment && showDebug && claims && (
         <div ref={debugPanelRef} className={styles.debugInfo}>
-          <h3>User Claims (Debug)</h3>
+          <h3>Debug Information</h3>
+          <h4>Environment Variables</h4>
+          <pre>
+            {JSON.stringify({
+              REACT_APP_BASE_URL: process.env.REACT_APP_BASE_URL || 'not set'
+            }, null, 2)}
+          </pre>
+          <h4>User Claims</h4>
           <pre>
             {JSON.stringify(claims, null, 2)}
           </pre>

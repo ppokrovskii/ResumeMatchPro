@@ -1,24 +1,25 @@
-export const msalConfig = {
+import { Configuration } from '@azure/msal-browser';
+
+const baseUrl = process.env.REACT_APP_BASE_URL || 'http://localhost:3000';
+
+export const msalConfig: Configuration = {
   auth: {
     clientId: 'test-client-id',
-    authority: 'test-authority',
-    knownAuthorities: ['test-authority'],
-    redirectUri: 'http://localhost:3000',
-    postLogoutRedirectUri: 'http://localhost:3000',
+    authority: 'https://test.authority.com',
+    redirectUri: baseUrl,
+    postLogoutRedirectUri: baseUrl,
   },
   cache: {
     cacheLocation: 'sessionStorage',
-    storeAuthStateInCookie: true,
-  }
+    storeAuthStateInCookie: false,
+  },
 };
 
 export const loginRequest = {
   scopes: ['openid'],
-  prompt: 'select_account',
-  responseType: 'token id_token'
 };
 
 export const policies = {
-  signUpSignIn: "B2C_1_signupsignin",
-  passwordReset: "B2C_1_passwordreset"
+  signUpSignIn: 'B2C_1_signupsignin',
+  passwordReset: 'B2C_1_passwordreset',
 }; 
