@@ -1,7 +1,7 @@
 // File: src/components/Header/Header.tsx
 
-import React, { useState, useRef, useEffect } from 'react';
 import { useMsal } from '@azure/msal-react';
+import React, { useEffect, useRef, useState } from 'react';
 import styles from './Header.module.css';
 
 interface MsalError extends Error {
@@ -58,6 +58,20 @@ const Header: React.FC = () => {
     }
   }, [accounts, claims, isAdmin, instance, isDevelopment]);
 
+  // Handle click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (debugPanelRef.current && !debugPanelRef.current.contains(event.target as Node)) {
+        setShowDebug(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const handleLogin = async () => {
     if (isLoggingIn) {
       // eslint-disable-next-line no-console
@@ -104,20 +118,6 @@ const Header: React.FC = () => {
     }
   };
 
-  // Handle click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (debugPanelRef.current && !debugPanelRef.current.contains(event.target as Node)) {
-        setShowDebug(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
   const handleLogout = async () => {
     try {
       await instance.logoutRedirect({
@@ -142,14 +142,12 @@ const Header: React.FC = () => {
         ResumeMatchPro
       </div>
       <nav className={styles.nav}>
-        {isDevelopment && (
-          <button 
-            onClick={toggleDebug}
-            className={`${styles.userButton} ${styles.debugButton}`}
-          >
-            Debug Info
-          </button>
-        )}
+        <button 
+          onClick={toggleDebug}
+          className={`${styles.userButton} ${styles.debugButton}`}
+        >
+          Debug Info
+        </button>
         {accounts.length > 0 ? (
           <div className={styles.userMenu}>
             <button 
@@ -187,7 +185,7 @@ const Header: React.FC = () => {
           </button>
         )}
       </nav>
-      {isDevelopment && showDebug && (
+      {showDebug && (
         <div ref={debugPanelRef} className={styles.debugInfo}>
           <h3>Debug Information</h3>
           <h4>Authentication State</h4>

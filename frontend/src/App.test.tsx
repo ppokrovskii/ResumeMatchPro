@@ -18,20 +18,20 @@ jest.mock('./contexts/AuthContext', () => ({
 
 jest.mock('./components/auth/AuthenticationTemplate', () => ({
   __esModule: true,
-  default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
+  default: ({ children }: { children: React.ReactNode }) => <div data-testid="auth-template">{children}</div>
 }));
 
 jest.mock('./components/layout/MainLayout', () => ({
-  MainLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
+  MainLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="main-layout">{children}</div>
 }));
 
 jest.mock('@azure/msal-react', () => ({
-  MsalProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
+  MsalProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="msal-provider">{children}</div>
 }));
 
 jest.mock('./pages/Homeage/HomePage', () => ({
   __esModule: true,
-  default: () => <div>Home Page Content</div>
+  default: () => <div data-testid="home-page">Home Page Content</div>
 }));
 
 describe('App', () => {

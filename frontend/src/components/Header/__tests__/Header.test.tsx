@@ -1,5 +1,5 @@
 import { useMsal } from '@azure/msal-react';
-import { render, screen } from '@test-utils';
+import { fireEvent, render, screen } from '@test-utils';
 import Header from '../Header';
 
 // Mock useMsal hook
@@ -20,7 +20,7 @@ describe('Header', () => {
     jest.clearAllMocks();
   });
 
-  it('shows Debug Info link in development mode when not authenticated', () => {
+  it('shows Debug Info button when not authenticated', () => {
     // Mock unauthenticated state
     (useMsal as jest.Mock).mockReturnValue({
       instance: {
@@ -40,9 +40,14 @@ describe('Header', () => {
     
     expect(screen.getByText('Debug Info')).toBeInTheDocument();
     expect(screen.getByText('Sign In')).toBeInTheDocument();
+    expect(screen.queryByText('Debug Information')).not.toBeInTheDocument();
+
+    // Click Debug Info button
+    fireEvent.click(screen.getByText('Debug Info'));
+    expect(screen.getByText('Debug Information')).toBeInTheDocument();
   });
 
-  it('shows Debug Info link in development mode when authenticated', () => {
+  it('shows Debug Info button when authenticated', () => {
     // Mock authenticated state
     const mockAccount = {
       name: 'Test User',
@@ -70,9 +75,14 @@ describe('Header', () => {
     
     expect(screen.getByText('Debug Info')).toBeInTheDocument();
     expect(screen.getByText('Test User')).toBeInTheDocument();
+    expect(screen.queryByText('Debug Information')).not.toBeInTheDocument();
+
+    // Click Debug Info button
+    fireEvent.click(screen.getByText('Debug Info'));
+    expect(screen.getByText('Debug Information')).toBeInTheDocument();
   });
 
-  it('hides Debug Info link in production mode', () => {
+  it('shows Debug Info button in production mode', () => {
     // Set NODE_ENV to production for this test
     process.env = { ...originalEnv, NODE_ENV: 'production' };
 
@@ -92,6 +102,11 @@ describe('Header', () => {
 
     render(<Header />);
     
-    expect(screen.queryByText('Debug Info')).not.toBeInTheDocument();
+    expect(screen.getByText('Debug Info')).toBeInTheDocument();
+    expect(screen.queryByText('Debug Information')).not.toBeInTheDocument();
+
+    // Click Debug Info button
+    fireEvent.click(screen.getByText('Debug Info'));
+    expect(screen.getByText('Debug Information')).toBeInTheDocument();
   });
 }); 
