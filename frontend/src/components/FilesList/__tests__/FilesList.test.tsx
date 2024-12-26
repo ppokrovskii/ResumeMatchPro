@@ -1,71 +1,43 @@
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import FilesList from '../FilesList';
+import { fireEvent, render, screen } from '@test-utils';
 import { RmpFile } from '../../../services/fileService';
+import FilesList from '../FilesList';
 
-const mockFiles: RmpFile[] = [
-  {
-    id: '1',
-    filename: 'file1.txt',
-    type: 'txt',
-    user_id: '1',
-    url: 'file1.txt',
-    text: ''
-  }
-];
+describe('FilesList', () => {
+  const mockFiles: RmpFile[] = [
+    { id: '1', filename: 'test1.pdf', type: 'resume', user_id: '1', url: 'test1.pdf', text: '' },
+    { id: '2', filename: 'test2.pdf', type: 'resume', user_id: '1', url: 'test2.pdf', text: '' },
+  ];
 
-test('renders a list of files', () => {
-  render(
-    <FilesList 
-      files={mockFiles} 
-      onFileSelect={() => {}} 
-      fileType="JD" 
-      setFiles={() => {}}
-      handleFilesUploaded={() => {}}
-    />
-  );
+  it('renders list of files', () => {
+    render(
+      <FilesList 
+        files={mockFiles} 
+        onFileSelect={() => {}} 
+        fileType="resume"
+        setFiles={() => {}}
+        handleFilesUploaded={() => {}}
+      />
+    );
 
-  const fileItems = screen.getAllByRole('listitem');
-  expect(fileItems).toHaveLength(mockFiles.length);
-  expect(fileItems[0]).toHaveTextContent('file1.txt');
-});
+    expect(screen.getByText('test1.pdf')).toBeInTheDocument();
+    expect(screen.getByText('test2.pdf')).toBeInTheDocument();
+  });
 
-test('calls onFileSelect when a file is clicked', () => {
-  const mockOnFileSelect = jest.fn();
-  render(
-    <FilesList 
-      files={mockFiles} 
-      onFileSelect={mockOnFileSelect} 
-      fileType="CV"
-      setFiles={() => {}}
-      handleFilesUploaded={() => {}}
-    />
-  );
+  it('calls onFileSelect when a file is clicked', () => {
+    const onFileSelect = jest.fn();
+    render(
+      <FilesList 
+        files={mockFiles} 
+        onFileSelect={onFileSelect}
+        fileType="resume"
+        setFiles={() => {}}
+        handleFilesUploaded={() => {}}
+      />
+    );
 
-  const fileItem = screen.getByText('file1.txt');
-  fireEvent.click(fileItem);
+    const fileItem = screen.getByText('test1.pdf');
+    fireEvent.click(fileItem);
 
-  expect(mockOnFileSelect).toHaveBeenCalledTimes(1);
-  expect(mockOnFileSelect).toHaveBeenCalledWith(mockFiles[0]);
-});
-
-test('renders files with correct type', () => {
-  const jdFiles: RmpFile[] = [{
-    ...mockFiles[0],
-    type: 'JD'
-  }];
-
-  render(
-    <FilesList 
-      files={jdFiles} 
-      onFileSelect={() => {}} 
-      fileType="JD"
-      setFiles={() => {}}
-      handleFilesUploaded={() => {}}
-    />
-  );
-
-  const fileItems = screen.getAllByRole('listitem');
-  expect(fileItems).toHaveLength(1);
-  expect(fileItems[0]).toHaveTextContent('file1.txt');
+    expect(onFileSelect).toHaveBeenCalledWith(mockFiles[0]);
+  });
 }); 

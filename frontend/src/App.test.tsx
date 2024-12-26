@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { render } from '@test-utils';
 import React from 'react';
 import App from './App';
 
@@ -7,6 +7,12 @@ jest.mock('./contexts/AuthContext', () => ({
   msalInstance: {
     initialize: jest.fn().mockResolvedValue(undefined),
     handleRedirectPromise: jest.fn().mockResolvedValue(null),
+    getConfiguration: () => ({
+      auth: {
+        authority: 'test-authority',
+        redirectUri: 'test-redirect-uri',
+      }
+    }),
   }
 }));
 
@@ -30,7 +36,7 @@ jest.mock('./pages/Homeage/HomePage', () => ({
 
 describe('App', () => {
   it('renders without crashing', () => {
-    render(<App />);
+    render(<App />, { useRouterProvider: true });
   });
 });
 

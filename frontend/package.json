@@ -22,11 +22,11 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "test:ci": "react-scripts test --watchAll=false --ci --coverage",
-    "test:precommit": "react-scripts test --watchAll=false --passWithNoTests --findRelatedTests",
+    "start": "craco start",
+    "build": "craco build",
+    "test": "craco test",
+    "test:ci": "craco test --watchAll=false --ci --coverage",
+    "test:precommit": "craco test --watchAll=false --passWithNoTests --findRelatedTests",
     "eject": "react-scripts eject",
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx --max-warnings 0",
     "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
@@ -61,6 +61,7 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@craco/craco": "^7.1.0",
     "husky": "^8.0.0",
     "lint-staged": "^13.0.0"
   }

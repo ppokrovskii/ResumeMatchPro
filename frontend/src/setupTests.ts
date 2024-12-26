@@ -5,61 +5,25 @@
 import '@testing-library/jest-dom';
 
 // Mock window.crypto
-const cryptoMock = {
-  subtle: {
-    digest: jest.fn(),
-    encrypt: jest.fn(),
-    decrypt: jest.fn(),
-  },
-  getRandomValues: jest.fn(),
-};
-
 Object.defineProperty(window, 'crypto', {
-  value: cryptoMock,
+  value: {
+    getRandomValues: (arr: Uint8Array) => crypto.getRandomValues(arr),
+  },
 });
 
-// Mock matchMedia
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: jest.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(), // deprecated
-    removeListener: jest.fn(), // deprecated
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
-});
-
-// suppress act() warnings
+// Suppress specific console errors during tests
 const originalError = console.error;
-beforeAll(() => {
-  console.error = (...args) => {
-    if (/Warning.*not wrapped in act/.test(args[0])) {
+console.error = (...args: unknown[]) => {
+  if (typeof args[0] === 'string') {
+    if (args[0].includes('Warning: ReactDOM.render is no longer supported')) {
       return;
     }
-    originalError.call(console, ...args);
-  };
-});
-
-afterAll(() => {
-  console.error = originalError;
-});
+    if (args[0].includes('Warning: `ReactDOMTestUtils.act` is deprecated')) {
+      return;
+    }
+  }
+  originalError.call(console, ...args);
+};
 
 // Configure Jest to handle async operations
 jest.setTimeout(10000);
-
-// Add global fetch mock
-global.fetch = jest.fn(() => 
-  Promise.resolve({
-    json: () => Promise.resolve({}),
-    ok: true,
-  })
-) as jest.Mock;
-
-// Clear all mocks after each test
-afterEach(() => {
-  jest.clearAllMocks();
-});
