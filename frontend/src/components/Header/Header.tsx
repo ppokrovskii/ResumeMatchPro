@@ -13,6 +13,27 @@ const Header: React.FC = () => {
   const claims = accounts[0]?.idTokenClaims;
   const isAdmin = claims?.['extension_IsAdmin'] === true;
 
+  // Log authentication state on mount and when accounts change
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Auth State:', {
+        isAuthenticated: accounts.length > 0,
+        accountsCount: accounts.length,
+        accounts: accounts,
+      });
+    }
+  }, [accounts]);
+
+  const handleLogin = async () => {
+    try {
+      console.log('Attempting login...');
+      await instance.loginRedirect();
+      console.log('Login redirect initiated');
+    } catch (error) {
+      console.error('Login error:', error);
+    }
+  };
+
   // Enhanced debug logging
   if (process.env.NODE_ENV === 'development') {
     const msalInfo = {
@@ -81,6 +102,14 @@ const Header: React.FC = () => {
         ResumeMatchPro
       </div>
       <nav className={styles.nav}>
+        {isDevelopment && (
+          <button 
+            onClick={toggleDebug}
+            className={`${styles.userButton} ${styles.debugButton}`}
+          >
+            Debug Info
+          </button>
+        )}
         {accounts.length > 0 ? (
           <div className={styles.userMenu}>
             <button 
@@ -99,14 +128,6 @@ const Header: React.FC = () => {
                     Admin Panel
                   </button>
                 )}
-                {isDevelopment && (
-                  <button 
-                    onClick={toggleDebug}
-                    className={styles.dropdownItem}
-                  >
-                    Toggle Debug Info
-                  </button>
-                )}
                 <button 
                   onClick={handleLogout}
                   className={styles.dropdownItem}
@@ -116,18 +137,26 @@ const Header: React.FC = () => {
               </div>
             )}
           </div>
-        ) : isDevelopment && (
+        ) : (
           <button 
-            onClick={toggleDebug}
+            onClick={handleLogin}
             className={styles.userButton}
           >
-            Debug Info
+            Sign In
           </button>
         )}
       </nav>
       {isDevelopment && showDebug && (
         <div ref={debugPanelRef} className={styles.debugInfo}>
           <h3>Debug Information</h3>
+          <h4>Authentication State</h4>
+          <pre>
+            {JSON.stringify({
+              isAuthenticated: accounts.length > 0,
+              accountsCount: accounts.length,
+              activeAccount: instance.getActiveAccount(),
+            }, null, 2)}
+          </pre>
           <h4>Environment Variables</h4>
           <pre>
             {JSON.stringify({

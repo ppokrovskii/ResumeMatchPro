@@ -100,3 +100,7 @@
   white-space: pre-wrap;
   word-break: break-all;
 }
+
+.debugButton {
+  margin-right: 1rem;
+}
