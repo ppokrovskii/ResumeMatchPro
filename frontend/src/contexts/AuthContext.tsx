@@ -1,6 +1,18 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useMsal } from '@azure/msal-react';
-import { AccountInfo } from '@azure/msal-browser';
+import { AccountInfo, PublicClientApplication } from '@azure/msal-browser';
+import { msalConfig } from '../authConfig';
+
+// Create MSAL instance
+export const msalInstance = new PublicClientApplication(msalConfig);
+
+// Default initialize MSAL
+msalInstance.initialize().then(() => {
+  // Set active account if available
+  if (!msalInstance.getActiveAccount() && msalInstance.getAllAccounts().length > 0) {
+    msalInstance.setActiveAccount(msalInstance.getAllAccounts()[0]);
+  }
+});
 
 interface AuthContextType {
   isAuthenticated: boolean;

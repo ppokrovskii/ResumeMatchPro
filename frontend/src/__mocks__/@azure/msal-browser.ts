@@ -1,27 +1,19 @@
-const mockInstance = {
-  initialize: jest.fn().mockImplementation(() => Promise.resolve()),
-  handleRedirectPromise: jest.fn().mockImplementation(() => Promise.resolve(null)),
-  loginRedirect: jest.fn().mockImplementation(() => Promise.resolve()),
-  logoutRedirect: jest.fn().mockImplementation(() => Promise.resolve()),
+export const PublicClientApplication = jest.fn().mockImplementation(() => ({
+  initialize: jest.fn().mockResolvedValue(undefined),
+  handleRedirectPromise: jest.fn(),
+  getActiveAccount: jest.fn(),
   getAllAccounts: jest.fn().mockReturnValue([]),
-  getActiveAccount: jest.fn().mockReturnValue(null),
   setActiveAccount: jest.fn(),
-  addEventCallback: jest.fn(),
-};
+}));
 
-export const PublicClientApplication = jest.fn().mockImplementation(() => mockInstance);
+export class AccountInfo {
+  homeAccountId: string = '';
+  localAccountId: string = '';
+  environment: string = '';
+  tenantId: string = '';
+  username: string = '';
 
-export const InteractionType = {
-  Redirect: 'redirect',
-  Popup: 'popup',
-  Silent: 'silent',
-};
-
-export const EventType = {
-  LOGIN_SUCCESS: 'login_success',
-  LOGIN_FAILURE: 'login_failure',
-  LOGOUT_SUCCESS: 'logout_success',
-  LOGOUT_FAILURE: 'logout_failure',
-};
-
-export const mockMsalInstance = mockInstance; 
+  constructor(init: Partial<AccountInfo>) {
+    Object.assign(this, init);
+  }
+} 
