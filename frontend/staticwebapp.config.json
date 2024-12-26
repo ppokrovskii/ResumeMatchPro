@@ -1,9 +1,33 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/images/*", "/css/*", "/js/*", "/api/*"]
+    "exclude": ["/static/*", "/images/*", "/css/*", "/js/*", "/api/*", "/manifest.json", "/favicon.ico"]
   },
   "routes": [
+    {
+      "route": "/static/*",
+      "headers": {
+        "cache-control": "must-revalidate, max-age=86400"
+      }
+    },
+    {
+      "route": "/static/js/*",
+      "headers": {
+        "content-type": "application/javascript"
+      }
+    },
+    {
+      "route": "/static/css/*",
+      "headers": {
+        "content-type": "text/css"
+      }
+    },
+    {
+      "route": "/manifest.json",
+      "headers": {
+        "content-type": "application/json"
+      }
+    },
     {
       "route": "/auth-callback",
       "rewrite": "/index.html",
@@ -16,8 +40,17 @@
     }
   ],
   "globalHeaders": {
-    "content-security-policy": "frame-ancestors 'self' https://*.b2clogin.com;",
+    "content-security-policy": "frame-ancestors 'self' https://*.b2clogin.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.b2clogin.com; style-src 'self' 'unsafe-inline';",
     "X-Frame-Options": "SAMEORIGIN",
     "X-Content-Type-Options": "nosniff"
+  },
+  "mimeTypes": {
+    ".js": "application/javascript",
+    ".css": "text/css",
+    ".json": "application/json",
+    ".ico": "image/x-icon",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".svg": "image/svg+xml"
   }
 } 
