@@ -1,49 +1,102 @@
 /* File: src/components/Header/Header.module.css */
 
-.appHeader {
+.header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 20px;
-  background-color: #333;
-  color: #fff;
-  /* increase vertical paddings */
-  padding: 20px 20px;
+  padding: 1rem 2rem;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.headerLogo {
+.logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #0078d4;
+}
+
+.nav {
   display: flex;
   align-items: center;
+  gap: 1rem;
 }
 
-.headerLogo img {
-  height: 50px;
+.userMenu {
+  position: relative;
 }
 
-.headerLogo a {
-  color: white;
-  text-decoration: none;
-  font-weight: bold;
-}
-
-.headerNav ul {
-  list-style: none;
+.userButton {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: none;
+  color: #0078d4;
+  font-weight: 500;
+  cursor: pointer;
   display: flex;
-  margin: 0;
-  padding: 0;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.headerNav ul li {
-  margin: 0 10px;
+.userButton:hover {
+  color: #005a9e;
 }
 
-.headerNav ul li a {
-  color: white;
-  text-decoration: none;
-  font-weight: bold;
+.dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-width: 150px;
+  z-index: 1000;
 }
 
-.headerUser img {
-  height: 40px;
-  border-radius: 50%;
+.dropdownItem {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.dropdownItem:hover {
+  background-color: #f5f5f5;
+  color: #0078d4;
+}
+
+.debugInfo {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  background: white;
+  padding: 20px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  max-width: 500px;
+  max-height: 80vh;
+  overflow: auto;
+  z-index: 1000;
+  border: 1px solid #e0e0e0;
+}
+
+.debugInfo h3 {
+  margin-top: 0;
+  color: #0078d4;
+  margin-bottom: 1rem;
+}
+
+.debugInfo pre {
+  background: #f5f5f5;
+  padding: 1rem;
+  border-radius: 4px;
+  overflow: auto;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  word-break: break-all;
 }

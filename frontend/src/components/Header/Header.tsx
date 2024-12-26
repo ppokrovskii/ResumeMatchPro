@@ -1,28 +1,108 @@
 // File: src/components/Header/Header.tsx
 
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { UserOutlined } from '@ant-design/icons';
-import 'antd/dist/reset.css';
+import React, { useState, useRef, useEffect } from 'react';
+import { useMsal } from '@azure/msal-react';
 import styles from './Header.module.css';
 
 const Header: React.FC = () => {
+  const { instance, accounts } = useMsal();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
+  const debugPanelRef = useRef<HTMLDivElement>(null);
+
+  const claims = accounts[0]?.idTokenClaims;
+  const isAdmin = claims?.['extension_IsAdmin'] === true;
+
+  // Add debug logging
+  console.log('User Claims:', claims);
+  console.log('Is Admin:', isAdmin);
+
+  // Handle click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (debugPanelRef.current && !debugPanelRef.current.contains(event.target as Node)) {
+        setShowDebug(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Only show debug in development
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
+  const handleLogout = async () => {
+    try {
+      await instance.logoutRedirect({
+        postLogoutRedirectUri: window.location.origin,
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const toggleDebug = () => {
+    setShowDebug(!showDebug);
+  };
+
   return (
-    <header className={styles.appHeader}>
-      <div className={styles.headerLogo}>
-        <Link to="/">Resume Match Pro</Link>
+    <header className={styles.header}>
+      <div className={styles.logo}>
+        ResumeMatchPro
       </div>
-      <nav className={styles.headerNav}>
-        <ul>
-          <li><Link to="/">Home</Link></li>
-          <li><Link to="/about">About</Link></li>
-          <li><Link to="/login">Login</Link></li>
-        </ul>
+      <nav className={styles.nav}>
+        {accounts.length > 0 && (
+          <div className={styles.userMenu}>
+            <button 
+              onClick={toggleDropdown}
+              className={styles.userButton}
+            >
+              {accounts[0].name || 'User'}{isAdmin ? ' (Admin)' : ''}
+            </button>
+            {isDropdownOpen && (
+              <div className={styles.dropdown}>
+                {isAdmin && (
+                  <button 
+                    onClick={() => {/* Navigate to admin panel */}}
+                    className={styles.dropdownItem}
+                  >
+                    Admin Panel
+                  </button>
+                )}
+                {isDevelopment && (
+                  <button 
+                    onClick={toggleDebug}
+                    className={styles.dropdownItem}
+                  >
+                    Toggle Debug Info
+                  </button>
+                )}
+                <button 
+                  onClick={handleLogout}
+                  className={styles.dropdownItem}
+                >
+                  Log Out
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </nav>
-      <div className={styles.headerUser}>
-        <UserOutlined />
-        <span> My Profile</span>
-      </div>
+      {isDevelopment && showDebug && claims && (
+        <div ref={debugPanelRef} className={styles.debugInfo}>
+          <h3>User Claims (Debug)</h3>
+          <pre>
+            {JSON.stringify(claims, null, 2)}
+          </pre>
+        </div>
+      )}
     </header>
   );
 };
