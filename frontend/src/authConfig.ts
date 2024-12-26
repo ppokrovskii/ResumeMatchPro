@@ -9,7 +9,7 @@ const b2cPolicies = {
 // B2C Endpoints
 const b2cAuth = {
   tenant: process.env.REACT_APP_B2C_TENANT || "resumematchprodev",
-  clientId: process.env.REACT_APP_B2C_CLIENT_ID || "c2fa3e0d-f097-4136-94fc-3eb66212dfd3",
+  clientId: process.env.REACT_APP_B2C_CLIENT_ID || "REACT_APP_B2C_CLIENT_ID not set",
   authorityDomain: process.env.REACT_APP_B2C_AUTHORITY_DOMAIN || "resumematchprodev.b2clogin.com",
 };
 
