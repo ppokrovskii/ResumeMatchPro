@@ -48,25 +48,33 @@ export const deleteFile = async (fileId: string): Promise<void> => {
     }
 };
 
-export const uploadFiles = async (files: File[], userId: string, type: string): Promise<any> => {
-    const formData = new FormData();
-    files.forEach(file => {
-        formData.append('content', file); // Changed 'content' to 'files' to better reflect the data
-    });
-    formData.append('user_id', userId);
-    formData.append('type', type);
+interface FileUploadResponse {
+    files: File[];
+    message?: string;
+}
 
-    const response = await fetch(`${API_BASE_URL}/files/upload`, {
+interface MatchingResult {
+    score: number;
+    matches: string[];
+    suggestions: string[];
+}
+
+export const uploadFiles = async (files: File[], userId: string, fileType: string): Promise<FileUploadResponse> => {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    formData.append('userId', userId);
+    formData.append('fileType', fileType);
+
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/files/upload`, {
         method: 'POST',
         body: formData,
     });
 
     if (!response.ok) {
-        throw new Error('File upload failed');
+        throw new Error('Upload failed');
     }
 
-    const data = await response.json();
-    return data; // If the server response includes more than just files, return the whole response object
+    return response.json();
 };
 
 
@@ -100,11 +108,12 @@ export interface ResultsResponse {
     results: Result[];
 }
 
-export const getMatchingResults = async (userId: string, fileId: string, fileType: string): Promise<Result[]> => {
-    const response = await fetch(`${API_BASE_URL}/results?user_id=${userId}&file_id=${fileId}&file_type=${fileType}`);
+export const getMatchingResults = async (userId: string, fileId: string, fileType: string): Promise<MatchingResult[]> => {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/results/${userId}/${fileId}?type=${fileType}`);
+    
     if (!response.ok) {
         throw new Error('Failed to fetch matching results');
     }
-    const data: ResultsResponse = await response.json();
-    return data.results;
+
+    return response.json();
 };

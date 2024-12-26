@@ -1,33 +1,38 @@
-import React, { useEffect, useState } from 'react';
-import { getMatchingResults } from '../../services/fileService';
+import React from 'react';
 
-
-interface SelectedFile {
-  id: string;
-  type: string;
+interface MatchingResult {
+  score: number;
+  matches: string[];
+  suggestions: string[];
 }
 
-const MatchingResults = ({ user_id, selectedFile }: { user_id: string; selectedFile: SelectedFile }) => {
-  const [results, setResults] = useState<any[]>([]);
+interface MatchingResultsProps {
+  results: MatchingResult[];
+  onClose: () => void;
+}
 
-  useEffect(() => {
-    // Adjusted to use both file ID and type
-    getMatchingResults(user_id, selectedFile.id, selectedFile.type).then((response: any[]) => setResults(response));
-    }, [user_id, selectedFile.id, selectedFile.type]);
-
+const MatchingResults: React.FC<MatchingResultsProps> = ({ results, onClose }) => {
   return (
-    <ul>
-      {results.map(result => (
-        <li key={result.id}>
-            <p>CV {result.cv.filename} vs JD {result.jd.filename}</p>
-            <p>Overall match percentage: {result.overall_match_percentage}</p>
-            <p>Skills match: {result.cv_match.skills_match.join(', ')}</p>
-            <p>Experience match: {result.cv_match.experience_match.join(', ')}</p>
-            <p>Education match: {result.cv_match.education_match.join(', ')}</p>
-            <p>Gaps: {result.cv_match.gaps.join(', ')}</p>
-        </li>
+    <div>
+      <button onClick={onClose}>Close</button>
+      {results.map((result, index) => (
+        <div key={index}>
+          <h3>Match Score: {result.score}%</h3>
+          <h4>Matches:</h4>
+          <ul>
+            {result.matches.map((match, i) => (
+              <li key={i}>{match}</li>
+            ))}
+          </ul>
+          <h4>Suggestions:</h4>
+          <ul>
+            {result.suggestions.map((suggestion, i) => (
+              <li key={i}>{suggestion}</li>
+            ))}
+          </ul>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 };
 

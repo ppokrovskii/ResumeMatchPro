@@ -4,6 +4,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useMsal } from '@azure/msal-react';
 import styles from './Header.module.css';
 
+interface MsalError extends Error {
+  errorCode?: string;
+}
+
 const Header: React.FC = () => {
   const { instance, accounts } = useMsal();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -21,7 +25,7 @@ const Header: React.FC = () => {
       const msalInfo = {
         config: instance.getConfiguration(),
         activeAccount: instance.getActiveAccount(),
-        accounts: accounts,
+        accounts,
         authority: instance.getConfiguration().auth.authority,
         redirectUri: instance.getConfiguration().auth.redirectUri,
       };
@@ -34,29 +38,36 @@ const Header: React.FC = () => {
         B2C_AUTHORITY_DOMAIN: process.env.REACT_APP_B2C_AUTHORITY_DOMAIN,
       };
 
+      // eslint-disable-next-line no-console
       console.log('Auth State:', {
         isAuthenticated: accounts.length > 0,
         accountsCount: accounts.length,
-        accounts: accounts,
+        accounts,
       });
+      // eslint-disable-next-line no-console
       console.log('MSAL Instance:', msalInfo);
+      // eslint-disable-next-line no-console
       console.log('Environment:', envInfo);
 
       if (claims) {
+        // eslint-disable-next-line no-console
         console.log('User Claims:', claims);
+        // eslint-disable-next-line no-console
         console.log('Is Admin:', isAdmin);
       }
     }
-  }, [accounts, claims, isAdmin, instance]);
+  }, [accounts, claims, isAdmin, instance, isDevelopment]);
 
   const handleLogin = async () => {
     if (isLoggingIn) {
+      // eslint-disable-next-line no-console
       console.log('Login already in progress...');
       return;
     }
 
     try {
       setIsLoggingIn(true);
+      // eslint-disable-next-line no-console
       console.log('Attempting login...');
       
       // Check if there's an interaction in progress
@@ -64,15 +75,19 @@ const Header: React.FC = () => {
         try {
           await instance.handleRedirectPromise();
         } catch (e) {
+          // eslint-disable-next-line no-console
           console.log('No redirect promise to handle');
         }
       }
 
       await instance.loginRedirect();
+      // eslint-disable-next-line no-console
       console.log('Login redirect initiated');
-    } catch (error: any) {
-      console.error('Login error:', error);
-      if (error.errorCode === 'interaction_in_progress') {
+    } catch (error) {
+      const msalError = error as MsalError;
+      console.error('Login error:', msalError);
+      if (msalError.errorCode === 'interaction_in_progress') {
+        // eslint-disable-next-line no-console
         console.log('Attempting to handle existing interaction...');
         try {
           await instance.handleRedirectPromise();

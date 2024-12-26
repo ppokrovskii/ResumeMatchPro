@@ -1,73 +1,47 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { AuthenticationTemplate } from './AuthenticationTemplate';
-import { BrowserRouter } from 'react-router-dom';
+import { useMsal } from '@azure/msal-react';
+import { AccountInfo } from '@azure/msal-browser';
+import AuthenticationTemplate from './AuthenticationTemplate';
 
-// Mock MSAL components
-const mockMsal = {
-  errorMode: false,
-  loadingMode: false,
-  reset() {
-    this.errorMode = false;
-    this.loadingMode = false;
-  }
-};
-
+// Mock useMsal hook
 jest.mock('@azure/msal-react', () => ({
-  MsalAuthenticationTemplate: ({ children, errorComponent: ErrorComponent, loadingComponent: LoadingComponent }: any) => {
-    if (mockMsal.errorMode) {
-      return ErrorComponent({ error: { errorMessage: 'Test error' } });
-    }
-    if (mockMsal.loadingMode) {
-      return LoadingComponent();
-    }
-    return children;
-  },
-  InteractionType: { Redirect: 'redirect' }
+  useMsal: jest.fn()
 }));
 
 describe('AuthenticationTemplate', () => {
+  const mockAccount: AccountInfo = {
+    homeAccountId: 'test-account-id',
+    localAccountId: 'test-local-id',
+    environment: 'test-env',
+    tenantId: 'test-tenant',
+    username: 'test@example.com'
+  };
+
   beforeEach(() => {
-    mockMsal.reset();
+    (useMsal as jest.Mock).mockReturnValue({
+      accounts: [mockAccount]
+    });
   });
 
   it('renders children', () => {
     render(
-      <BrowserRouter>
-        <AuthenticationTemplate>
-          <div>Test Content</div>
-        </AuthenticationTemplate>
-      </BrowserRouter>
+      <AuthenticationTemplate>
+        <div>Test Content</div>
+      </AuthenticationTemplate>
     );
 
     expect(screen.getByText('Test Content')).toBeInTheDocument();
   });
 
-  it('renders error message when authentication fails', () => {
-    mockMsal.errorMode = true;
-
+  it('calls onAuthenticated when account is available', () => {
+    const onAuthenticated = jest.fn();
     render(
-      <BrowserRouter>
-        <AuthenticationTemplate>
-          <div>Test Content</div>
-        </AuthenticationTemplate>
-      </BrowserRouter>
+      <AuthenticationTemplate onAuthenticated={onAuthenticated}>
+        <div>Test Content</div>
+      </AuthenticationTemplate>
     );
 
-    expect(screen.getByText('Authentication failed. Please try again.')).toBeInTheDocument();
-  });
-
-  it('renders loading message during authentication', () => {
-    mockMsal.loadingMode = true;
-
-    render(
-      <BrowserRouter>
-        <AuthenticationTemplate>
-          <div>Test Content</div>
-        </AuthenticationTemplate>
-      </BrowserRouter>
-    );
-
-    expect(screen.getByText('Processing authentication...')).toBeInTheDocument();
+    expect(onAuthenticated).toHaveBeenCalledWith(mockAccount);
   });
 }); 

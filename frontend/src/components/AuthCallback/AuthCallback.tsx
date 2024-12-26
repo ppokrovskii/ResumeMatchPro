@@ -1,38 +1,30 @@
 import React, { useEffect } from 'react';
 import { useMsal } from '@azure/msal-react';
 import { useNavigate } from 'react-router-dom';
+import { loginRequest } from '../../authConfig';
 
 const AuthCallback: React.FC = () => {
   const { instance } = useMsal();
   const navigate = useNavigate();
 
   useEffect(() => {
-    instance
-      .handleRedirectPromise()
-      .then((response) => {
-        if (response) {
-          console.log('Authentication successful:', response);
-          navigate('/');
+    const handleCallback = async () => {
+      try {
+        await instance.handleRedirectPromise();
+        const account = instance.getActiveAccount();
+        if (!account) {
+          // If no active account, try to acquire token silently
+          await instance.acquireTokenSilent(loginRequest);
         }
-      })
-      .catch((error) => {
-        console.error('Authentication error:', error);
-        
-        // Handle user cancellation gracefully
-        if (error.errorMessage?.includes('AADB2C90091')) {
-          console.log('User cancelled sign-up/sign-in');
-          // Just redirect to home page without error
-          navigate('/');
-          return;
-        }
+        navigate('/');
+      } catch (error) {
+        // Log error and redirect to home page
+        console.error('Authentication callback error:', error);
+        navigate('/');
+      }
+    };
 
-        // Handle other errors
-        navigate('/', { 
-          state: { 
-            authError: 'Authentication failed. Please try again.' 
-          }
-        });
-      });
+    handleCallback();
   }, [instance, navigate]);
 
   return (

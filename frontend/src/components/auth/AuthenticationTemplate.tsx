@@ -1,38 +1,22 @@
-import React from 'react';
-import { MsalAuthenticationTemplate } from '@azure/msal-react';
-import { InteractionType } from '@azure/msal-browser';
-import { loginRequest } from '../../authConfig';
+import React, { ReactNode } from 'react';
+import { useMsal } from '@azure/msal-react';
+import { AccountInfo } from '@azure/msal-browser';
 
-interface Props {
-  children: React.ReactNode;
+interface AuthenticationTemplateProps {
+  children: ReactNode;
+  onAuthenticated?: (account: AccountInfo) => void;
 }
 
-export const AuthenticationTemplate: React.FC<Props> = ({ children }) => {
-  const ErrorComponent = ({ error }: { error: any }) => {
-    if (error?.errorMessage?.includes('AADB2C90091')) {
-      return null;
+const AuthenticationTemplate: React.FC<AuthenticationTemplateProps> = ({ children, onAuthenticated }) => {
+  const { accounts } = useMsal();
+  
+  React.useEffect(() => {
+    if (accounts.length > 0 && onAuthenticated) {
+      onAuthenticated(accounts[0]);
     }
-    return (
-      <div className="auth-error">
-        Authentication failed. Please try again.
-      </div>
-    );
-  };
+  }, [accounts, onAuthenticated]);
 
-  const LoadingComponent = () => (
-    <div className="auth-callback">
-      <p>Processing authentication...</p>
-    </div>
-  );
+  return <>{children}</>;
+};
 
-  return (
-    <MsalAuthenticationTemplate 
-      interactionType={InteractionType.Redirect}
-      authenticationRequest={loginRequest}
-      errorComponent={ErrorComponent}
-      loadingComponent={LoadingComponent}
-    >
-      {children}
-    </MsalAuthenticationTemplate>
-  );
-}; 
+export default AuthenticationTemplate; 

@@ -1,32 +1,45 @@
-import { createContext, useContext } from 'react';
-import { PublicClientApplication, EventType, AuthenticationResult } from '@azure/msal-browser';
-import { msalConfig } from '../authConfig';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useMsal } from '@azure/msal-react';
+import { AccountInfo } from '@azure/msal-browser';
 
-// Create MSAL instance
-export const msalInstance = new PublicClientApplication(msalConfig);
+interface AuthContextType {
+  isAuthenticated: boolean;
+  account: AccountInfo | null;
+}
 
-// Initialize MSAL
-msalInstance.initialize().then(() => {
-  if (!msalInstance.getActiveAccount() && msalInstance.getAllAccounts().length > 0) {
-    msalInstance.setActiveAccount(msalInstance.getAllAccounts()[0]);
-  }
+const AuthContext = createContext<AuthContextType>({
+  isAuthenticated: false,
+  account: null,
 });
 
-// Event handling
-msalInstance.addEventCallback((event) => {
-  if (
-    event.eventType === EventType.LOGIN_SUCCESS && 
-    event.payload && 
-    'account' in event.payload
-  ) {
-    const payload = event.payload as AuthenticationResult;
-    console.log('Login successful');
-    if (payload.account) {
-      msalInstance.setActiveAccount(payload.account);
+export const useAuth = () => useContext(AuthContext);
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { accounts } = useMsal();
+  const [account, setAccount] = useState<AccountInfo | null>(null);
+
+  useEffect(() => {
+    // Handle account changes
+    const currentAccount = accounts[0] || null;
+    if (currentAccount && (!account || account.homeAccountId !== currentAccount.homeAccountId)) {
+      console.error('Account changed:', currentAccount.username);
+      setAccount(currentAccount);
+    } else if (!currentAccount && account) {
+      console.error('User signed out');
+      setAccount(null);
     }
-  }
-});
+  }, [accounts, account]);
 
-export const AuthContext = createContext(null);
+  const value = {
+    isAuthenticated: !!account,
+    account,
+  };
 
-export const useAuth = () => useContext(AuthContext); 
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export default AuthContext; 
