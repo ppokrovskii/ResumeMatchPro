@@ -1,4 +1,4 @@
-import { AccountInfo } from '@azure/msal-browser';
+import { AccountInfo, BrowserAuthError } from '@azure/msal-browser';
 import { useMsal } from '@azure/msal-react';
 import React, { ReactNode, useEffect } from 'react';
 
@@ -24,7 +24,7 @@ const AuthenticationTemplate: React.FC<AuthenticationTemplateProps> = ({ childre
           return;
         }
 
-        // If no redirect was handled and we're not authenticated, initiate login
+        // If we're not authenticated, initiate login
         if (accounts.length === 0) {
           await instance.loginRedirect();
         } else if (onAuthenticated && accounts[0]) {
@@ -32,7 +32,19 @@ const AuthenticationTemplate: React.FC<AuthenticationTemplateProps> = ({ childre
           onAuthenticated(accounts[0]);
         }
       } catch (error) {
-        console.error('Authentication error:', error);
+        if (error instanceof BrowserAuthError && error.errorCode === 'interaction_in_progress') {
+          // If there's an interaction in progress, wait for it to complete
+          try {
+            const result = await instance.handleRedirectPromise();
+            if (result?.account && onAuthenticated) {
+              onAuthenticated(result.account);
+            }
+          } catch (redirectError) {
+            console.error('Error handling redirect:', redirectError);
+          }
+        } else {
+          console.error('Authentication error:', error);
+        }
       }
     };
 
