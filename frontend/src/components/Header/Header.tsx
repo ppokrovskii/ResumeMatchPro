@@ -8,58 +8,86 @@ const Header: React.FC = () => {
   const { instance, accounts } = useMsal();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const debugPanelRef = useRef<HTMLDivElement>(null);
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
   const claims = accounts[0]?.idTokenClaims;
   const isAdmin = claims?.['extension_IsAdmin'] === true;
 
   // Log authentication state on mount and when accounts change
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
+    if (isDevelopment) {
+      const msalInfo = {
+        config: instance.getConfiguration(),
+        activeAccount: instance.getActiveAccount(),
+        accounts: accounts,
+        authority: instance.getConfiguration().auth.authority,
+        redirectUri: instance.getConfiguration().auth.redirectUri,
+      };
+      
+      const envInfo = {
+        NODE_ENV: process.env.NODE_ENV,
+        BASE_URL: process.env.REACT_APP_BASE_URL,
+        API_URL: process.env.REACT_APP_API_URL,
+        B2C_TENANT: process.env.REACT_APP_B2C_TENANT,
+        B2C_AUTHORITY_DOMAIN: process.env.REACT_APP_B2C_AUTHORITY_DOMAIN,
+      };
+
       console.log('Auth State:', {
         isAuthenticated: accounts.length > 0,
         accountsCount: accounts.length,
         accounts: accounts,
       });
+      console.log('MSAL Instance:', msalInfo);
+      console.log('Environment:', envInfo);
+
+      if (claims) {
+        console.log('User Claims:', claims);
+        console.log('Is Admin:', isAdmin);
+      }
     }
-  }, [accounts]);
+  }, [accounts, claims, isAdmin, instance]);
 
   const handleLogin = async () => {
+    if (isLoggingIn) {
+      console.log('Login already in progress...');
+      return;
+    }
+
     try {
+      setIsLoggingIn(true);
       console.log('Attempting login...');
+      
+      // Check if there's an interaction in progress
+      if (instance.getActiveAccount() === null) {
+        try {
+          await instance.handleRedirectPromise();
+        } catch (e) {
+          console.log('No redirect promise to handle');
+        }
+      }
+
       await instance.loginRedirect();
       console.log('Login redirect initiated');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
+      if (error.errorCode === 'interaction_in_progress') {
+        console.log('Attempting to handle existing interaction...');
+        try {
+          await instance.handleRedirectPromise();
+          if (!accounts.length) {
+            // If still not authenticated after handling redirect, try login again
+            await instance.loginRedirect();
+          }
+        } catch (redirectError) {
+          console.error('Error handling redirect:', redirectError);
+        }
+      }
+    } finally {
+      setIsLoggingIn(false);
     }
   };
-
-  // Enhanced debug logging
-  if (process.env.NODE_ENV === 'development') {
-    const msalInfo = {
-      config: instance.getConfiguration(),
-      activeAccount: instance.getActiveAccount(),
-      accounts: accounts,
-      authority: instance.getConfiguration().auth.authority,
-      redirectUri: instance.getConfiguration().auth.redirectUri,
-    };
-    
-    const envInfo = {
-      NODE_ENV: process.env.NODE_ENV,
-      BASE_URL: process.env.REACT_APP_BASE_URL,
-      API_URL: process.env.REACT_APP_API_URL,
-      B2C_TENANT: process.env.REACT_APP_B2C_TENANT,
-      B2C_AUTHORITY_DOMAIN: process.env.REACT_APP_B2C_AUTHORITY_DOMAIN,
-    };
-
-    console.log('MSAL Instance:', msalInfo);
-    console.log('Environment:', envInfo);
-
-    if (claims) {
-      console.log('User Claims:', claims);
-      console.log('Is Admin:', isAdmin);
-    }
-  }
 
   // Handle click outside
   useEffect(() => {
@@ -74,9 +102,6 @@ const Header: React.FC = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
-  // Only show debug in development
-  const isDevelopment = process.env.NODE_ENV === 'development';
 
   const handleLogout = async () => {
     try {
@@ -141,8 +166,9 @@ const Header: React.FC = () => {
           <button 
             onClick={handleLogin}
             className={styles.userButton}
+            disabled={isLoggingIn}
           >
-            Sign In
+            {isLoggingIn ? 'Signing in...' : 'Sign In'}
           </button>
         )}
       </nav>

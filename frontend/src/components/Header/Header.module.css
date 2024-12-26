@@ -41,6 +41,11 @@
   color: #005a9e;
 }
 
+.userButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .dropdown {
   position: absolute;
   top: 100%;
