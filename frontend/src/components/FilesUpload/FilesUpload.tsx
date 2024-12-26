@@ -1,8 +1,8 @@
-import React from 'react';
-import { Upload } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
-import { uploadFiles } from '../../services/fileService';
+import { Upload } from 'antd';
 import { UploadRequestOption } from 'rc-upload/lib/interface';
+import React from 'react';
+import { uploadFiles } from '../../services/fileService';
 
 interface FilesUploadProps {
     onFilesUploaded: (files: File[], fileType: string) => void;
@@ -18,7 +18,7 @@ const FilesUpload: React.FC<FilesUploadProps> = ({ onFilesUploaded, fileType }) 
             const response = await uploadFiles([file as File], userId, fileType);
             if (response.files) {
                 onFilesUploaded(response.files, fileType);
-                onSuccess?.(response, file);
+                onSuccess?.(response);
             } else {
                 throw new Error('No files returned from server');
             }

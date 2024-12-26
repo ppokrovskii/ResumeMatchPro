@@ -18,7 +18,7 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.23.0",
     "react-scripts": "5.0.1",
-    "typescript": "^4.9.5",
+    "typescript": "^5.7.2",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -31,11 +31,13 @@
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx --max-warnings 0",
     "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
     "prepare": "node -e \"try { require('husky').install() } catch (e) { if (process.env.CI !== 'true') throw e }\"",
-    "pre-commit": "lint-staged && npm run test:ci"
+    "pre-commit": "lint-staged && npm run test:ci",
+    "type-check": "tsc --noEmit"
   },
   "lint-staged": {
     "src/**/*.{js,jsx,ts,tsx}": [
       "eslint --fix",
+      "npm run type-check",
       "npm run test:precommit"
     ]
   },

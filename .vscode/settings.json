@@ -25,7 +25,8 @@
     "search.useIgnoreFiles": false,
     "azureFunctions.projectSubpath": "azfunctions",
     "editor.codeActionsOnSave": {
-        "source.fixAll.eslint": "explicit"
+        "source.fixAll.eslint": "explicit",
+        "source.organizeImports": "explicit"
     },
     "eslint.validate": [
         "javascript",
@@ -44,5 +45,14 @@
     },
     "[typescriptreact]": {
         "editor.defaultFormatter": "dbaeumer.vscode-eslint"
-    }
+    },
+    "typescript.validate.enable": true,
+    "typescript.reportStyleChecksAsWarnings": true,
+    "typescript.surveys.enabled": false,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit",
+        "source.organizeImports": "explicit"
+    },
+    "typescript.tsc.autoDetect": "on",
+    "typescript.suggest.completeFunctionCalls": true
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface MatchingResult {
   score: number;
@@ -7,14 +7,34 @@ interface MatchingResult {
 }
 
 interface MatchingResultsProps {
-  results: MatchingResult[];
-  onClose: () => void;
+  user_id: string;
+  selectedFile: {
+    id: string;
+    filename: string;
+    type: string;
+    url: string;
+    text: string;
+  };
 }
 
-const MatchingResults: React.FC<MatchingResultsProps> = ({ results, onClose }) => {
+const MatchingResults: React.FC<MatchingResultsProps> = ({ user_id, selectedFile }) => {
+  const [results, setResults] = useState<MatchingResult[]>([]);
+
+  useEffect(() => {
+    // TODO: Fetch matching results using user_id and selectedFile
+    // For now, using mock data
+    setResults([
+      {
+        score: 85,
+        matches: ['Experience with React', 'TypeScript knowledge'],
+        suggestions: ['Add more details about testing experience']
+      }
+    ]);
+  }, [user_id, selectedFile]);
+
   return (
     <div>
-      <button onClick={onClose}>Close</button>
+      <h2>Matching Results for {selectedFile.filename}</h2>
       {results.map((result, index) => (
         <div key={index}>
           <h3>Match Score: {result.score}%</h3>

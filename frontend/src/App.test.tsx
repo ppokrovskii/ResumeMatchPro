@@ -1,5 +1,5 @@
-import React from 'react';
 import { render } from '@testing-library/react';
+import React from 'react';
 import App from './App';
 
 // Mock all required modules
@@ -11,7 +11,8 @@ jest.mock('./contexts/AuthContext', () => ({
 }));
 
 jest.mock('./components/auth/AuthenticationTemplate', () => ({
-  AuthenticationTemplate: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
+  __esModule: true,
+  default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
 }));
 
 jest.mock('./components/layout/MainLayout', () => ({
