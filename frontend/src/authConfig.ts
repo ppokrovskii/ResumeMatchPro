@@ -15,7 +15,18 @@ const b2cAuth = {
 
 // Authority URLs - Using the exact format from Azure Portal
 const authorityBase = `https://${b2cAuth.authorityDomain}/${b2cAuth.tenant}.onmicrosoft.com`;
-const redirectUri = `${window.location.origin}/auth-callback`;
+
+// Get the base URL from environment or window.location
+const baseUrl = process.env.REACT_APP_BASE_URL || window.location.origin;
+console.log('Auth configuration:', {
+  baseUrl,
+  windowOrigin: window.location.origin,
+  environment: process.env.NODE_ENV,
+  b2cTenant: b2cAuth.tenant,
+  authorityDomain: b2cAuth.authorityDomain
+});
+
+const redirectUri = `${baseUrl}/auth-callback`;
 
 export const msalConfig: Configuration = {
   auth: {
@@ -23,7 +34,7 @@ export const msalConfig: Configuration = {
     authority: `${authorityBase}/${b2cPolicies.signUpSignIn}`,
     knownAuthorities: [b2cAuth.authorityDomain],
     redirectUri: redirectUri,
-    postLogoutRedirectUri: window.location.origin,
+    postLogoutRedirectUri: baseUrl,
   },
   cache: {
     cacheLocation: 'localStorage',
