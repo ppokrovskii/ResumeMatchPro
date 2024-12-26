@@ -13,9 +13,32 @@ const Header: React.FC = () => {
   const claims = accounts[0]?.idTokenClaims;
   const isAdmin = claims?.['extension_IsAdmin'] === true;
 
-  // Add debug logging
-  console.log('User Claims:', claims);
-  console.log('Is Admin:', isAdmin);
+  // Enhanced debug logging
+  if (process.env.NODE_ENV === 'development') {
+    const msalInfo = {
+      config: instance.getConfiguration(),
+      activeAccount: instance.getActiveAccount(),
+      accounts: accounts,
+      authority: instance.getConfiguration().auth.authority,
+      redirectUri: instance.getConfiguration().auth.redirectUri,
+    };
+    
+    const envInfo = {
+      NODE_ENV: process.env.NODE_ENV,
+      BASE_URL: process.env.REACT_APP_BASE_URL,
+      API_URL: process.env.REACT_APP_API_URL,
+      B2C_TENANT: process.env.REACT_APP_B2C_TENANT,
+      B2C_AUTHORITY_DOMAIN: process.env.REACT_APP_B2C_AUTHORITY_DOMAIN,
+    };
+
+    console.log('MSAL Instance:', msalInfo);
+    console.log('Environment:', envInfo);
+
+    if (claims) {
+      console.log('User Claims:', claims);
+      console.log('Is Admin:', isAdmin);
+    }
+  }
 
   // Handle click outside
   useEffect(() => {
@@ -58,7 +81,7 @@ const Header: React.FC = () => {
         ResumeMatchPro
       </div>
       <nav className={styles.nav}>
-        {accounts.length > 0 && (
+        {accounts.length > 0 ? (
           <div className={styles.userMenu}>
             <button 
               onClick={toggleDropdown}
@@ -93,14 +116,22 @@ const Header: React.FC = () => {
               </div>
             )}
           </div>
+        ) : isDevelopment && (
+          <button 
+            onClick={toggleDebug}
+            className={styles.userButton}
+          >
+            Debug Info
+          </button>
         )}
       </nav>
-      {isDevelopment && showDebug && claims && (
+      {isDevelopment && showDebug && (
         <div ref={debugPanelRef} className={styles.debugInfo}>
           <h3>Debug Information</h3>
           <h4>Environment Variables</h4>
           <pre>
             {JSON.stringify({
+              NODE_ENV: process.env.NODE_ENV,
               REACT_APP_BASE_URL: process.env.REACT_APP_BASE_URL || 'not set',
               REACT_APP_API_URL: process.env.REACT_APP_API_URL || 'not set',
               REACT_APP_B2C_TENANT: process.env.REACT_APP_B2C_TENANT || 'not set',
@@ -108,10 +139,23 @@ const Header: React.FC = () => {
               REACT_APP_B2C_AUTHORITY_DOMAIN: process.env.REACT_APP_B2C_AUTHORITY_DOMAIN || 'not set'
             }, null, 2)}
           </pre>
-          <h4>User Claims</h4>
+          <h4>MSAL Configuration</h4>
           <pre>
-            {JSON.stringify(claims, null, 2)}
+            {JSON.stringify({
+              authority: instance.getConfiguration().auth.authority,
+              redirectUri: instance.getConfiguration().auth.redirectUri,
+              postLogoutRedirectUri: instance.getConfiguration().auth.postLogoutRedirectUri,
+              knownAuthorities: instance.getConfiguration().auth.knownAuthorities,
+            }, null, 2)}
           </pre>
+          {claims && (
+            <>
+              <h4>User Claims</h4>
+              <pre>
+                {JSON.stringify(claims, null, 2)}
+              </pre>
+            </>
+          )}
         </div>
       )}
     </header>
