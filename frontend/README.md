@@ -56,3 +56,25 @@ The frontend interacts with the backend through three main API endpoints:
     ```
 
 5. **Open your browser** and navigate to `http://localhost:3000` to see the application running.
+
+## Environment Variables
+
+The application uses the following environment variables:
+
+- `REACT_APP_BASE_URL`: Base URL for the application (e.g., http://localhost:3000 for development)
+- `REACT_APP_API_URL`: Base URL for the API (e.g., http://localhost:7071/api for development)
+- `REACT_APP_B2C_TENANT`: Azure B2C tenant name
+- `REACT_APP_B2C_CLIENT_ID`: Azure B2C client ID
+- `REACT_APP_B2C_AUTHORITY_DOMAIN`: Azure B2C authority domain
+
+You can create a `.env` file in the root directory with these variables:
+
+```env
+REACT_APP_BASE_URL=http://localhost:3000
+REACT_APP_API_URL=http://localhost:7071/api
+REACT_APP_B2C_TENANT=your_tenant_name
+REACT_APP_B2C_CLIENT_ID=your_client_id
+REACT_APP_B2C_AUTHORITY_DOMAIN=your_authority_domain
+```
+
+For production, these variables should be set in your deployment environment.

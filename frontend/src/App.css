@@ -36,3 +36,22 @@
     transform: rotate(360deg);
   }
 }
+
+.auth-error {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 1rem;
+  margin: 1rem;
+  border: 1px solid #ffeeba;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.auth-callback {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  text-align: center;
+  color: #666;
+}

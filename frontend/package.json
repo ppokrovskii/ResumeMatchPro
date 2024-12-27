@@ -4,6 +4,8 @@
   "private": true,
   "dependencies": {
     "@ant-design/icons": "^5.3.7",
+    "@azure/msal-browser": "^3.28.0",
+    "@azure/msal-react": "^2.2.0",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -16,15 +18,28 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.23.0",
     "react-scripts": "5.0.1",
-    "typescript": "^4.9.5",
+    "typescript": "4.9.5",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "test:ci": "react-scripts test --watchAll=false --ci --coverage",
-    "eject": "react-scripts eject"
+    "start": "craco start",
+    "build": "craco build",
+    "test": "craco test",
+    "test:ci": "craco test --watchAll=false --ci --coverage",
+    "test:precommit": "craco test --watchAll=false --passWithNoTests --findRelatedTests",
+    "eject": "react-scripts eject",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx --max-warnings 0",
+    "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
+    "prepare": "node -e \"try { require('husky').install() } catch (e) { if (process.env.CI !== 'true') throw e }\"",
+    "pre-commit": "lint-staged && npm run test:ci",
+    "type-check": "react-scripts tsc --noEmit"
+  },
+  "lint-staged": {
+    "src/**/*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "npm run test:precommit"
+    ],
+    "*.{js,jsx,ts,tsx}": "npm run type-check"
   },
   "eslintConfig": {
     "extends": [
@@ -45,6 +60,9 @@
     ]
   },
   "devDependencies": {
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@craco/craco": "^7.1.0",
+    "husky": "^8.0.0",
+    "lint-staged": "^13.0.0"
   }
 }

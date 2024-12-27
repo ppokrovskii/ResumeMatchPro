@@ -1,6 +1,7 @@
-import React from 'react';
-import { Upload } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
+import { Upload } from 'antd';
+import { UploadRequestOption } from 'rc-upload/lib/interface';
+import React from 'react';
 import { uploadFiles } from '../../services/fileService';
 
 interface FilesUploadProps {
@@ -11,19 +12,19 @@ interface FilesUploadProps {
 const FilesUpload: React.FC<FilesUploadProps> = ({ onFilesUploaded, fileType }) => {
     const userId = '1'; // Normally taken from global state or props
 
-    const handleUpload = async (options: any) => {
+    const handleUpload = async (options: UploadRequestOption) => {
         const { file, onSuccess, onError } = options;
         try {
-            const response = await uploadFiles([file], userId, fileType);
+            const response = await uploadFiles([file as File], userId, fileType);
             if (response.files) {
                 onFilesUploaded(response.files, fileType);
-                onSuccess(response, file);
+                onSuccess?.(response);
             } else {
                 throw new Error('No files returned from server');
             }
         } catch (error) {
             console.error('Error uploading files:', error);
-            onError(error);
+            onError?.(error as Error);
         }
     };
 

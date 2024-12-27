@@ -1,33 +1,58 @@
 import React, { useEffect, useState } from 'react';
-import { getMatchingResults } from '../../services/fileService';
 
-
-interface SelectedFile {
-  id: string;
-  type: string;
+interface MatchingResult {
+  score: number;
+  matches: string[];
+  suggestions: string[];
 }
 
-const MatchingResults = ({ user_id, selectedFile }: { user_id: string; selectedFile: SelectedFile }) => {
-  const [results, setResults] = useState<any[]>([]);
+interface MatchingResultsProps {
+  user_id: string;
+  selectedFile: {
+    id: string;
+    filename: string;
+    type: string;
+    url: string;
+    text: string;
+  };
+}
+
+const MatchingResults: React.FC<MatchingResultsProps> = ({ user_id, selectedFile }) => {
+  const [results, setResults] = useState<MatchingResult[]>([]);
 
   useEffect(() => {
-    // Adjusted to use both file ID and type
-    getMatchingResults(user_id, selectedFile.id, selectedFile.type).then((response: any[]) => setResults(response));
-    }, [user_id, selectedFile.id, selectedFile.type]);
+    // TODO: Fetch matching results using user_id and selectedFile
+    // For now, using mock data
+    setResults([
+      {
+        score: 85,
+        matches: ['Experience with React', 'TypeScript knowledge'],
+        suggestions: ['Add more details about testing experience']
+      }
+    ]);
+  }, [user_id, selectedFile]);
 
   return (
-    <ul>
-      {results.map(result => (
-        <li key={result.id}>
-            <p>CV {result.cv.filename} vs JD {result.jd.filename}</p>
-            <p>Overall match percentage: {result.overall_match_percentage}</p>
-            <p>Skills match: {result.cv_match.skills_match.join(', ')}</p>
-            <p>Experience match: {result.cv_match.experience_match.join(', ')}</p>
-            <p>Education match: {result.cv_match.education_match.join(', ')}</p>
-            <p>Gaps: {result.cv_match.gaps.join(', ')}</p>
-        </li>
+    <div>
+      <h2>Matching Results for {selectedFile.filename}</h2>
+      {results.map((result, index) => (
+        <div key={index}>
+          <h3>Match Score: {result.score}%</h3>
+          <h4>Matches:</h4>
+          <ul>
+            {result.matches.map((match, i) => (
+              <li key={i}>{match}</li>
+            ))}
+          </ul>
+          <h4>Suggestions:</h4>
+          <ul>
+            {result.suggestions.map((suggestion, i) => (
+              <li key={i}>{suggestion}</li>
+            ))}
+          </ul>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 };
 
