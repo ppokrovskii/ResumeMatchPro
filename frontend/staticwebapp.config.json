@@ -5,21 +5,17 @@
   },
   "routes": [
     {
-      "route": "/static/*",
-      "headers": {
-        "cache-control": "must-revalidate, max-age=86400"
-      }
-    },
-    {
       "route": "/static/js/*",
       "headers": {
-        "content-type": "application/javascript"
+        "content-type": "application/javascript",
+        "cache-control": "must-revalidate, max-age=86400"
       }
     },
     {
       "route": "/static/css/*",
       "headers": {
-        "content-type": "text/css"
+        "content-type": "text/css",
+        "cache-control": "must-revalidate, max-age=86400"
       }
     },
     {
