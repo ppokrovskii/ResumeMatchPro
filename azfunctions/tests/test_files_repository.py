@@ -1,12 +1,18 @@
-from uuid import UUID, uuid4
-import pytest
-from azure.cosmos import CosmosClient
-
-# add project root to sys.path
+import os
 import sys
 from pathlib import Path
+from uuid import UUID, uuid4
+
+import pytest
+from azure.cosmos import CosmosClient
+from dotenv import load_dotenv
+
+# Load test environment variables
+load_dotenv(Path(__file__).parent / ".env.test")
+
+# add project root to sys.path
 sys.path.append(str(Path(__file__).parent.parent))
-# 
+
 from shared.models import FileMetadataDb
 from shared.files_repository import FilesRepository
 
@@ -14,12 +20,14 @@ from shared.files_repository import FilesRepository
 @pytest.fixture
 def repository():
     # Create a Cosmos DB client and initialize the repository
-    client = CosmosClient(url="https://localhost:8081",
-                credential=(
-                    "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="
-                ),)
-    db_client = client.get_database_client("resumematchpro_test")
-    return FilesRepository(db_client)
+    client = CosmosClient(
+        url=os.getenv("COSMOS_DB_URL"),
+        credential=os.getenv("COSMOS_DB_KEY"),
+        connection_verify=False  # Skip SSL verification for emulator
+    )
+    # Create database if not exists
+    database = client.create_database_if_not_exists(os.getenv("COSMOS_DB_DATABASE"))
+    return FilesRepository(database)
 
 
 # add pytest fixture to delete all items from the container before each test

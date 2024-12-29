@@ -4,55 +4,112 @@
     "azureFunctions.pythonVenv": ".venv",
     "azureFunctions.projectLanguage": "Python",
     "azureFunctions.projectRuntime": "~4",
-    "debug.internalConsoleOptions": "neverOpen",
     "azureFunctions.projectLanguageModel": 2,
+    "azureFunctions.projectSubpath": "azfunctions",
+    "debug.internalConsoleOptions": "neverOpen",
+    // Jest configuration
     "jest.rootPath": "landing",
     "jest.testMatch": [
         "**/__tests__/**/*.{js,jsx,ts,tsx}",
         "**/*.{spec,test}.{js,jsx,ts,tsx}"
     ],
-    "jest.autoRun": {
-        "watch": true,
-        "onStartup": ["all-tests"]
+    "jest.runMode": {
+        "type": "watch",
+        "runAllTestsOnStartup": true
     },
     "jest.jestCommandLine": "npm test --",
     "jest.debugMode": true,
+    // Python configuration
+    "python.defaultInterpreterPath": "C:\\Users\\ppokr\\GitHub\\ResumeMatchPro\\azfunctions\\.venv\\Scripts\\python.exe",
+    "python.analysis.extraPaths": [
+        "./azfunctions",
+        "./landing_backend"
+    ],
+    "python.terminal.activateEnvironment": true,
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.diagnosticMode": "workspace",
+    "python.envFile": "${workspaceFolder}/.env",
+    // Python testing
     "python.testing.pytestArgs": [
-        "."
+        "tests"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
-    "search.useIgnoreFiles": false,
-    "azureFunctions.projectSubpath": "azfunctions",
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.cwd": "${workspaceFolder}/azfunctions",
+    // Language specific settings
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        }
+    },
+    "black-formatter.args": [
+        "--line-length",
+        "100"
+    ],
+    "isort.args": [
+        "--profile",
+        "black",
+        "--line-length",
+        "100"
+    ],
+    // Editor settings
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true,
     "editor.codeActionsOnSave": {
         "source.fixAll.eslint": "explicit",
         "source.organizeImports": "explicit"
     },
+    // TypeScript settings
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "typescript.validate.enable": true,
+    "typescript.reportStyleChecksAsWarnings": true,
+    "typescript.surveys.enabled": false,
+    "typescript.tsc.autoDetect": "on",
+    "typescript.suggest.completeFunctionCalls": true,
+    // ESLint
     "eslint.validate": [
         "javascript",
         "javascriptreact",
         "typescript",
         "typescriptreact"
     ],
-    "editor.formatOnSave": true,
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
     "eslint.alwaysShowStatus": true,
-    "editor.formatOnPaste": true,
     "eslint.run": "onSave",
-    "typescript.tsdk": "node_modules/typescript/lib",
+    // File handling
+    "search.useIgnoreFiles": false,
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.pytest_cache": true
+    },
     "[typescript]": {
-        "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+        "editor.defaultFormatter": "vscode.typescript-language-features"
     },
     "[typescriptreact]": {
-        "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+        "editor.defaultFormatter": "vscode.typescript-language-features"
     },
-    "typescript.validate.enable": true,
-    "typescript.reportStyleChecksAsWarnings": true,
-    "typescript.surveys.enabled": false,
-    "editor.codeActionsOnSave": {
-        "source.fixAll.eslint": "explicit",
-        "source.organizeImports": "explicit"
+    "[azfunctions]": {
+        "python.defaultInterpreterPath": "C:\\Users\\ppokr\\GitHub\\ResumeMatchPro\\azfunctions\\.venv\\Scripts\\python.exe",
+        "python.analysis.extraPaths": [
+            "./azfunctions"
+        ],
+        "terminal.integrated.cwd": "${workspaceFolder}/azfunctions",
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": [
+            "tests"
+        ]
     },
-    "typescript.tsc.autoDetect": "on",
-    "typescript.suggest.completeFunctionCalls": true
+    "[landing_backend]": {
+        "python.defaultInterpreterPath": "C:\\Users\\ppokr\\GitHub\\ResumeMatchPro\\landing_backend\\.venv\\Scripts\\python.exe",
+        "python.analysis.extraPaths": [
+            "./landing_backend"
+        ],
+        "terminal.integrated.cwd": "${workspaceFolder}/landing_backend",
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": [
+            "tests"
+        ]
+    }
 }

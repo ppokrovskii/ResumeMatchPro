@@ -11,3 +11,7 @@ local.settings.json
 **/.terraform/
 *terraform.tfstate*
 **/node_modules/
+
+# Test environment files
+*/.env.test
+**/.env.test
