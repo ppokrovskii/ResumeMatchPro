@@ -21,16 +21,19 @@ app = func.FunctionApp(
     cors_credentials=True
 )
 
-from file_upload.file_upload import bp as file_upload_bp
-from file_processing.file_processing import file_processing_bp
-from matching.matching import matching_bp
-from user_files.user_files import user_files_bp
-from matching_results.matching_results import matching_results_bp
-from auth_test import auth_test_bp
+# Import all function modules
+from file_upload.file_upload import files_upload
+from file_processing.file_processing import process_file
+from matching.matching import match_resume
+from user_files.user_files import get_user_files, delete_user_file
+from matching_results.matching_results import get_matching_results
+from auth_test import auth_test
 
-app.register_blueprint(file_upload_bp)
-app.register_blueprint(file_processing_bp)
-app.register_blueprint(matching_bp)
-app.register_blueprint(user_files_bp)
-app.register_blueprint(matching_results_bp)
-app.register_blueprint(auth_test_bp)
+# Register functions directly
+app.register_functions(files_upload)
+app.register_functions(process_file)
+app.register_functions(match_resume)
+app.register_functions(get_user_files)
+app.register_functions(delete_user_file)
+app.register_functions(get_matching_results)
+app.register_functions(auth_test)

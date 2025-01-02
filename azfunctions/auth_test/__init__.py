@@ -3,9 +3,8 @@ import azure.functions as func
 import json
 import base64
 
-auth_test_bp = func.Blueprint("auth_test", __name__)
-
-@auth_test_bp.route(route="auth_test", methods=["GET"])
+@func.function_name("auth_test")
+@func.route(route="auth_test", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
 def auth_test(req: func.HttpRequest) -> func.HttpResponse:
     """Test endpoint to verify Azure AD B2C authentication.
     Returns user claims if authenticated."""
