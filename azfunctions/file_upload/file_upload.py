@@ -11,8 +11,10 @@ from file_upload.schemas import FileUploadOutputQueueMessage, FileUploadRequest,
 from shared.blob_service import FilesBlobService
 from shared.models import FileMetadataDb
 
-@func.function_name("files_upload")
-@func.route(route="files/upload", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+# create blueprint
+file_upload_bp = func.Blueprint()
+
+@file_upload_bp.route(route="files/upload", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 def files_upload(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
     files_blob_service = FilesBlobService()
