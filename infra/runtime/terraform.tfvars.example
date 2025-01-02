@@ -1,0 +1,15 @@
+# API Keys
+AZURE_OPENAI_API_KEY = "c732fb3136274b578de8fbf08bb4794a"
+AZURE_DOCUMENT_INTELLIGENCE_KEY = "55ea103663564ddab3dc9f920eabf870"
+AZURE_OPENAI_ENDPOINT = "https://neogpt.openai.azure.com/"
+AZURE_OPENAI_DEPLOYMENT_NAME = "gpt35turbo16k"
+AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT = "https://docintpavelpweurope.cognitiveservices.azure.com/"
+
+# Azure AD B2C Configuration
+B2C_TENANT_NAME = "your-b2c-tenant-name" # e.g., "resumematchprodev" or "resumematchpro"
+BACKEND_B2C_CLIENT_ID = "your-backend-b2c-client-id"
+BACKEND_B2C_CLIENT_SECRET = "your-client-secret"
+
+# CORS Configuration
+MAIN_FRONTEND_URLS = "http://localhost:3000,https://app.resumematchpro.com"
+LANDING_FRONTEND_URLS = "http://localhost:3001,https://resumematchpro.com" 
