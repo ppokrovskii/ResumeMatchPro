@@ -1,0 +1,13 @@
+{
+    "scriptFile": "file_processing.py",
+    "entryPoint": "process_file",
+    "bindings": [
+        {
+            "type": "queueTrigger",
+            "direction": "in",
+            "name": "msg",
+            "queueName": "file-processing",
+            "connection": "AzureWebJobsStorage"
+        }
+    ]
+}
