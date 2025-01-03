@@ -10,16 +10,18 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent))
 
 # Get allowed origins from environment variable
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
-if not allowed_origins or allowed_origins[0] == "":
-    # Default to localhost in development
-    allowed_origins = ["http://localhost:3000"]
+# allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
+# if not allowed_origins or allowed_origins[0] == "":
+#     # Default to localhost in development
+#     allowed_origins = ["http://localhost:3000"]
 
-app = func.FunctionApp(
-    http_auth_level=func.AuthLevel.ANONYMOUS,
-    cors=allowed_origins,
-    cors_credentials=True
-)
+# app = func.FunctionApp(
+#     http_auth_level=func.AuthLevel.ANONYMOUS,
+#     cors=allowed_origins,
+#     cors_credentials=True
+# )
+
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 # Import all function modules to register their blueprints
 from file_upload.file_upload import file_upload_bp
