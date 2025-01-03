@@ -1,1 +1,1 @@
-from .auth_test import auth_test_bp 
+# Empty __init__.py file 
