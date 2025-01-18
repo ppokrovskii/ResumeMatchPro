@@ -4,6 +4,9 @@
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
 
+// Mock environment variables
+process.env.REACT_APP_BASE_URL = 'http://localhost:3000';
+
 // Mock window.crypto
 Object.defineProperty(window, 'crypto', {
   value: {
