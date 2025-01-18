@@ -1,8 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
 import App from './App';
+import './index.css';
 import reportWebVitals from './reportWebVitals';
+import { enableMsalLogging } from './utils/requestLogger';
+
+// Enable MSAL logging before initializing MSAL
+enableMsalLogging();
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

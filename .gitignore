@@ -11,3 +11,73 @@ local.settings.json
 **/.terraform/
 *terraform.tfstate*
 **/node_modules/
+
+# Test environment files
+*/.env.test
+**/.env.test
+
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars.*
+!*.tfvars.example
+.terraform/
+.terraform.lock.hcl
+
+# Local .terraform directories
+**/.terraform/*
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Exclude all .tfvars files, which are likely to contain sensitive data
+*.tfvars
+*.tfvars.json
+
+# Keep example files
+!*.tfvars.example
+
+# Ignore override files as they are usually used to override resources locally
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Additional patterns for build outputs and development
+*.pyc
+**/dist/
+**/build/
+**/.next/
+**/.nuxt/
+**/.output/
+
+# Coverage reports
+**/coverage/
+**/.nyc_output/
+
+# Additional IDE files
+*.swp
+*.swo
+.DS_Store
+*.sublime-workspace
+*.sublime-project
+
+# Node specific
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Logs
+logs/
+log/
+
+# Cypress
+**/cypress/screenshots/
+**/cypress/videos/
+**/cypress/downloads/
+**/cypress/results/
+**/cypress/reports/
+**/.cypress-cache/
+cypress.env.json
+

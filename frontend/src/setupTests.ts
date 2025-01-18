@@ -4,6 +4,9 @@
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
 
+// Mock environment variables
+process.env.REACT_APP_BASE_URL = 'http://localhost:3000';
+
 // Mock window.crypto
 Object.defineProperty(window, 'crypto', {
   value: {
@@ -24,6 +27,30 @@ console.error = (...args: unknown[]) => {
   }
   originalError.call(console, ...args);
 };
+
+// Mock window.matchMedia for Ant Design components
+window.matchMedia = window.matchMedia || function () {
+  return {
+    matches: false,
+    addListener: function () { },
+    removeListener: function () { },
+    addEventListener: function () { },
+    removeEventListener: function () { },
+    dispatchEvent: function () { return true; },
+    onchange: null,
+    media: '',
+  };
+};
+
+// Mock MSAL LogLevel
+jest.mock('@azure/msal-browser', () => ({
+  LogLevel: {
+    Error: 0,
+    Warning: 1,
+    Info: 2,
+    Verbose: 3,
+  }
+}));
 
 // Configure Jest to handle async operations
 jest.setTimeout(10000);

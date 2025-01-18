@@ -1,167 +1,114 @@
 // File: src/components/Header/Header.tsx
 
+import { AccountInfo } from '@azure/msal-browser';
 import { useMsal } from '@azure/msal-react';
-import React, { useEffect, useRef, useState } from 'react';
-import styles from './Header.module.css';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { apiTokenRequest, loginRequest } from '../../authConfig';
+import './Header.css';
+
+interface TokenInfo {
+  loginScopes?: string[];
+  apiScopes?: string[];
+  error?: string;
+}
 
 const Header: React.FC = () => {
   const { instance, accounts } = useMsal();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
-  const debugPanelRef = useRef<HTMLDivElement>(null);
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  const [account, setAccount] = useState<AccountInfo | null>(null);
+  const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
 
-  const claims = accounts[0]?.idTokenClaims;
-  const isAdmin = claims?.['extension_IsAdmin'] === true;
-
-  // Log authentication state on mount and when accounts change
   useEffect(() => {
-    if (isDevelopment) {
-      const msalInfo = {
-        config: instance.getConfiguration(),
-        activeAccount: instance.getActiveAccount(),
-        accounts,
-        authority: instance.getConfiguration().auth.authority,
-        redirectUri: instance.getConfiguration().auth.redirectUri,
-      };
-      
-      const envInfo = {
-        NODE_ENV: process.env.NODE_ENV,
-        BASE_URL: process.env.REACT_APP_BASE_URL,
-        API_URL: process.env.REACT_APP_API_URL,
-        B2C_TENANT: process.env.REACT_APP_B2C_TENANT,
-        B2C_AUTHORITY_DOMAIN: process.env.REACT_APP_B2C_AUTHORITY_DOMAIN,
-      };
+    setAccount(accounts[0] ?? null);
+  }, [accounts]);
 
-      // eslint-disable-next-line no-console
-      console.log('Auth State:', {
-        isAuthenticated: accounts.length > 0,
-        accountsCount: accounts.length,
-        accounts,
-      });
-      // eslint-disable-next-line no-console
-      console.log('MSAL Instance:', msalInfo);
-      // eslint-disable-next-line no-console
-      console.log('Environment:', envInfo);
+  const getTokenInfo = async () => {
+    if (!account) return;
 
-      if (claims) {
-        // eslint-disable-next-line no-console
-        console.log('User Claims:', claims);
-        // eslint-disable-next-line no-console
-        console.log('Is Admin:', isAdmin);
-      }
-    }
-  }, [accounts, claims, isAdmin, instance, isDevelopment]);
-
-  // Handle click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (debugPanelRef.current && !debugPanelRef.current.contains(event.target as Node)) {
-        setShowDebug(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const handleLogout = async () => {
     try {
-      await instance.logoutRedirect({
-        postLogoutRedirectUri: window.location.origin,
+      // Get login token info
+      const loginTokenResult = await instance.acquireTokenSilent(loginRequest);
+
+      // Try to get API token info
+      let apiTokenResult = null;
+      try {
+        apiTokenResult = await instance.acquireTokenSilent(apiTokenRequest);
+      } catch (error) {
+        console.error('API token acquisition failed:', error);
+      }
+
+      setTokenInfo({
+        loginScopes: loginTokenResult.scopes,
+        apiScopes: apiTokenResult?.scopes,
       });
-    } catch (error) {
-      console.error('Logout error:', error);
+    } catch (error: unknown) {
+      console.error('Error getting token info:', error);
+      if (error instanceof Error) {
+        setTokenInfo({ error: error.message });
+      } else {
+        setTokenInfo({ error: 'An unknown error occurred' });
+      }
     }
   };
 
-  const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
+  const handleLogout = async () => {
+    await instance.logoutRedirect();
   };
 
   const toggleDebug = () => {
     setShowDebug(!showDebug);
+    if (!showDebug) {
+      getTokenInfo();
+    }
   };
 
   return (
-    <header className={styles.header}>
-      <div className={styles.logo}>
-        ResumeMatchPro
-      </div>
-      <nav className={styles.nav}>
-        <button 
-          onClick={toggleDebug}
-          className={`${styles.userButton} ${styles.debugButton}`}
-        >
-          Debug Info
-        </button>
-        <div className={styles.userMenu}>
-          <button 
-            onClick={toggleDropdown}
-            className={styles.userButton}
-          >
-            {accounts[0]?.name || 'User'}{isAdmin ? ' (Admin)' : ''}
-          </button>
-          {isDropdownOpen && (
-            <div className={styles.dropdown}>
-              {isAdmin && (
-                <button 
-                  onClick={() => {/* Navigate to admin panel */}}
-                  className={styles.dropdownItem}
-                >
-                  Admin Panel
-                </button>
-              )}
-              <button 
-                onClick={handleLogout}
-                className={styles.dropdownItem}
-              >
-                Log Out
+    <header className="header">
+      <nav>
+        <Link to="/" className="logo">ResumeMatchPro</Link>
+        <div className="nav-links">
+          {account ? (
+            <>
+              <span className="user-info">
+                {account.name || account.username}
+              </span>
+              <button onClick={toggleDebug} className="debug-button">
+                {showDebug ? 'Hide Debug Info' : 'Show Debug Info'}
               </button>
-            </div>
+              <button onClick={handleLogout} className="logout-button">
+                Logout
+              </button>
+            </>
+          ) : (
+            <span>Not logged in</span>
           )}
         </div>
       </nav>
-      {showDebug && (
-        <div ref={debugPanelRef} className={styles.debugInfo}>
-          <h3>Debug Information</h3>
-          <h4>Authentication State</h4>
-          <pre>
-            {JSON.stringify({
-              isAuthenticated: accounts.length > 0,
-              accountsCount: accounts.length,
-              activeAccount: instance.getActiveAccount(),
-            }, null, 2)}
-          </pre>
-          <h4>Environment Variables</h4>
-          <pre>
-            {JSON.stringify({
-              NODE_ENV: process.env.NODE_ENV,
-              REACT_APP_BASE_URL: process.env.REACT_APP_BASE_URL || 'not set',
-              REACT_APP_API_URL: process.env.REACT_APP_API_URL || 'not set',
-              REACT_APP_B2C_TENANT: process.env.REACT_APP_B2C_TENANT || 'not set',
-              REACT_APP_B2C_CLIENT_ID: process.env.REACT_APP_B2C_CLIENT_ID || 'not set',
-              REACT_APP_B2C_AUTHORITY_DOMAIN: process.env.REACT_APP_B2C_AUTHORITY_DOMAIN || 'not set'
-            }, null, 2)}
-          </pre>
-          <h4>MSAL Configuration</h4>
-          <pre>
-            {JSON.stringify({
-              authority: instance.getConfiguration().auth.authority,
-              redirectUri: instance.getConfiguration().auth.redirectUri,
-              postLogoutRedirectUri: instance.getConfiguration().auth.postLogoutRedirectUri,
-              knownAuthorities: instance.getConfiguration().auth.knownAuthorities,
-            }, null, 2)}
-          </pre>
-          {claims && (
-            <>
-              <h4>User Claims</h4>
-              <pre>
-                {JSON.stringify(claims, null, 2)}
-              </pre>
-            </>
+
+      {showDebug && account && (
+        <div className="debug-info">
+          <h3>Account Information</h3>
+          <pre>{JSON.stringify(account, null, 2)}</pre>
+
+          <h3>Token Information</h3>
+          {tokenInfo ? (
+            <div>
+              <h4>Login Scopes</h4>
+              <pre>{JSON.stringify(tokenInfo.loginScopes, null, 2)}</pre>
+
+              <h4>API Scopes</h4>
+              <pre>{JSON.stringify(tokenInfo.apiScopes, null, 2)}</pre>
+
+              {tokenInfo.error && (
+                <div className="error-message">
+                  <h4>Error</h4>
+                  <pre>{tokenInfo.error}</pre>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p>Loading token information...</p>
           )}
         </div>
       )}

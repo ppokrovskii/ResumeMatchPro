@@ -7,16 +7,33 @@ type RenderOptions = {
   useRouterProvider?: boolean;
 };
 
+// Simple mock for MSAL that bypasses authentication
+jest.mock('@azure/msal-react', () => ({
+  useMsal: () => ({
+    instance: {
+      getActiveAccount: () => ({
+        idTokenClaims: { oid: 'test-user-id' }
+      }),
+      getAllAccounts: () => [{
+        idTokenClaims: { oid: 'test-user-id' }
+      }]
+    },
+    accounts: [{
+      idTokenClaims: { oid: 'test-user-id' }
+    }],
+    inProgress: 'none'
+  }),
+  MsalProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
+}));
+
 // Custom render function that includes Router
 export function render(ui: React.ReactElement, { route = '/', useRouterProvider = false }: RenderOptions = {}) {
   window.history.pushState({}, 'Test page', route);
 
   if (useRouterProvider) {
-    // Don't wrap with any router when useRouterProvider is true
     return rtlRender(ui);
   }
 
-  // For components that don't need the full router setup
   return rtlRender(ui, {
     wrapper: ({ children }: { children: React.ReactNode }) => (
       <MemoryRouter initialEntries={[route]}>

@@ -1,10 +1,3 @@
-# Register this blueprint by adding the following line of code 
-# to your entry point file.  
-# app.register_functions(file_upload) 
-# 
-# Please refer to https://aka.ms/azure-functions-python-blueprints
-
-
 import os
 import azure.functions as func
 import logging
@@ -18,10 +11,10 @@ from file_upload.schemas import FileUploadOutputQueueMessage, FileUploadRequest,
 from shared.blob_service import FilesBlobService
 from shared.models import FileMetadataDb
 
-bp = func.Blueprint("file_upload", __name__)
+# create blueprint
+file_upload_bp = func.Blueprint()
 
-
-@bp.route(route="files/upload", methods=["POST"])
+@file_upload_bp.route(route="files/upload", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 def files_upload(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
     files_blob_service = FilesBlobService()
@@ -67,7 +60,6 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
                 user_id=file_upload_request.user_id,
                 url=blob_url
             )
-            # file_metadata = files_db_service.upsert_file_meta_data(files_container, file_metadata)
             file_metadata = files_repository.upsert_file(file_metadata.model_dump(mode="json"))
         except ValidationError as e:
             return func.HttpResponse(
@@ -75,7 +67,7 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
                 status_code=500
             )        
         # send to queue 'processing-queue'
-        queue_service = QueueService(connection_string=os.getenv("AZURE_STORAGE_CONNECTION_STRING"))  # MyBlobConnectionString; AzureWebJobsStorage?
+        queue_service = QueueService(connection_string=os.getenv("AZURE_STORAGE_CONNECTION_STRING"))
         queue_service.create_queue_if_not_exists("processing-queue")
         file_upload_queue_message = FileUploadOutputQueueMessage(**file_metadata.model_dump())
         msg = file_upload_queue_message.model_dump_json()

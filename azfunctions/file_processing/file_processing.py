@@ -12,13 +12,11 @@ from shared.docx_service import DocxService
 from shared.models import FileMetadataDb
 from shared.queue_service import QueueService
 
-
 # create blueprint with Queue trigger
 file_processing_bp = func.Blueprint()
 
-@file_processing_bp.queue_trigger(arg_name="msg", queue_name="processing-queue",
-                                  connection="AzureWebJobsStorage")  # MyBlobConnectionString
-def file_processing(msg: func.QueueMessage):
+@file_processing_bp.queue_trigger(arg_name="msg", queue_name="processing-queue", connection="AzureWebJobsStorage")
+def process_file(msg: func.QueueMessage):
     logging.info(f"file_processing function called with a message: {msg.get_body().decode('utf-8')}")
     try:
         file_processing_request = FileProcessingRequest(**msg.get_json())

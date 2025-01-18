@@ -12,8 +12,8 @@ from matching.schemas import FileModel, FileType, MatchingRequestMessage, Matchi
 matching_bp = func.Blueprint()
 
 @matching_bp.queue_trigger(arg_name="msg", queue_name="matching-queue",
-                                  connection="AzureWebJobsStorage")  # MyBlobConnectionString
-def matching(msg: func.QueueMessage):
+                                  connection="AzureWebJobsStorage")
+def match_resume(msg: func.QueueMessage):
     logging.info(f"matching function called with a message: {msg.get_body().decode('utf-8')}")
     # validate message
     try:

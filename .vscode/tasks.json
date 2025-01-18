@@ -2,65 +2,32 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"type": "func",
-			"command": "extensions install",
-			"problemMatcher": [],
-			"label": "func: extensions install"
-		},
-		{
-			"type": "func",
 			"label": "func: host start azfunctions",
-			"command": "host start",
-			"problemMatcher": "$func-python-watch",
-			"isBackground": true,
-			"dependsOn": "pip install (azfunctions)",
-			"options": {
-				"cwd": "${workspaceFolder}\\azfunctions"
-			}
-		},
-		{
-			"type": "func",
-			"label": "func: host start landing backend",
-			"command": "host start",
-			"problemMatcher": "$func-python-watch",
-			"isBackground": true,
-			"dependsOn": "pip install (landing_backend)",
-			"options": {
-				"cwd": "${workspaceFolder}\\landing_backend"
-			}
-		},
-		{
-			"label": "pip install (azfunctions)",
-			"type": "shell",
-			"osx": {
-				"command": "${config:azureFunctions.pythonVenv}/bin/python -m pip install -r requirements.txt"
-			},
-			"windows": {
-				"command": "${config:azureFunctions.pythonVenv}\\Scripts\\python -m pip install -r requirements.txt"
-			},
-			"linux": {
-				"command": "${config:azureFunctions.pythonVenv}/bin/python -m pip install -r requirements.txt"
-			},
-			"problemMatcher": [],
+			"type": "process",
+			"command": "func",
+			"args": [
+				"start"
+			],
 			"options": {
 				"cwd": "${workspaceFolder}/azfunctions"
-			}
+			},
+			"problemMatcher": "$func-python-watch",
+			"isBackground": true,
+			"dependsOn": "pip install (functions)"
 		},
 		{
-			"label": "pip install (landing_backend)",
-			"type": "shell",
-			"osx": {
-				"command": "${config:azureFunctions.pythonVenv}/bin/python -m pip install -r requirements.txt"
-			},
-			"windows": {
-				"command": "${config:azureFunctions.pythonVenv}\\Scripts\\python -m pip install -r requirements.txt"
-			},
-			"linux": {
-				"command": "${config:azureFunctions.pythonVenv}/bin/python -m pip install -r requirements.txt"
-			},
-			"problemMatcher": [],
+			"label": "pip install (functions)",
+			"type": "process",
+			"command": "${config:python.defaultInterpreterPath}",
+			"args": [
+				"-m",
+				"pip",
+				"install",
+				"-r",
+				"requirements.txt"
+			],
 			"options": {
-				"cwd": "${workspaceFolder}/landing_backend"
+				"cwd": "${workspaceFolder}/azfunctions"
 			}
 		}
 	]

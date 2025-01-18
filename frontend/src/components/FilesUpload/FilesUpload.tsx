@@ -1,4 +1,5 @@
 import { InboxOutlined } from '@ant-design/icons';
+import { useMsal } from '@azure/msal-react';
 import { Upload } from 'antd';
 import { UploadRequestOption } from 'rc-upload/lib/interface';
 import React from 'react';
@@ -10,12 +11,15 @@ interface FilesUploadProps {
 }
 
 const FilesUpload: React.FC<FilesUploadProps> = ({ onFilesUploaded, fileType }) => {
-    const userId = '1'; // Normally taken from global state or props
+    const { instance, accounts } = useMsal();
+    const account = accounts[0];
+    const claims = account?.idTokenClaims as { oid?: string };
+    const userId = claims?.oid || '1'; // Fallback to '1' for development
 
     const handleUpload = async (options: UploadRequestOption) => {
         const { file, onSuccess, onError } = options;
         try {
-            const response = await uploadFiles([file as File], userId, fileType);
+            const response = await uploadFiles([file as File], userId, fileType, account, instance);
             if (response.files) {
                 onFilesUploaded(response.files, fileType);
                 onSuccess?.(response);

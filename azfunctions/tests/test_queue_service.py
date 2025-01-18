@@ -1,21 +1,24 @@
-
 import os
-from unittest import TestCase
-
-# add project root to sys.path
 import sys
 from pathlib import Path
+
+# add project root to sys.path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from shared.queue_service import QueueService
+from tests.test_base import BaseIntegrationTest
 
-
-
-class TestQueueService(TestCase):
-
+class TestQueueService(BaseIntegrationTest):
     def setUp(self):
-        # account_url = os.environ.get("AZURE_STORAGE_ACCOUNT_URL")
+        super().setUp()
         self.queue_service = QueueService(os.environ.get("AZURE_STORAGE_CONNECTION_STRING"))
+
+    def tearDown(self):
+        # Clean up any queues created during tests
+        try:
+            self.queue_service.delete_queue('test-queue')
+        except:
+            pass
 
     def test_create_queue(self):
         queue_name = 'test-queue'
@@ -64,7 +67,7 @@ class TestQueueService(TestCase):
     #     self.assertEqual(messages[0].content, message)
     #     message = self.queue_service.get_message(queue_name, messages[0].id)
     #     self.assertEqual(message.content, message)
-
+    #
     # def test_peek_messages(self):
     #     queue_name = 'test-queue'
     #     self.queue_service.create_queue_if_not_exists(queue_name)

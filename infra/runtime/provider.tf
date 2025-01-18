@@ -1,31 +1,22 @@
-provider "azurerm" {
-    features {}
-}
-
-provider "github" {
-    token = var.github_token
-    owner = var.github_owner
-}
-
 terraform {
     required_providers {
         azurerm = {
             source = "hashicorp/azurerm"
             version = "~> 3.108.0"
         }
-        github = {
-            source = "integrations/github"
-            version = "~> 6.0"
+        azuread = {
+            source  = "hashicorp/azuread"
+            version = "~> 2.53.0"
         }
     }
 }
 
-variable "github_token" {
-  description = "GitHub token with appropriate permissions"
-  type        = string
-  sensitive   = true
+provider "azuread" {
+    tenant_id = "9fe31206-ac65-4e49-966c-0c07561ca0f9"  # neoteq.dev tenant
 }
 
-variable "github_owner" {
-    description = "The GitHub organization or user name"
+provider "azurerm" {
+    features {}
+    tenant_id = "9fe31206-ac65-4e49-966c-0c07561ca0f9"  # neoteq.dev tenant
+    skip_provider_registration = true
 }

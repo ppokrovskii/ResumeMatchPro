@@ -1,0 +1,15 @@
+# Azure AD B2C Configuration
+DIRECTORY_ID = "your-directory-id"
+B2C_TENANT_NAME = "your-tenant-name"
+B2C_TENANT_DOMAIN_NAME = "your-tenant-name.onmicrosoft.com"
+
+# Frontend Configuration
+# Azure Development environment redirect URIs
+# Note: Local development environment URIs (http://localhost:3000/ and http://localhost:3000/auth-callback/) 
+# are automatically added for development purposes
+FRONTEND_REDIRECT_URIS = [
+  # Azure Development environment URL
+  "https://app.dev.resumematch.pro/",
+  # Azure Development environment callback URL
+  "https://app.dev.resumematch.pro/auth-callback/"
+] 
