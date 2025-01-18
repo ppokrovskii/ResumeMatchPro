@@ -1,7 +1,6 @@
 import { useMsal } from '@azure/msal-react';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginRequest } from '../../authConfig';
 
 interface AuthError {
   errorCode: string;
@@ -16,13 +15,15 @@ const AuthCallback: React.FC = () => {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        // Check if there's an error in the URL hash
+        // Handle the redirect promise first
+        const result = await instance.handleRedirectPromise();
+
+        // Check for hash parameters even if no result
         const urlParams = new URLSearchParams(window.location.hash.substring(1));
         const error = urlParams.get('error');
         const errorDescription = urlParams.get('error_description');
 
         if (error) {
-          // If there's an error, set it and don't redirect
           setError({
             errorCode: error,
             errorMessage: decodeURIComponent(errorDescription || 'Unknown error')
@@ -30,18 +31,23 @@ const AuthCallback: React.FC = () => {
           return;
         }
 
-        // No error, proceed with normal flow
-        await instance.handleRedirectPromise();
+        // Get the account after authentication attempt
         const account = instance.getActiveAccount();
         if (!account) {
-          await instance.acquireTokenSilent(loginRequest);
+          // Try to set the first account as active if available
+          const accounts = instance.getAllAccounts();
+          if (accounts.length > 0) {
+            instance.setActiveAccount(accounts[0]);
+          }
         }
-        navigate('/');
+
+        // Always navigate back to home after processing
+        navigate('/', { replace: true });
       } catch (error) {
         console.error('Authentication callback error:', error);
         setError({
           errorCode: 'unknown_error',
-          errorMessage: 'An unexpected error occurred during authentication.'
+          errorMessage: error instanceof Error ? error.message : 'An unexpected error occurred during authentication.'
         });
       }
     };

@@ -1,44 +1,44 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/static/*", "/images/*", "/css/*", "/js/*", "/api/*", "/manifest.json", "/favicon.ico"]
+    "exclude": [
+      "/static/*",
+      "/images/*",
+      "/css/*",
+      "/js/*",
+      "/api/*",
+      "/manifest.json",
+      "/favicon.ico"
+    ]
   },
   "routes": [
     {
-      "route": "/static/js/*",
-      "headers": {
-        "content-type": "application/javascript",
-        "cache-control": "must-revalidate, max-age=86400"
-      }
-    },
-    {
-      "route": "/static/css/*",
-      "headers": {
-        "content-type": "text/css",
-        "cache-control": "must-revalidate, max-age=86400"
-      }
-    },
-    {
-      "route": "/manifest.json",
-      "headers": {
-        "content-type": "application/json"
-      }
-    },
-    {
-      "route": "/auth-callback",
+      "route": "/auth-callback/*",
       "rewrite": "/index.html",
-      "allowedRoles": ["anonymous"]
+      "allowedRoles": [
+        "anonymous"
+      ]
+    },
+    {
+      "route": "/static/*",
+      "headers": {
+        "cache-control": "must-revalidate, max-age=86400"
+      }
     },
     {
       "route": "/*",
       "rewrite": "/index.html",
-      "allowedRoles": ["anonymous"]
+      "allowedRoles": [
+        "anonymous"
+      ]
     }
   ],
   "globalHeaders": {
-    "content-security-policy": "frame-ancestors 'self' https://*.b2clogin.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.b2clogin.com; style-src 'self' 'unsafe-inline';",
+    "content-security-policy": "frame-ancestors 'self' https://*.b2clogin.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.b2clogin.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.b2clogin.com https://resumematchprodev.b2clogin.com",
     "X-Frame-Options": "SAMEORIGIN",
-    "X-Content-Type-Options": "nosniff"
+    "X-Content-Type-Options": "nosniff",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "Referrer-Policy": "strict-origin-when-cross-origin"
   },
   "mimeTypes": {
     ".js": "application/javascript",
@@ -49,4 +49,4 @@
     ".jpg": "image/jpeg",
     ".svg": "image/svg+xml"
   }
-} 
+}
