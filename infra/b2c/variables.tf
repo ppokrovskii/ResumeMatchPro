@@ -19,7 +19,7 @@ variable "FRONTEND_REDIRECT_URIS" {
   type        = list(string)
 }
 
-variable "BACKEND_API_CLIENT_ID" {
-  description = "The client ID of the backend API application registration in Azure AD B2C"
-  type        = string
-} 
+variable "BACKEND_REDIRECT_URIS" {
+  description = "List of allowed redirect URIs for the backend application"
+  type        = list(string)
+}

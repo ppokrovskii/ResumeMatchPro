@@ -10,7 +10,6 @@ B2C_TENANT_DOMAIN_NAME = "resumematchprodev.onmicrosoft.com"
 B2C_TENANT_NAME = "resumematchprodev"  # tenant name without .onmicrosoft.com for API scope
 DIRECTORY_ID = "4bab4312-676c-42cb-ac9f-4931f0438d6e"  # Azure AD B2C tenant directory ID
 BACKEND_B2C_CLIENT_ID = "your-backend-b2c-client-id"
-BACKEND_B2C_CLIENT_SECRET = "your-client-secret"
 
 # CORS Configuration
 MAIN_FRONTEND_URLS = "http://localhost:3000,https://app.resumematchpro.com"

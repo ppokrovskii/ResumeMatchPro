@@ -49,11 +49,11 @@ variable "BACKEND_B2C_CLIENT_ID" {
     type        = string
 }
 
-variable "BACKEND_B2C_CLIENT_SECRET" {
-    description = "Azure AD B2C Client Secret for the main backend API"
-    type        = string
-    sensitive   = true
-}
+# variable "BACKEND_B2C_CLIENT_SECRET" {
+#     description = "Azure AD B2C Client Secret for the main backend API"
+#     type        = string
+#     sensitive   = true
+# }
 
 # OpenAI Configuration
 variable "AZURE_OPENAI_API_KEY" {

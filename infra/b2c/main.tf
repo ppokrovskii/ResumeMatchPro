@@ -1,20 +1,12 @@
 # Create the backend application registration
 resource "azuread_application" "backend" {
   display_name     = "ResumeMatchPro-Backend"
-  identifier_uris  = ["https://resumematchprodev.onmicrosoft.com/resumematchpro-api"]
+  identifier_uris  = ["https://${var.B2C_TENANT_NAME}.onmicrosoft.com/resumematchpro-api"]
   sign_in_audience = "AzureADandPersonalMicrosoftAccount"
   tags             = ["notApiConsumer", "webApi"]
 
   web {
-    redirect_uris = [
-      # Azure Development environment
-      "https://resumematchpro-dev-function-app.azurewebsites.net/.auth/login/aad/callback",
-      # Development tools
-      "https://oauth.pstmn.io/v1/callback",
-      # Local development environment
-      "http://localhost:7071/.auth/login/aad/callback",
-      "http://localhost:3000/auth-callback/"
-    ]
+    redirect_uris = var.BACKEND_REDIRECT_URIS
     implicit_grant {
       access_token_issuance_enabled = false
       id_token_issuance_enabled     = false
@@ -72,14 +64,7 @@ resource "azuread_application" "frontend" {
 
   # Configure as single page application
   single_page_application {
-    redirect_uris = [
-      # Local development environment
-      "http://localhost:3000/",
-      "http://localhost:3000/auth-callback/",
-      # Development environment
-      "https://app.dev.resumematch.pro/",
-      "https://app.dev.resumematch.pro/auth-callback/"
-    ]
+    redirect_uris = var.FRONTEND_REDIRECT_URIS
   }
 
   # Required resource access (Microsoft Graph permissions)
@@ -154,8 +139,3 @@ output "B2C_TOKEN_URL" {
     value = "https://${var.B2C_TENANT_NAME}.b2clogin.com/${var.B2C_TENANT_NAME}.onmicrosoft.com/B2C_1_signupsignin/oauth2/v2.0/token"
     description = "Use this URL for OAuth2 token endpoint in Postman"
 }
-
-output "B2C_SCOPE" {
-    value = "openid offline_access https://${var.B2C_TENANT_NAME}.onmicrosoft.com/${var.BACKEND_API_CLIENT_ID}/user_impersonation"
-    description = "Use this scope for OAuth2 configuration in Postman"
-} 

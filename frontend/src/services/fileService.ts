@@ -27,7 +27,7 @@ export interface ResultsResponse {
     results: Result[];
 }
 
-const API_BASE_URL = 'https://resumematchpro-dev-function-app.azurewebsites.net/api';
+const API_BASE_URL = process.env.BACKEND_URL;
 
 const getAuthToken = async (instance: IPublicClientApplication, account: AccountInfo): Promise<string> => {
     try {

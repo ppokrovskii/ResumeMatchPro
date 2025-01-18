@@ -27,7 +27,7 @@ resource "azurerm_linux_function_app" "resumematchpro" {
         active_directory_v2 {
             client_id = var.BACKEND_B2C_CLIENT_ID
             tenant_auth_endpoint = "https://${var.B2C_TENANT_NAME}.b2clogin.com/${var.B2C_TENANT_NAME}.onmicrosoft.com/B2C_1_signupsignin/v2.0"
-            client_secret_setting_name = "BACKEND_B2C_CLIENT_SECRET"
+            # client_secret_setting_name = "BACKEND_B2C_CLIENT_SECRET"
             allowed_audiences = ["api://${var.BACKEND_B2C_CLIENT_ID}"]
         }
 
@@ -57,7 +57,7 @@ resource "azurerm_linux_function_app" "resumematchpro" {
         "ALLOWED_ORIGINS" = var.MAIN_FRONTEND_URLS
 
         # B2C Configuration
-        "BACKEND_B2C_CLIENT_SECRET" = var.BACKEND_B2C_CLIENT_SECRET
+        # "BACKEND_B2C_CLIENT_SECRET" = var.BACKEND_B2C_CLIENT_SECRET
         "ALLOWED_REDIRECT_URIS" = terraform.workspace == "dev" ? "https://oauth.pstmn.io/v1/callback" : ""
     }
 

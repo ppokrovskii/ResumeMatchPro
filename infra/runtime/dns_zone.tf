@@ -4,7 +4,13 @@ locals {
 
 resource "azurerm_resource_group" "resumematchpro_dns_rg" {
     name     = "resumematchpro-dns-rg"
-    location = var.location
+    location = "westeurope"
+
+    lifecycle {
+        ignore_changes = [
+            location,
+        ]
+    }
 }
 
 resource "azurerm_dns_zone" "dns_zone" {
