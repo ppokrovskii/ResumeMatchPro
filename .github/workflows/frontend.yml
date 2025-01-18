@@ -62,13 +62,14 @@ jobs:
           app_build_command: 'npm run build' # Static Web App build command to embed environment variables
         env: # Add environment variables here
           # REACT_APP_GA_MEASUREMENT_ID: ${{ secrets.REACT_APP_GA_MEASUREMENT_ID }}
-          # REACT_APP_BACKEND_URL: ${{ vars.BACKEND_URL }}
+          REACT_APP_ENV: ${{ github.ref_name == 'main' && 'prod' || 'dev' }} # Set the node environment to enable/disable google analytics
           REACT_APP_BASE_URL: ${{ vars.REACT_APP_BASE_URL }}
           REACT_APP_B2C_TENANT: ${{ vars.REACT_APP_B2C_TENANT }}
-          REACT_APP_B2C_CLIENT_ID: ${{ vars.REACT_APP_B2C_CLIENT_ID }}
           REACT_APP_B2C_AUTHORITY_DOMAIN: ${{ vars.REACT_APP_B2C_AUTHORITY_DOMAIN }}
-          REACT_APP_API_URL: ${{ vars.REACT_APP_API_URL }}
-          REACT_APP_ENV: ${{ github.ref_name == 'main' && 'prod' || 'dev' }} # Set the node environment to enable/disable google analytics
+          REACT_APP_BACKEND_URL: ${{ vars.REACT_APP_BACKEND_URL }}
+          REACT_APP_BACKEND_CLIENT_ID: ${{ vars.REACT_APP_BACKEND_CLIENT_ID }}
+          REACT_APP_FRONTEND_CLIENT_ID: ${{ vars.REACT_APP_FRONTEND_CLIENT_ID }}
+
 
           ###### End of Repository/Build Configurations ######
 
