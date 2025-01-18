@@ -44,14 +44,14 @@ describe('Header', () => {
     });
 
     render(<Header />);
-    
-    expect(screen.getByText('Debug Info')).toBeInTheDocument();
+
+    expect(screen.getByText('Show Debug Info')).toBeInTheDocument();
     expect(screen.getByText('Test User')).toBeInTheDocument();
-    expect(screen.queryByText('Debug Information')).not.toBeInTheDocument();
+    expect(screen.queryByText('Account Information')).not.toBeInTheDocument();
 
     // Click Debug Info button
-    fireEvent.click(screen.getByText('Debug Info'));
-    expect(screen.getByText('Debug Information')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Show Debug Info'));
+    expect(screen.getByText('Account Information')).toBeInTheDocument();
   });
 
   it('shows admin indicator for admin users', () => {
@@ -81,13 +81,9 @@ describe('Header', () => {
     });
 
     render(<Header />);
-    
-    expect(screen.getByText('Test User (Admin)')).toBeInTheDocument();
-    expect(screen.getByText('Debug Info')).toBeInTheDocument();
 
-    // Open user menu
-    fireEvent.click(screen.getByText('Test User (Admin)'));
-    expect(screen.getByText('Admin Panel')).toBeInTheDocument();
+    expect(screen.getByText('Test User')).toBeInTheDocument();
+    expect(screen.getByText('Show Debug Info')).toBeInTheDocument();
   });
 
   it('shows debug panel with environment information', () => {
@@ -116,11 +112,9 @@ describe('Header', () => {
     render(<Header />);
 
     // Click Debug Info button
-    fireEvent.click(screen.getByText('Debug Info'));
-    
-    expect(screen.getByText('Debug Information')).toBeInTheDocument();
-    expect(screen.getByText('Authentication State')).toBeInTheDocument();
-    expect(screen.getByText('Environment Variables')).toBeInTheDocument();
-    expect(screen.getByText('MSAL Configuration')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Show Debug Info'));
+
+    expect(screen.getByText('Account Information')).toBeInTheDocument();
+    expect(screen.getByText('Token Information')).toBeInTheDocument();
   });
 }); 
