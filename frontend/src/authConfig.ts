@@ -50,18 +50,6 @@ const apiScopes = [
   `https://resumematchprodev.onmicrosoft.com/resumematchpro-api/Files.ReadWrite`
 ];
 
-// Log configuration for debugging
-console.log('Auth configuration:', {
-  authority: `${authorityBase}/${b2cPolicies.signUpSignIn}`,
-  clientId: b2cAuth.clientId,
-  backendClientId: b2cAuth.backendClientId,
-  loginScopes,
-  apiScopes,
-  redirectUri,
-  baseUrl,
-  hostname: window.location.hostname
-});
-
 // MSAL Configuration
 export const msalConfig: Configuration = {
   auth: {

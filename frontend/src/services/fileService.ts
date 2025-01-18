@@ -27,7 +27,13 @@ export interface ResultsResponse {
     results: Result[];
 }
 
-const API_BASE_URL = process.env.BACKEND_URL;
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || '';
+
+// Helper function to construct API URLs
+const getApiUrl = (path: string) => {
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    return `${API_BASE_URL}/${cleanPath}`;
+};
 
 const getAuthToken = async (instance: IPublicClientApplication, account: AccountInfo): Promise<string> => {
     try {
@@ -36,27 +42,11 @@ const getAuthToken = async (instance: IPublicClientApplication, account: Account
             ...apiTokenRequest,
             account: account
         });
-        // eslint-disable-next-line no-console
-        console.log('Token response:', {
-            scopes: response.scopes,
-            tenantId: response.tenantId,
-            tokenType: response.tokenType,
-            expiresOn: response.expiresOn,
-            token: response.accessToken.substring(0, 20) + '...'  // Log first 20 chars for debugging
-        });
         return response.accessToken;
     } catch (error) {
         if (error instanceof InteractionRequiredAuthError) {
             // If silent token acquisition fails, fall back to interactive method
             const response = await instance.acquireTokenPopup(interactiveRequest);
-            // eslint-disable-next-line no-console
-            console.log('Interactive token response:', {
-                scopes: response.scopes,
-                tenantId: response.tenantId,
-                tokenType: response.tokenType,
-                expiresOn: response.expiresOn,
-                token: response.accessToken.substring(0, 20) + '...'  // Log first 20 chars for debugging
-            });
             return response.accessToken;
         }
         throw error;
@@ -65,32 +55,17 @@ const getAuthToken = async (instance: IPublicClientApplication, account: Account
 
 const getAuthHeaders = async (instance: IPublicClientApplication, account: AccountInfo): Promise<HeadersInit> => {
     const token = await getAuthToken(instance, account);
-    const headers = {
+    return {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
     };
-    // eslint-disable-next-line no-console
-    console.log('Request headers:', {
-        ...headers,
-        'Authorization': headers.Authorization.substring(0, 27) + '...'  // Log "Bearer " + first 20 chars
-    });
-    return headers;
 };
 
-/**
- * Fetches files based on the user ID.
- * @param userId The user ID for whom to fetch files.
- * @param account The MSAL account info for authentication
- * @param instance The MSAL instance
- */
 export const fetchFiles = async (userId: string, account: AccountInfo, instance: IPublicClientApplication): Promise<RmpFile[]> => {
     try {
         const headers = await getAuthHeaders(instance, account);
-        // eslint-disable-next-line no-console
-        console.log('Fetching files with headers:', headers);
-
-        const response = await fetch(`${API_BASE_URL}/files?user_id=${userId}`, {
+        const response = await fetch(getApiUrl(`files?user_id=${userId}`), {
             method: 'GET',
             headers,
             credentials: 'include'
@@ -116,15 +91,9 @@ export const fetchFiles = async (userId: string, account: AccountInfo, instance:
     }
 };
 
-/**
- * Deletes a file based on its ID.
- * @param fileId The ID of the file to delete.
- * @param account The MSAL account info for authentication
- * @param instance The MSAL instance
- */
 export const deleteFile = async (fileId: string, account: AccountInfo, instance: IPublicClientApplication): Promise<void> => {
     const headers = await getAuthHeaders(instance, account);
-    const response = await fetch(`${API_BASE_URL}/files/${fileId}`, {
+    const response = await fetch(getApiUrl(`files/${fileId}`), {
         method: 'DELETE',
         headers,
         credentials: 'include'
@@ -156,7 +125,7 @@ export const uploadFiles = async (
     // Remove content-type for FormData
     delete headers['Content-Type'];
 
-    const response = await fetch(`${API_BASE_URL}/files/upload`, {
+    const response = await fetch(getApiUrl('files/upload'), {
         method: 'POST',
         headers,
         credentials: 'include',
@@ -186,7 +155,7 @@ export const getMatchingResults = async (
 ): Promise<Result[]> => {
     const headers = await getAuthHeaders(instance, account);
     const response = await fetch(
-        `${API_BASE_URL}/results?user_id=${userId}&file_id=${fileId}&file_type=${fileType}`,
+        getApiUrl(`results?user_id=${userId}&file_id=${fileId}&file_type=${fileType}`),
         {
             headers,
             credentials: 'include'
