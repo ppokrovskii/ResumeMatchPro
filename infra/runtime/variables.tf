@@ -1,7 +1,8 @@
 # Define variables
 variable "project_name" {
-    type    = string
-    default = "resumematchpro"
+    description = "Name of the project, used in resource naming"
+    type        = string
+    default     = "resumematchpro"
 }
 
 variable "environment_name" {
@@ -10,8 +11,9 @@ variable "environment_name" {
 }
 
 variable "location" {
-    type    = string
-    default = "UAE North"
+    description = "The Azure region where resources will be created"
+    type        = string
+    default     = "uaenorth"
 }
 
 variable "europe_location" {
@@ -19,14 +21,31 @@ variable "europe_location" {
     default = "West Europe"
 }
 
+variable "domain_name" {
+    description = "Domain name for the application"
+    type        = string
+    default     = "resumematch.pro"
+}
+
+variable "b2c_tenant" {
+    description = "Azure AD B2C tenant name"
+    type        = string
+    default     = "resumematchprodev"
+}
+
 # Azure AD B2C Configuration
-variable "BACKEND_B2C_CLIENT_ID" {
-    description = "Azure AD B2C Application (client) ID for the main backend API"
+variable "B2C_TENANT_DOMAIN_NAME" {
+    description = "Azure AD B2C Tenant domain name (e.g., 'resumematchprodev.onmicrosoft.com')"
     type        = string
 }
 
 variable "B2C_TENANT_NAME" {
-    description = "Azure AD B2C Tenant name (e.g., 'resumematchprodev' or 'resumematchpro')"
+    description = "Azure AD B2C Tenant name without domain (e.g., 'resumematchprodev')"
+    type        = string
+}
+
+variable "BACKEND_B2C_CLIENT_ID" {
+    description = "Azure AD B2C Application (client) ID for the main backend API"
     type        = string
 }
 
@@ -79,4 +98,9 @@ variable "LANDING_FRONTEND_URLS" {
 # Automatically detect workspace
 locals {
     env = terraform.workspace
+}
+
+variable "DIRECTORY_ID" {
+    description = "The directory (tenant) ID of the Azure AD B2C tenant"
+    type        = string
 }

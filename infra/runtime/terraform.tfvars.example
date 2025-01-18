@@ -6,7 +6,9 @@ AZURE_OPENAI_DEPLOYMENT_NAME = "gpt35turbo16k"
 AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT = "https://docintpavelpweurope.cognitiveservices.azure.com/"
 
 # Azure AD B2C Configuration
-B2C_TENANT_NAME = "your-b2c-tenant-name" # e.g., "resumematchprodev" or "resumematchpro"
+B2C_TENANT_DOMAIN_NAME = "resumematchprodev.onmicrosoft.com"
+B2C_TENANT_NAME = "resumematchprodev"  # tenant name without .onmicrosoft.com for API scope
+DIRECTORY_ID = "4bab4312-676c-42cb-ac9f-4931f0438d6e"  # Azure AD B2C tenant directory ID
 BACKEND_B2C_CLIENT_ID = "your-backend-b2c-client-id"
 BACKEND_B2C_CLIENT_SECRET = "your-client-secret"
 

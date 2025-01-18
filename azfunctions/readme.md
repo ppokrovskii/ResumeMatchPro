@@ -1,7 +1,85 @@
-# cosmos db emulator
-### to install it ```https://learn.microsoft.com/en-us/azure/cosmos-db/how-to-develop-emulator?tabs=windows%2Ccsharp&pivots=api-nosql```
-### Navigate to ```https://localhost:8081/_explorer/index.html``` to access the data explorer.
+# Azure Functions
 
+## Local Development Setup
+
+### Prerequisites
+- Python 3.11
+- Node.js and npm
+- Azure Functions Core Tools
+- Azurite (Azure Storage Emulator)
+
+### Installation Steps
+
+1. Install Azure Functions Core Tools (choose one method):
+
+   **Option 1 - npm (recommended):**
+   ```bash
+   npm i -g azure-functions-core-tools@4 --unsafe-perm true
+   ```
+
+   **Option 2 - Direct download:**
+   Download and install from: https://go.microsoft.com/fwlink/?linkid=2174087
+
+2. Install Azurite (Azure Storage Emulator):
+```powershell
+npm install -g azurite
+```
+
+### Configuration
+
+1. Configure `local.settings.json` with your Azure service credentials:
+```json
+{
+    "IsEncrypted": false,
+    "Values": {
+        "FUNCTIONS_WORKER_RUNTIME": "python",
+        "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+        "AZURE_OPENAI_API_KEY": "<your-openai-key>",
+        "AZURE_DOCUMENT_INTELLIGENCE_KEY": "<your-doc-intelligence-key>",
+        "AZURE_OPENAI_ENDPOINT": "<your-openai-endpoint>",
+        "AZURE_OPENAI_DEPLOYMENT_NAME": "<your-deployment-name>",
+        "AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT": "<your-doc-intelligence-endpoint>",
+        "MAIN_FRONTEND_URLS": "http://localhost:3000",
+        "LANDING_FRONTEND_URLS": "http://localhost:3001"
+    },
+    "Host": {
+        "LocalHttpPort": 7071,
+        "CORS": "*",
+        "CORSCredentials": true
+    }
+}
+```
+
+### Running Locally
+
+1. Start Azurite in a separate terminal:
+```powershell
+azurite
+```
+
+2. In your main terminal, navigate to the azfunctions directory:
+```powershell
+cd azfunctions
+```
+
+3. Start the Functions host:
+```powershell
+func start
+```
+
+### Accessing the Functions
+- Local endpoint: `http://localhost:7071`
+- API routes: `http://localhost:7071/api/{route}`
+- Available routes:
+  - `POST /api/files/upload`: Upload files
+  - `GET /api/files`: Get user files
+  - `POST /api/matching`: Match resume
+  - `GET /api/matching/results`: Get matching results
+  - `GET /api/auth_test`: Test authentication
+
+## Cosmos DB Emulator
+To install it: https://learn.microsoft.com/en-us/azure/cosmos-db/how-to-develop-emulator?tabs=windows%2Ccsharp&pivots=api-nosql
+Navigate to https://localhost:8081/_explorer/index.html to access the data explorer.
 
 # Architecture
 
@@ -39,7 +117,6 @@
 - **Azure Services Used**:
   - **Azure Easy Auth**: Authenticates the user.
   - **Azure Cosmos DB**: Queries for files associated with the authenticated user.
-
 
 ### 5. **Matching Results Function**
 

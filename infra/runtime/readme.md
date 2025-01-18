@@ -1,98 +1,49 @@
-# Infrastructure Setup Guide
+# Infrastructure Management
+
+This infrastructure is split into two resource pools:
+1. Main Azure Resources (in `infra/runtime`) - managed in the neoteq.dev tenant
+2. Azure AD B2C Resources (in `infra/b2c`) - managed in the ResumeMatchPro-dev tenant
 
 ## Prerequisites
-- Terraform version: terraform v1.8.2
-- Azure CLI installed and configured
-- Azure AD B2C tenant created
 
-## Initial Setup
+- Azure CLI installed
+- Terraform installed
+- Access to both Azure tenants:
+  - neoteq.dev (Directory ID: 9fe31206-ac65-4e49-966c-0c07561ca0f9)
+  - ResumeMatchPro-dev (Directory ID: 4bab4312-676c-42cb-ac9f-4931f0438d6e)
 
-1. Navigate to the runtime directory:
-```bash
-cd .\infra\runtime\
-```
+## Managing Main Azure Resources
 
-2. Initialize Terraform:
-```bash
+Use the `login-azure.ps1` script to authenticate and run Terraform commands:
+
+```powershell
+# Login and set subscription
+./login-azure.ps1
+
+# Run Terraform commands
 terraform init
+terraform plan -var-file="terraform.tfvars.dev"
+terraform apply -var-file="terraform.tfvars.dev"
 ```
 
-3. Login to Azure:
-```bash
-az login --scope https://graph.microsoft.com/.default
+## Managing B2C Resources
+
+Use the `login-b2c.ps1` script to authenticate and run Terraform commands:
+
+```powershell
+# Change to B2C directory and login
+cd ../b2c
+./login-b2c.ps1
+
+# Run Terraform commands
+terraform init
+terraform plan -var-file="terraform.tfvars.dev"
+terraform apply -var-file="terraform.tfvars.dev"
 ```
-
-## Environment Configuration
-
-### Setting up tfvars files
-
-1. Create environment-specific tfvars files:
-   - Copy `terraform.tfvars.example` to create workspace-specific files:
-     ```bash
-     cp terraform.tfvars.example dev.tfvars
-     cp terraform.tfvars.example prod.tfvars
-     ```
-   - Update the values in each file according to your environment needs
-
-### Azure AD B2C Setup
-
-1. Create an App Registration in Azure AD B2C:
-   - Navigate to Azure AD B2C > App registrations
-   - Click "New registration"
-   - Name: "ResumeMatchPro API"
-   - Supported account types: "Accounts in any identity provider..."
-   - Platform configuration: Add Web platform with redirect URI: `https://{your-function-app-name}.azurewebsites.net/.auth/login/aad/callback`
-
-2. Configure API permissions:
-   - Add Microsoft Graph permissions:
-     - User.Read (delegated)
-     - openid
-     - profile
-
-3. Create a client secret:
-   - Go to Certificates & secrets
-   - Create a new client secret
-   - Copy the secret value immediately (you won't see it again)
-   - Add it to your tfvars file as `BACKEND_B2C_CLIENT_SECRET`
-
-4. Configure App ID URI:
-   - Go to Expose an API
-   - Set App ID URI to: `api://{client_id}`
-
-### Working with Workspaces
-
-1. List available workspaces:
-```bash
-terraform workspace list
-```
-
-2. Create workspaces if they don't exist:
-```bash
-terraform workspace new dev
-terraform workspace new prod
-```
-
-3. Select the workspace you want to work with:
-```bash
-terraform workspace select dev    # For development environment
-# OR
-terraform workspace select prod   # For production environment
-```
-
-4. Apply the configuration:
-```bash
-terraform plan     # Review the changes
-terraform apply    # Apply the changes
-```
-
-The workspace-specific tfvars file will be automatically loaded based on your current workspace (dev.tfvars for dev workspace, prod.tfvars for prod workspace).
 
 ## Important Notes
 
-1. Never commit sensitive values to version control
-2. Keep your API keys and secrets secure
-3. Use different B2C tenants for dev and prod environments
-4. Always review the plan before applying changes
-5. Make sure to test changes in dev before applying to prod
-6. Store B2C client secrets securely and rotate them periodically
-7. Configure proper CORS settings in your B2C tenant to match your frontend URLs
+- Always ensure you're logged into the correct tenant before running Terraform commands
+- The main Azure resources are deployed to the UAE North region
+- B2C resources are managed separately to maintain clear separation of concerns
+- Use the provided scripts to switch between tenants when needed

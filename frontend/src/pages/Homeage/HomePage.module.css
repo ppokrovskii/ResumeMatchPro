@@ -1,38 +1,48 @@
 /* File: src/pages/HomePage.module.css */
 
-.homePage {
-    padding: 20px;
-    text-align: center;
-  }
-  
-  .fileSections {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 20px;
-  }
-  
-  .fileSection {
-    flex: 1;
-    border: 1px solid #ccc;
-    margin: 0 10px;
-    padding: 10px;
-  }
-  
-  .fileSection h2 {
-    color: #333;
-  }
-  
-  .fileSection ul {
-    list-style-type: none;
-    padding: 0;
-  }
-  
-  .fileSection ul li {
-    padding: 5px 0;
-    border-bottom: 1px solid #eee;
-  }
-  
-  .fileSection ul li:last-child {
-    border-bottom: none;
-  }
-  
+.container {
+  padding: 2rem;
+  height: calc(100vh - 64px);
+  /* Adjust based on your header height */
+  overflow: hidden;
+}
+
+.columnsContainer {
+  display: flex;
+  gap: 2rem;
+  height: 100%;
+}
+
+.column {
+  flex: 1;
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.columnTitle {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.uploadSection {
+  margin-bottom: 1.5rem;
+}
+
+/* Ensure the upload area has a nice style */
+.uploadSection :global(.ant-upload-drag) {
+  border: 2px dashed #d9d9d9;
+  border-radius: 8px;
+  background: #fafafa;
+  transition: border-color 0.3s;
+}
+
+.uploadSection :global(.ant-upload-drag:hover) {
+  border-color: #1890ff;
+}

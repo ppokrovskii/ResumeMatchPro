@@ -2,6 +2,7 @@
 import { AccountInfo, BrowserAuthError } from '@azure/msal-browser';
 import { useMsal } from '@azure/msal-react';
 import React, { ReactNode, useEffect } from 'react';
+import { loginRedirectRequest } from '../../authConfig';
 
 interface AuthenticationTemplateProps {
   children: ReactNode;
@@ -10,79 +11,46 @@ interface AuthenticationTemplateProps {
 
 const AuthenticationTemplate: React.FC<AuthenticationTemplateProps> = ({ children, onAuthenticated }) => {
   const { instance, accounts } = useMsal();
-  
+
   useEffect(() => {
     const handleAuth = async () => {
-      console.log('Starting authentication flow...', {
-        accountsCount: accounts.length,
-        hasOnAuthenticated: !!onAuthenticated
-      });
-
       try {
         // Try to handle any existing redirect promise first
-        console.log('Attempting to handle redirect promise...');
         const result = await instance.handleRedirectPromise();
-        
+
         if (result?.account) {
-          console.log('Redirect handled successfully with account:', {
-            username: result.account.username,
-            homeAccountId: result.account.homeAccountId
-          });
-          
           if (onAuthenticated) {
-            console.log('Calling onAuthenticated callback with redirect result');
             onAuthenticated(result.account);
           }
           return;
         }
 
-        console.log('No redirect result, checking authentication state...', {
-          accountsCount: accounts.length
-        });
-
-        // If we're not authenticated, initiate login
+        // If we're not authenticated, immediately redirect to B2C login
         if (accounts.length === 0) {
-          console.log('No accounts found, initiating login redirect...');
-          await instance.loginRedirect();
-        } else if (onAuthenticated && accounts[0]) {
-          console.log('Already authenticated, calling callback with existing account:', {
-            username: accounts[0].username,
-            homeAccountId: accounts[0].homeAccountId
-          });
+          await instance.loginRedirect(loginRedirectRequest);
+          return;
+        }
+
+        // If we have an account but no result, call the callback
+        if (onAuthenticated && accounts[0]) {
           onAuthenticated(accounts[0]);
         }
       } catch (error) {
         if (error instanceof BrowserAuthError && error.errorCode === 'interaction_in_progress') {
-          console.log('Interaction in progress detected, waiting for completion...');
           try {
-            console.log('Attempting to handle existing redirect...');
             const result = await instance.handleRedirectPromise();
             if (result?.account && onAuthenticated) {
-              console.log('Successfully handled existing redirect:', {
-                username: result.account.username,
-                homeAccountId: result.account.homeAccountId
-              });
               onAuthenticated(result.account);
-            } else {
-              console.log('No account found after handling redirect', {
-                hasResult: !!result,
-                hasAccount: !!result?.account
-              });
             }
           } catch (redirectError) {
-            console.error('Error handling redirect during interaction:', {
-              error: redirectError,
-              errorType: redirectError instanceof Error ? redirectError.constructor.name : typeof redirectError,
-              errorMessage: redirectError instanceof Error ? redirectError.message : 'Unknown error'
-            });
+            console.error('Error handling redirect:', redirectError);
           }
         } else {
-          console.error('Authentication error:', {
-            error,
-            errorType: error instanceof Error ? error.constructor.name : typeof error,
-            errorMessage: error instanceof Error ? error.message : 'Unknown error',
-            errorCode: error instanceof BrowserAuthError ? error.errorCode : undefined
-          });
+          console.error('Authentication error:', error);
+          // If there's an error and user is not authenticated, redirect to login
+          if (accounts.length === 0) {
+            await instance.loginRedirect(loginRedirectRequest);
+          }
         }
       }
     };
@@ -90,13 +58,11 @@ const AuthenticationTemplate: React.FC<AuthenticationTemplateProps> = ({ childre
     handleAuth();
   }, [instance, accounts, onAuthenticated]);
 
-  // Only render children if authenticated
+  // Show nothing while authentication is in progress
   if (accounts.length === 0) {
-    console.log('No accounts available, not rendering children');
     return null;
   }
 
-  console.log('Authenticated, rendering children');
   return <>{children}</>;
 };
 

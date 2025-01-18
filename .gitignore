@@ -43,3 +43,41 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+
+# Additional patterns for build outputs and development
+*.pyc
+**/dist/
+**/build/
+**/.next/
+**/.nuxt/
+**/.output/
+
+# Coverage reports
+**/coverage/
+**/.nyc_output/
+
+# Additional IDE files
+*.swp
+*.swo
+.DS_Store
+*.sublime-workspace
+*.sublime-project
+
+# Node specific
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Logs
+logs/
+log/
+
+# Cypress
+**/cypress/screenshots/
+**/cypress/videos/
+**/cypress/downloads/
+**/cypress/results/
+**/cypress/reports/
+**/.cypress-cache/
+cypress.env.json
+
