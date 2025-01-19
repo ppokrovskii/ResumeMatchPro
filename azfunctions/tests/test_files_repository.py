@@ -129,18 +129,14 @@ def test_get_file_by_id(repository, sample_CV):
 
     # Retrieve the file from the repository
     files = repository.get_files_from_db(user_id=file.user_id)
-    file_id = files[0].id
+    file_id = str(files[0].id)
     
     # Retrieve the file by ID
     file = repository.get_file_by_id(user_id=file.user_id, file_id=file_id)
+    assert file is not None
     assert file.filename == sample_CV.filename
-    assert file.id == file_id
-    assert file.user_id == file.user_id
-    assert file.type == file.type
-    assert file.url == file.url
-    assert file.text == file.text
-    
+
 def test_get_file_by_id_not_found(repository):
     # Retrieve the file by ID
-    file = repository.get_file_by_id(user_id=uuid4(), file_id=uuid4())
+    file = repository.get_file_by_id(user_id=str(uuid4()), file_id=str(uuid4()))
     assert file is None

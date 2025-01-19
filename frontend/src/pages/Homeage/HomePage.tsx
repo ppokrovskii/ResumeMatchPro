@@ -1,10 +1,12 @@
+import { InteractionRequiredAuthError } from '@azure/msal-browser';
 import { useMsal } from '@azure/msal-react';
 import { message } from 'antd';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import FilesList from '../../components/FilesList/FilesList';
 import FilesUpload from '../../components/FilesUpload/FilesUpload';
 import { AuthContext } from '../../contexts/AuthContext';
-import { fetchFiles, RmpFile } from '../../services/fileService';
+import { useFiles } from '../../hooks/useFiles';
+import { getMatchingResults, RmpFile } from '../../services/fileService';
 import styles from './HomePage.module.css';
 
 interface IdTokenClaims {
@@ -13,95 +15,80 @@ interface IdTokenClaims {
 }
 
 const HomePage: React.FC = () => {
-  const { isAuthenticated, user, login, isInitialized } = useContext(AuthContext);
+  const { isAuthenticated, user, isInitialized } = useContext(AuthContext);
   const { instance, accounts } = useMsal();
+  const { cvFiles, jdFiles, isLoading, refreshFiles } = useFiles(instance, accounts, isAuthenticated);
   const [selectedFile, setSelectedFile] = useState<RmpFile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [cvFiles, setCvFiles] = useState<RmpFile[]>([]);
-  const [jdFiles, setJdFiles] = useState<RmpFile[]>([]);
   const [matchingScores, setMatchingScores] = useState<{ [key: string]: number }>({});
-
-  useEffect(() => {
-    if (!isInitialized) return;
-
-    if (!isAuthenticated) {
-      login();
-      return;
-    }
-
-    const loadFiles = async () => {
-      try {
-        setIsLoading(true);
-        if (accounts.length > 0) {
-          const account = accounts[0];
-          // Get ID token claims to get the sub claim
-          const response = await instance.acquireTokenSilent({
-            scopes: ['openid'],
-            account: account
-          });
-          const claims = response.idTokenClaims as IdTokenClaims;
-          const userId = claims.sub;
-          if (!userId) {
-            throw new Error('No user ID found in token claims');
-          }
-          const loadedFiles = await fetchFiles(userId, account, instance);
-          setCvFiles(loadedFiles.filter((file: RmpFile) => file.type === 'CV'));
-          setJdFiles(loadedFiles.filter((file: RmpFile) => file.type === 'JD'));
-        }
-      } catch (error) {
-        console.error('Error loading files:', error);
-        message.error('Failed to load files');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadFiles();
-  }, [isInitialized, isAuthenticated, user, login, instance, accounts]);
 
   const handleFilesUploaded = async (response: { files: { name: string }[] }, fileType: 'CV' | 'JD') => {
     if (!user) return;
 
     try {
-      // Get ID token claims to get the sub claim for the uploaded files
       const account = accounts[0];
-      const tokenResponse = await instance.acquireTokenSilent({
-        scopes: ['openid'],
-        account: account
-      });
+      if (!account) {
+        throw new Error('No account found');
+      }
+
+      let tokenResponse;
+      try {
+        tokenResponse = await instance.acquireTokenSilent({
+          scopes: ['openid', 'https://resumematchprob2c.onmicrosoft.com/api/Files.ReadWrite'],
+          account: account
+        });
+      } catch (error) {
+        if (error instanceof InteractionRequiredAuthError) {
+          tokenResponse = await instance.acquireTokenPopup({
+            scopes: ['openid', 'https://resumematchprob2c.onmicrosoft.com/api/Files.ReadWrite'],
+            account: account
+          });
+        } else {
+          throw error;
+        }
+      }
+
       const claims = tokenResponse.idTokenClaims as IdTokenClaims;
       const userId = claims.sub;
       if (!userId) {
         throw new Error('No user ID found in token claims');
       }
 
-      const rmp_files = response.files.map(file => ({
-        id: `temp-${Date.now()}-${file.name}`,
-        filename: file.name,
-        type: fileType,
-        user_id: userId,
-        url: '', // We'll need to get the URL from the backend
-        text: ''
-      } as RmpFile));
-
-      if (fileType === 'CV') {
-        setCvFiles(prevFiles => [...prevFiles, ...rmp_files]);
-      } else {
-        setJdFiles(prevFiles => [...prevFiles, ...rmp_files]);
-      }
+      // Refresh the files list after successful upload
+      await refreshFiles();
+      message.success('Files uploaded successfully');
     } catch (error) {
       console.error('Error handling uploaded files:', error);
       message.error('Failed to process uploaded files');
     }
   };
 
-  const handleFileSelect = async (file: RmpFile) => {
+  const handleFileSelect = (file: RmpFile) => {
     try {
       setSelectedFile(file);
-      // We'll need to update getMatchingResults to work with our new auth system
-      // const results = await getMatchingResults(user?.name || '', file.id, file.type);
-      // For now, just clear matching scores when selecting a new file
-      setMatchingScores({});
+
+      const account = accounts[0];
+      instance.acquireTokenSilent({
+        scopes: ['openid'],
+        account: account
+      }).then(tokenResponse => {
+        const claims = tokenResponse.idTokenClaims as IdTokenClaims;
+        const userId = claims.sub;
+        if (!userId) {
+          throw new Error('No user ID found in token claims');
+        }
+
+        getMatchingResults(userId, file.id, file.type, account, instance).then(results => {
+          const scoresMap: { [key: string]: number } = {};
+          results.forEach(result => {
+            const targetFile = file.type === 'CV' ? result.jd : result.cv;
+            scoresMap[targetFile.id] = result.overall_match_percentage;
+          });
+          setMatchingScores(scoresMap);
+        });
+      }).catch(error => {
+        console.error('Error getting matching results:', error);
+        message.error('Failed to get matching results');
+      });
     } catch (error) {
       console.error('Error getting matching results:', error);
       message.error('Failed to get matching results');
@@ -133,8 +120,8 @@ const HomePage: React.FC = () => {
             onFileSelect={handleFileSelect}
             selectedFile={selectedFile}
             fileType="JD"
-            setFiles={setJdFiles}
             matchingScores={selectedFile?.type === 'CV' ? matchingScores : {}}
+            refreshFiles={refreshFiles}
           />
         </div>
         <div className={styles.column}>
@@ -147,8 +134,8 @@ const HomePage: React.FC = () => {
             onFileSelect={handleFileSelect}
             selectedFile={selectedFile}
             fileType="CV"
-            setFiles={setCvFiles}
             matchingScores={selectedFile?.type === 'JD' ? matchingScores : {}}
+            refreshFiles={refreshFiles}
           />
         </div>
       </div>

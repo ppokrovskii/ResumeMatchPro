@@ -1,35 +1,28 @@
 /* File: src/components/Footer/Footer.module.css */
 
-.appFooter {
-  background-color: #333;
-  color: #fff;
+.wrapper {
+  background-color: #fff;
   padding: 20px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Montserrat Light Alt1', sans-serif;
   position: fixed;
   bottom: 0;
   left: 0;
   width: 100%;
-  z-index: 1000;
+  z-index: 999;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.footerContent {
-  max-width: 1200px;
+.footerInner {
+  max-width: var(--container-width, 1220px);
   margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 2rem);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.logo {
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 300;
+.footerLogo {
   font-size: 1.2rem;
-  color: #fff;
-  text-decoration: none;
-}
-
-.logo:hover {
-  color: #1976d2;
 }
 
 .footerLinks {
@@ -37,22 +30,33 @@
   display: flex;
   padding: 0;
   margin: 0;
-}
-
-.footerLinks li {
-  padding: 0 15px;
+  gap: clamp(1rem, 2vw, 2rem);
 }
 
 .footerLinks li a {
-  color: #fff;
+  color: #333;
   text-decoration: none;
-  transition: color 0.2s;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+  white-space: nowrap;
 }
 
 .footerLinks li a:hover {
   color: #1976d2;
 }
 
-.footerCopy {
-  font-size: 0.9rem;
+@media screen and (max-width: 1024px) {
+  .footerLinks li a {
+    font-size: 0.8rem;
+  }
+
+  .footerLogo {
+    font-size: 1rem;
+  }
+}
+
+@media screen and (min-width: 1921px) {
+  .footerInner {
+    max-width: 1400px;
+  }
 }

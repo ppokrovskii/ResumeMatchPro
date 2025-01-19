@@ -1,15 +1,14 @@
 // File: src/components/Footer/Footer.tsx
 
 import React from 'react';
+import Logo from '../Logo/Logo';
 import styles from './Footer.module.css';
 
 const Footer: React.FC = () => {
   return (
-    <footer className={styles.appFooter}>
-      <div className={styles.footerContent}>
-        <div className={styles.logo}>
-          ResumeMatch Pro
-        </div>
+    <footer className={styles.wrapper}>
+      <div className={styles.footerInner}>
+        <Logo className={styles.footerLogo} />
         <ul className={styles.footerLinks}>
           <li><a href="/privacy">Privacy Policy</a></li>
           <li><a href="/terms">Terms of Service</a></li>

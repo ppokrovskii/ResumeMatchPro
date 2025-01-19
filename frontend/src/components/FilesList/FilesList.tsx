@@ -1,27 +1,45 @@
 import { DeleteOutlined, StarFilled, StarOutlined } from '@ant-design/icons';
-import { Button, List } from 'antd';
-import React from 'react';
-import { RmpFile } from '../../services/fileService';
+import { useMsal } from '@azure/msal-react';
+import { Button, List, message } from 'antd';
+import React, { useContext } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
+import { RmpFile, deleteFile } from '../../services/fileService';
 import styles from './FilesList.module.css';
 
 interface FilesListProps {
   files: RmpFile[];
   onFileSelect: (file: RmpFile) => void;
-  fileType: string;
-  setFiles: React.Dispatch<React.SetStateAction<RmpFile[]>>;
   selectedFile: RmpFile | null;
+  fileType: string;
   matchingScores: { [key: string]: number };
+  refreshFiles: () => Promise<void>;
 }
 
 const FilesList: React.FC<FilesListProps> = ({
   files,
   onFileSelect,
   selectedFile,
+  fileType,
   matchingScores,
-  setFiles
+  refreshFiles
 }) => {
-  const handleDelete = (fileId: string) => {
-    setFiles(prevFiles => prevFiles.filter(file => file.id !== fileId));
+  const { instance, accounts } = useMsal();
+  const { isAuthenticated } = useContext(AuthContext);
+
+  const handleDelete = async (fileId: string) => {
+    if (!isAuthenticated || !accounts[0]) {
+      message.error('You must be authenticated to delete files');
+      return;
+    }
+
+    try {
+      await deleteFile(fileId, accounts[0], instance);
+      await refreshFiles();
+      message.success('File deleted successfully');
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      message.error('Failed to delete file');
+    }
   };
 
   const renderStarRating = (score: number) => {

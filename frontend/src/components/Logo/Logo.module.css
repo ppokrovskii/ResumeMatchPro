@@ -1,0 +1,31 @@
+@font-face {
+    font-family: 'Montserrat Light Alt1';
+    src: url('../../assets/fonts/MontserratAlt1-Light.woff') format('woff');
+    font-weight: 300;
+    font-style: normal;
+}
+
+.logo {
+    font-family: 'Montserrat Light Alt1', sans-serif;
+    font-weight: 300;
+    font-size: clamp(18px, 2.5vw, 32px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+
+    /* Gradient for text */
+    background: linear-gradient(to right, #000000, #7a7985);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+    text-decoration: none;
+}
+
+/* Additional size adjustments for very small screens */
+@media screen and (max-width: 1024px) {
+    .logo {
+        font-size: clamp(28px, 3.5vw, 42px);
+    }
+}

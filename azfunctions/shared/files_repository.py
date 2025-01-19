@@ -58,36 +58,34 @@ class FilesRepository:
         for item in items:
             self.container.delete_item(item, partition_key=item["user_id"])
     
-    def delete_file(self, **kwargs):
-         if 'user_id' in kwargs and 'filename' in kwargs:
-             return self._delete_file_by_user_id_and_filename(kwargs['user_id'], kwargs['filename'])
-         elif 'file_id' in kwargs:
-            return self._delete_file_by_id(kwargs['file_id'])
-        
-    def _delete_file_by_user_id_and_filename(self, user_id: UUID, filename: str):
-        query = "SELECT * FROM c WHERE c.user_id = @user_id AND c.filename = @filename"
-        parameters = [
-            {"name": "@user_id", "value": str(user_id)},
-            {"name": "@filename", "value": filename}
-        ]
-        items = list(self.container.query_items(query, parameters=parameters))
-        if items:
-            self.container.delete_item(items[0], partition_key=user_id)
+    def delete_file(self, user_id: str, file_id: str = None, filename: str = None):
+        """Delete a file from the database by user_id and either file_id or filename."""
+        if file_id:
+            file = self.get_file_by_id(user_id, file_id)
+        elif filename:
+            query = "SELECT * FROM c WHERE c.user_id = @user_id AND c.filename = @filename"
+            parameters = [
+                {"name": "@user_id", "value": user_id},
+                {"name": "@filename", "value": filename}
+            ]
+            items = list(self.container.query_items(query, parameters=parameters))
+            file = FileMetadataDb(**items[0]) if items else None
+        else:
+            raise ValueError("Either file_id or filename must be provided")
+
+        if file:
+            self.container.delete_item(item=str(file.id), partition_key=user_id)
             return True
         return False
     
-    def _delete_file_by_id(self, file_id):
-        raise NotImplementedError
-    
-    def get_file_by_id(self, user_id, file_id) -> FileMetadataDb:
+    def get_file_by_id(self, user_id: str, file_id: str | UUID):
+        """Get a file by user_id and file_id."""
         if isinstance(file_id, UUID):
             file_id = str(file_id)
-        if isinstance(user_id, UUID):
-            user_id = str(user_id)
-        query = "SELECT * FROM c WHERE c.user_id = @user_id AND c.id = @id"
+        query = "SELECT * FROM c WHERE c.user_id = @user_id AND c.id = @file_id"
         parameters = [
             {"name": "@user_id", "value": user_id},
-            {"name": "@id", "value": file_id}
+            {"name": "@file_id", "value": file_id}
         ]
         items = list(self.container.query_items(query, parameters=parameters))
         if items:

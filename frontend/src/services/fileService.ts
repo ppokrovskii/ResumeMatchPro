@@ -92,15 +92,28 @@ export const fetchFiles = async (userId: string, account: AccountInfo, instance:
 };
 
 export const deleteFile = async (fileId: string, account: AccountInfo, instance: IPublicClientApplication): Promise<void> => {
-    const headers = await getAuthHeaders(instance, account);
-    const response = await fetch(getApiUrl(`files/${fileId}`), {
-        method: 'DELETE',
-        headers,
-        credentials: 'include'
-    });
+    try {
+        const headers = await getAuthHeaders(instance, account);
+        const response = await fetch(getApiUrl(`files/${fileId}`), {
+            method: 'DELETE',
+            headers,
+            credentials: 'include'
+        });
 
-    if (!response.ok) {
-        throw new Error('Failed to delete file');
+        if (!response.ok) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to delete file:', {
+                status: response.status,
+                statusText: response.statusText,
+                headers: Object.fromEntries(response.headers.entries()),
+                body: await response.text()
+            });
+            throw new Error('Failed to delete file');
+        }
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error deleting file:', error);
+        throw error;
     }
 };
 
@@ -112,15 +125,28 @@ interface FileUploadResponse {
 export const uploadFiles = async (
     files: File[],
     userId: string,
-    fileType: string
+    fileType: string,
+    account: AccountInfo,
+    instance: IPublicClientApplication
 ): Promise<FileUploadResponse> => {
     const formData = new FormData();
-    files.forEach(file => formData.append('content', file));
+
+    // Add text fields first
     formData.append('user_id', userId);
     formData.append('type', fileType);
 
+    // Add file with explicit filename
+    files.forEach(file => {
+        // Ensure we're sending the file with the correct field name and filename
+        formData.append('content', file);
+    });
+
+    const headers = await getAuthHeaders(instance, account);
     const response = await fetch(getApiUrl('files/upload'), {
         method: 'POST',
+        headers: {
+            ...headers,
+        } as HeadersInit,
         credentials: 'include',
         body: formData,
     });
