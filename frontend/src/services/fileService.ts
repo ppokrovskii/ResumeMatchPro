@@ -105,29 +105,22 @@ export const deleteFile = async (fileId: string, account: AccountInfo, instance:
 };
 
 interface FileUploadResponse {
-    files: File[];
+    files: { name: string }[];
     message?: string;
 }
 
 export const uploadFiles = async (
     files: File[],
     userId: string,
-    fileType: string,
-    account: AccountInfo,
-    instance: IPublicClientApplication
+    fileType: string
 ): Promise<FileUploadResponse> => {
     const formData = new FormData();
     files.forEach(file => formData.append('content', file));
     formData.append('user_id', userId);
     formData.append('type', fileType);
 
-    const headers = await getAuthHeaders(instance, account) as Record<string, string>;
-    // Remove content-type for FormData
-    delete headers['Content-Type'];
-
     const response = await fetch(getApiUrl('files/upload'), {
         method: 'POST',
-        headers,
         credentials: 'include',
         body: formData,
     });

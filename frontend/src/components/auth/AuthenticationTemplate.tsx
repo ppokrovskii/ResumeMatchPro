@@ -1,66 +1,31 @@
 /* eslint-disable no-console */
-import { AccountInfo, BrowserAuthError } from '@azure/msal-browser';
-import { useMsal } from '@azure/msal-react';
-import React, { ReactNode, useEffect } from 'react';
-import { loginRedirectRequest } from '../../authConfig';
+import React, { useContext, useEffect } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
 
 interface AuthenticationTemplateProps {
-  children: ReactNode;
-  onAuthenticated?: (account: AccountInfo) => void;
+  children: React.ReactNode;
+  onAuthenticated: (user: { name: string; isAdmin: boolean }) => void;
 }
 
-const AuthenticationTemplate: React.FC<AuthenticationTemplateProps> = ({ children, onAuthenticated }) => {
-  const { instance, accounts } = useMsal();
+const AuthenticationTemplate: React.FC<AuthenticationTemplateProps> = ({
+  children,
+  onAuthenticated
+}) => {
+  const { isAuthenticated, user, login } = useContext(AuthContext);
 
   useEffect(() => {
-    const handleAuth = async () => {
-      try {
-        // Try to handle any existing redirect promise first
-        const result = await instance.handleRedirectPromise();
+    if (!isAuthenticated) {
+      login();
+      return;
+    }
 
-        if (result?.account) {
-          if (onAuthenticated) {
-            onAuthenticated(result.account);
-          }
-          return;
-        }
+    if (user) {
+      onAuthenticated(user);
+    }
+  }, [isAuthenticated, user, login, onAuthenticated]);
 
-        // If we're not authenticated, immediately redirect to B2C login
-        if (accounts.length === 0) {
-          await instance.loginRedirect(loginRedirectRequest);
-          return;
-        }
-
-        // If we have an account but no result, call the callback
-        if (onAuthenticated && accounts[0]) {
-          onAuthenticated(accounts[0]);
-        }
-      } catch (error) {
-        if (error instanceof BrowserAuthError && error.errorCode === 'interaction_in_progress') {
-          try {
-            const result = await instance.handleRedirectPromise();
-            if (result?.account && onAuthenticated) {
-              onAuthenticated(result.account);
-            }
-          } catch (redirectError) {
-            console.error('Error handling redirect:', redirectError);
-          }
-        } else {
-          console.error('Authentication error:', error);
-          // If there's an error and user is not authenticated, redirect to login
-          if (accounts.length === 0) {
-            await instance.loginRedirect(loginRedirectRequest);
-          }
-        }
-      }
-    };
-
-    handleAuth();
-  }, [instance, accounts, onAuthenticated]);
-
-  // Show nothing while authentication is in progress
-  if (accounts.length === 0) {
-    return null;
+  if (!isAuthenticated || !user) {
+    return <div>Loading...</div>;
   }
 
   return <>{children}</>;

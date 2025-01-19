@@ -1,57 +1,79 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { InteractionStatus } from '@azure/msal-browser';
 import { useMsal } from '@azure/msal-react';
-import { AccountInfo, PublicClientApplication } from '@azure/msal-browser';
-import { msalConfig } from '../authConfig';
+import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 
-// Create MSAL instance
-export const msalInstance = new PublicClientApplication(msalConfig);
-
-// Default initialize MSAL
-msalInstance.initialize().then(() => {
-  // Set active account if available
-  if (!msalInstance.getActiveAccount() && msalInstance.getAllAccounts().length > 0) {
-    msalInstance.setActiveAccount(msalInstance.getAllAccounts()[0]);
-  }
-});
-
-interface AuthContextType {
+export interface AuthContextType {
   isAuthenticated: boolean;
-  account: AccountInfo | null;
+  user: {
+    name: string;
+    isAdmin: boolean;
+  } | null;
+  login: () => void;
+  logout: () => void;
+  isInitialized: boolean;
 }
 
-const AuthContext = createContext<AuthContextType>({
+const defaultContext: AuthContextType = {
   isAuthenticated: false,
-  account: null,
-});
+  user: null,
+  login: () => { },
+  logout: () => { },
+  isInitialized: false
+};
 
-export const useAuth = () => useContext(AuthContext);
+export const AuthContext = createContext<AuthContextType>(defaultContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { accounts } = useMsal();
-  const [account, setAccount] = useState<AccountInfo | null>(null);
+  const { instance, accounts, inProgress } = useMsal();
+  const [user, setUser] = useState<AuthContextType['user']>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Handle account changes
-    const currentAccount = accounts[0] || null;
-    if (currentAccount && (!account || account.homeAccountId !== currentAccount.homeAccountId)) {
-      console.error('Account changed:', currentAccount.username);
-      setAccount(currentAccount);
-    } else if (!currentAccount && account) {
-      console.error('User signed out');
-      setAccount(null);
-    }
-  }, [accounts, account]);
+    const initializeAuth = async () => {
+      try {
+        await instance.initialize();
+        setIsInitialized(true);
+      } catch (error) {
+        console.error('Failed to initialize MSAL:', error);
+      }
+    };
 
-  const value = {
-    isAuthenticated: !!account,
-    account,
-  };
+    initializeAuth();
+  }, [instance]);
+
+  useEffect(() => {
+    if (accounts.length > 0) {
+      const account = accounts[0];
+      setUser({
+        name: account.name || '',
+        isAdmin: false, // Set based on your requirements
+      });
+    } else {
+      setUser(null);
+    }
+  }, [accounts]);
+
+  const login = useCallback(() => {
+    if (!isInitialized) return;
+    instance.loginRedirect();
+  }, [instance, isInitialized]);
+
+  const logout = useCallback(() => {
+    if (!isInitialized) return;
+    instance.logoutRedirect();
+  }, [instance, isInitialized]);
+
+  const contextValue = useMemo(() => ({
+    isAuthenticated: accounts.length > 0 && inProgress === InteractionStatus.None,
+    user,
+    login,
+    logout,
+    isInitialized
+  }), [accounts.length, inProgress, user, login, logout, isInitialized]);
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
-};
-
-export default AuthContext; 
+}; 
