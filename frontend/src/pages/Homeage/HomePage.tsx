@@ -16,8 +16,8 @@ const HomePage: React.FC = () => {
 
   // Get user ID from claims
   const account = accounts[0];
-  const claims = account?.idTokenClaims as { oid?: string };
-  const user_id = claims?.oid || '1'; // Fallback to '1' for development
+  const claims = account?.idTokenClaims as { sub?: string };
+  const user_id = claims?.sub || '1'; // Fallback to '1' for development
 
   useEffect(() => {
     const initializeAuth = async () => {
