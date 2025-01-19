@@ -1,19 +1,20 @@
+import { PublicClientApplication } from '@azure/msal-browser';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { msalConfig } from './authConfig';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
-import { enableMsalLogging } from './utils/requestLogger';
 
-// Enable MSAL logging before initializing MSAL
-enableMsalLogging();
+const pca = new PublicClientApplication(msalConfig);
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
+
 root.render(
   <React.StrictMode>
-    <App />
+    <App pca={pca} />
   </React.StrictMode>
 );
 

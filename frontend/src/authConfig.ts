@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 import { Configuration } from '@azure/msal-browser';
-import { msalLoggerConfig } from './utils/requestLogger';
 
 
 
@@ -66,7 +65,6 @@ export const msalConfig: Configuration = {
     secureCookies: true
   },
   system: {
-    ...msalLoggerConfig.loggerOptions,
     allowNativeBroker: false,
     windowHashTimeout: 60000,
     iframeHashTimeout: 6000,

@@ -1,111 +1,99 @@
 /* File: src/components/Header/Header.module.css */
 
-.header {
+.appHeader {
+  background-color: #333;
+  color: #fff;
+  padding: 15px 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.headerContent {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .logo {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 300;
   font-size: 1.5rem;
-  font-weight: bold;
-  color: #0078d4;
-}
-
-.nav {
+  color: #fff;
+  text-decoration: none;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 10px;
 }
 
-.userMenu {
-  position: relative;
+.logo:hover {
+  color: #1976d2;
 }
 
-.userButton {
-  padding: 0.5rem 1rem;
-  border: none;
-  background: none;
-  color: #0078d4;
-  font-weight: 500;
-  cursor: pointer;
+.navLinks {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 20px;
 }
 
-.userButton:hover {
-  color: #005a9e;
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
-.userButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 0.5rem;
-  background-color: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  min-width: 150px;
-  z-index: 1000;
-}
-
-.dropdownItem {
-  width: 100%;
-  padding: 0.75rem 1rem;
+.button {
+  background-color: #1976d2;
+  color: white;
   border: none;
-  background: none;
-  text-align: left;
+  padding: 8px 16px;
+  border-radius: 4px;
   cursor: pointer;
-  color: #333;
-  font-size: 0.9rem;
+  font-size: 1rem;
+  transition: background-color 0.2s;
 }
 
-.dropdownItem:hover {
-  background-color: #f5f5f5;
-  color: #0078d4;
-}
-
-.debugInfo {
-  position: fixed;
-  top: 70px;
-  right: 20px;
-  background: white;
-  padding: 20px;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  max-width: 500px;
-  max-height: 80vh;
-  overflow: auto;
-  z-index: 1000;
-  border: 1px solid #e0e0e0;
-}
-
-.debugInfo h3 {
-  margin-top: 0;
-  color: #0078d4;
-  margin-bottom: 1rem;
-}
-
-.debugInfo pre {
-  background: #f5f5f5;
-  padding: 1rem;
-  border-radius: 4px;
-  overflow: auto;
-  font-size: 0.9rem;
-  white-space: pre-wrap;
-  word-break: break-all;
+.button:hover {
+  background-color: #1565c0;
 }
 
 .debugButton {
-  margin-right: 1rem;
+  background-color: #f50057;
+}
+
+.debugButton:hover {
+  background-color: #c51162;
+}
+
+.debugInfo {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  margin-top: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  color: #333;
+}
+
+.debugInfo h3 {
+  margin-bottom: 1rem;
+}
+
+.debugInfo h4 {
+  color: #666;
+  margin: 1rem 0 0.5rem;
+}
+
+.debugInfo pre {
+  background: white;
+  padding: 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  border: 1px solid #eee;
+}
+
+.errorMessage {
+  color: #f44336;
+  margin-left: 10px;
+  font-size: 0.9rem;
 }
