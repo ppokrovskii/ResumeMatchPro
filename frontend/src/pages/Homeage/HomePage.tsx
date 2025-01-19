@@ -62,28 +62,33 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const handleFileSelect = async (file: RmpFile) => {
+  const handleFileSelect = (file: RmpFile) => {
     try {
       setSelectedFile(file);
 
       const account = accounts[0];
-      const tokenResponse = await instance.acquireTokenSilent({
+      instance.acquireTokenSilent({
         scopes: ['openid'],
         account: account
-      });
-      const claims = tokenResponse.idTokenClaims as IdTokenClaims;
-      const userId = claims.sub;
-      if (!userId) {
-        throw new Error('No user ID found in token claims');
-      }
+      }).then(tokenResponse => {
+        const claims = tokenResponse.idTokenClaims as IdTokenClaims;
+        const userId = claims.sub;
+        if (!userId) {
+          throw new Error('No user ID found in token claims');
+        }
 
-      const results = await getMatchingResults(userId, file.id, file.type, account, instance);
-      const scoresMap: { [key: string]: number } = {};
-      results.forEach(result => {
-        const targetFile = file.type === 'CV' ? result.jd : result.cv;
-        scoresMap[targetFile.id] = result.overall_match_percentage;
+        getMatchingResults(userId, file.id, file.type, account, instance).then(results => {
+          const scoresMap: { [key: string]: number } = {};
+          results.forEach(result => {
+            const targetFile = file.type === 'CV' ? result.jd : result.cv;
+            scoresMap[targetFile.id] = result.overall_match_percentage;
+          });
+          setMatchingScores(scoresMap);
+        });
+      }).catch(error => {
+        console.error('Error getting matching results:', error);
+        message.error('Failed to get matching results');
       });
-      setMatchingScores(scoresMap);
     } catch (error) {
       console.error('Error getting matching results:', error);
       message.error('Failed to get matching results');

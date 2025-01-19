@@ -19,6 +19,7 @@ const FilesList: React.FC<FilesListProps> = ({
   files,
   onFileSelect,
   selectedFile,
+  fileType,
   matchingScores,
   refreshFiles
 }) => {
