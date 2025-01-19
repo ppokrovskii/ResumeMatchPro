@@ -12,7 +12,7 @@ interface FilesListProps {
   selectedFile: RmpFile | null;
   fileType: string;
   matchingScores: { [key: string]: number };
-  setFiles?: React.Dispatch<React.SetStateAction<RmpFile[]>>;
+  refreshFiles: () => Promise<void>;
 }
 
 const FilesList: React.FC<FilesListProps> = ({
@@ -20,7 +20,7 @@ const FilesList: React.FC<FilesListProps> = ({
   onFileSelect,
   selectedFile,
   matchingScores,
-  setFiles
+  refreshFiles
 }) => {
   const { instance, accounts } = useMsal();
   const { isAuthenticated } = useContext(AuthContext);
@@ -33,9 +33,7 @@ const FilesList: React.FC<FilesListProps> = ({
 
     try {
       await deleteFile(fileId, accounts[0], instance);
-      if (setFiles) {
-        setFiles(prevFiles => prevFiles.filter(file => file.id !== fileId));
-      }
+      await refreshFiles();
       message.success('File deleted successfully');
     } catch (error) {
       console.error('Error deleting file:', error);

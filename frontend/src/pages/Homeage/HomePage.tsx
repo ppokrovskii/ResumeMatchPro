@@ -116,6 +116,7 @@ const HomePage: React.FC = () => {
             selectedFile={selectedFile}
             fileType="JD"
             matchingScores={selectedFile?.type === 'CV' ? matchingScores : {}}
+            refreshFiles={refreshFiles}
           />
         </div>
         <div className={styles.column}>
@@ -129,6 +130,7 @@ const HomePage: React.FC = () => {
             selectedFile={selectedFile}
             fileType="CV"
             matchingScores={selectedFile?.type === 'JD' ? matchingScores : {}}
+            refreshFiles={refreshFiles}
           />
         </div>
       </div>
