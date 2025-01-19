@@ -1,23 +1,30 @@
 /* File: src/components/Header/Header.module.css */
 
-.appHeader {
-  background-color: #333;
-  color: #fff;
-  padding: 15px 20px;
+.wrapper {
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 999;
+  background-color: #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  transition: height 0.3s ease-in-out;
 }
 
-.headerContent {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1200px;
+.navInner {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  max-width: var(--container-width, 1220px);
   margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 2rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .logo {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'MontserratAlt1-Light', sans-serif;
   font-weight: 300;
   font-size: 1.5rem;
   color: #fff;
@@ -25,6 +32,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  transition: color 0.2s ease;
 }
 
 .logo:hover {
@@ -43,6 +51,13 @@
   gap: 15px;
 }
 
+.username {
+  font-family: 'Montserrat Light Alt1', sans-serif;
+  font-size: 1rem;
+  color: #333;
+  white-space: nowrap;
+}
+
 .button {
   background-color: #1976d2;
   color: white;
@@ -51,7 +66,9 @@
   border-radius: 4px;
   cursor: pointer;
   font-size: 1rem;
-  transition: background-color 0.2s;
+  font-family: 'Montserrat Light Alt1', sans-serif;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
 }
 
 .button:hover {
@@ -96,4 +113,21 @@
   color: #f44336;
   margin-left: 10px;
   font-size: 0.9rem;
+}
+
+@media screen and (max-width: 1024px) {
+  .username {
+    font-size: 0.9rem;
+  }
+
+  .button {
+    font-size: 0.9rem;
+    padding: 6px 12px;
+  }
+}
+
+@media screen and (min-width: 1921px) {
+  .navInner {
+    max-width: 1400px;
+  }
 }
