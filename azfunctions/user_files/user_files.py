@@ -107,7 +107,7 @@ def _delete_file(req: func.HttpRequest, files_blob_service: FilesBlobService, fi
             
             if not user_id:
                 return func.HttpResponse(
-                    body=json.dumps({"error": "Unauthorized - Missing user ID in claims"}),
+                    body=json.dumps({"error": "Unauthorized - Missing user ID in claims. claims: " + str(claims)}),
                     mimetype="application/json",
                     status_code=401
                 )
