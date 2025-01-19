@@ -1,6 +1,7 @@
 import { useMsal } from '@azure/msal-react';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { loginRequest } from '../../authConfig';
 
 interface AuthError {
   errorCode: string;
@@ -15,34 +16,19 @@ const AuthCallback: React.FC = () => {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        // Handle the redirect promise first
-        const result = await instance.handleRedirectPromise();
-
-        // Check for hash parameters even if no result
-        const urlParams = new URLSearchParams(window.location.hash.substring(1));
-        const error = urlParams.get('error');
-        const errorDescription = urlParams.get('error_description');
-
-        if (error) {
-          setError({
-            errorCode: error,
-            errorMessage: decodeURIComponent(errorDescription || 'Unknown error')
-          });
-          return;
-        }
-
-        // Get the account after authentication attempt
+        await instance.handleRedirectPromise();
         const account = instance.getActiveAccount();
         if (!account) {
-          // Try to set the first account as active if available
+          console.error('No active account found after redirect');
           const accounts = instance.getAllAccounts();
           if (accounts.length > 0) {
             instance.setActiveAccount(accounts[0]);
+          } else {
+            await instance.loginRedirect(loginRequest);
+            return;
           }
         }
-
-        // Always navigate back to home after processing
-        navigate('/', { replace: true });
+        navigate('/');
       } catch (error) {
         console.error('Authentication callback error:', error);
         setError({
