@@ -6,9 +6,6 @@
     "@ant-design/icons": "^5.3.7",
     "@azure/msal-browser": "^3.28.0",
     "@azure/msal-react": "^2.2.0",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
     "@types/jest": "^27.5.2",
     "@types/node": "^16.18.96",
     "@types/react": "^18.3.1",
@@ -40,7 +37,7 @@
   },
   "lint-staged": {
     "src/**/*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
+      "eslint --fix --max-warnings 0",
       "npm run test:precommit"
     ],
     "*.{js,jsx,ts,tsx}": "npm run type-check"
@@ -68,8 +65,12 @@
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@craco/craco": "^7.1.0",
     "@svgr/webpack": "^8.1.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/user-event": "^14.6.0",
     "@types/cypress": "^1.1.6",
     "cypress": "^13.17.0",
+    "eslint-plugin-testing-library": "^5.11.1",
     "husky": "^8.0.0",
     "lint-staged": "^13.0.0",
     "resolve-url-loader": "^5.0.0"

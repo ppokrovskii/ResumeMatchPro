@@ -1,6 +1,6 @@
 // File: src/components/Header/Header.tsx
 
-import { AccountInfo } from '@azure/msal-browser';
+import { AccountInfo, IdTokenClaims } from '@azure/msal-browser';
 import { useMsal } from '@azure/msal-react';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -10,6 +10,8 @@ import './Header.css';
 interface TokenInfo {
   loginScopes?: string[];
   apiScopes?: string[];
+  loginClaims?: IdTokenClaims;
+  apiClaims?: IdTokenClaims;
   error?: string;
 }
 
@@ -41,6 +43,8 @@ const Header: React.FC = () => {
       setTokenInfo({
         loginScopes: loginTokenResult.scopes,
         apiScopes: apiTokenResult?.scopes,
+        loginClaims: loginTokenResult.idTokenClaims,
+        apiClaims: apiTokenResult?.idTokenClaims,
       });
     } catch (error: unknown) {
       console.error('Error getting token info:', error);
@@ -99,6 +103,12 @@ const Header: React.FC = () => {
 
               <h4>API Scopes</h4>
               <pre>{JSON.stringify(tokenInfo.apiScopes, null, 2)}</pre>
+
+              <h4>Login Token Claims</h4>
+              <pre>{JSON.stringify(tokenInfo.loginClaims, null, 2)}</pre>
+
+              <h4>API Token Claims</h4>
+              <pre>{JSON.stringify(tokenInfo.apiClaims, null, 2)}</pre>
 
               {tokenInfo.error && (
                 <div className="error-message">
