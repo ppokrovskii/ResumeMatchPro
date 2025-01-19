@@ -34,7 +34,7 @@
     }
   ],
   "globalHeaders": {
-    "content-security-policy": "frame-ancestors 'self' https://*.b2clogin.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.b2clogin.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.b2clogin.com https://resumematchprodev.b2clogin.com",
+    "content-security-policy": "frame-ancestors 'self' https://*.b2clogin.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.b2clogin.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.b2clogin.com https://resumematchprodev.b2clogin.com https://resumematchpro.b2clogin.com https://*.azurewebsites.net",
     "X-Frame-Options": "SAMEORIGIN",
     "X-Content-Type-Options": "nosniff",
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
