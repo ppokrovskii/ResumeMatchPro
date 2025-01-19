@@ -1,13 +1,16 @@
 // File: src/components/Header/Header.tsx
 
 import React, { useContext, useEffect, useState } from 'react';
+import BurgerIcon from '../../assets/svg/BurgerIcon';
 import { AuthContext } from '../../contexts/AuthContext';
 import Logo from '../Logo/Logo';
+import Sidebar from '../Sidebar/Sidebar';
 import styles from './Header.module.css';
 
 const Header: React.FC = () => {
   const { isAuthenticated, user, login, logout } = useContext(AuthContext);
   const [y, setY] = useState(window.scrollY);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setY(window.scrollY);
@@ -18,24 +21,38 @@ const Header: React.FC = () => {
   }, [y]);
 
   return (
-    <header
-      className={styles.wrapper}
-      style={y > 100 ? { height: "60px" } : { height: "80px" }}
-    >
-      <div className={styles.navInner}>
-        <Logo />
-        <div className={styles.navLinks}>
-          {isAuthenticated && user ? (
-            <div className={styles.userInfo}>
-              <span className={styles.username}>{user.name}</span>
-              <button onClick={logout} className={styles.button}>Sign Out</button>
-            </div>
-          ) : (
-            <button onClick={login} className={styles.button}>Sign In</button>
-          )}
+    <>
+      <Sidebar
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        username={user?.name || ''}
+        onSignOut={logout}
+      />
+      <header
+        className={styles.wrapper}
+        style={y > 100 ? { height: "60px" } : { height: "80px" }}
+      >
+        <div className={styles.navInner}>
+          <Logo />
+          <div className={styles.navLinks}>
+            {isAuthenticated && user ? (
+              <div className={styles.userInfo}>
+                <span className={styles.username}>{user.name}</span>
+                <button onClick={logout} className={styles.button}>Sign Out</button>
+              </div>
+            ) : (
+              <button onClick={login} className={styles.button}>Sign In</button>
+            )}
+          </div>
+          <button
+            className={styles.burgerWrapper}
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <BurgerIcon />
+          </button>
         </div>
-      </div>
-    </header>
+      </header>
+    </>
   );
 };
 

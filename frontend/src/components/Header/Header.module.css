@@ -21,13 +21,30 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  box-sizing: border-box;
+  /* Ensure padding is included in width */
+}
+
+.burgerWrapper {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  color: #333;
+  padding: 0 10px;
+}
+
+.burgerWrapper:hover {
+  opacity: 0.7;
 }
 
 .logo {
   font-family: 'MontserratAlt1-Light', sans-serif;
   font-weight: 300;
   font-size: 1.5rem;
-  color: #fff;
+  color: #333;
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -42,30 +59,35 @@
 .navLinks {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: clamp(0.5rem, 2vw, 1.25rem);
 }
 
 .userInfo {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: clamp(0.5rem, 2vw, 1rem);
+  padding-right: 10px;
+  /* Add padding to prevent overflow */
 }
 
 .username {
   font-family: 'Montserrat Light Alt1', sans-serif;
-  font-size: 1rem;
+  font-size: clamp(0.875rem, 1.5vw, 1rem);
   color: #333;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: clamp(100px, 20vw, 200px);
 }
 
 .button {
   background-color: #1976d2;
   color: white;
   border: none;
-  padding: 8px 16px;
+  padding: clamp(6px, 1vw, 8px) clamp(12px, 2vw, 16px);
   border-radius: 4px;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: clamp(0.875rem, 1.5vw, 1rem);
   font-family: 'Montserrat Light Alt1', sans-serif;
   transition: background-color 0.2s ease;
   white-space: nowrap;
@@ -115,14 +137,13 @@
   font-size: 0.9rem;
 }
 
-@media screen and (max-width: 1024px) {
-  .username {
-    font-size: 0.9rem;
+@media screen and (max-width: 768px) {
+  .navLinks {
+    display: none;
   }
 
-  .button {
-    font-size: 0.9rem;
-    padding: 6px 12px;
+  .burgerWrapper {
+    display: block;
   }
 }
 
