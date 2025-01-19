@@ -47,7 +47,7 @@ const loginScopes = [
 ];
 
 const apiScopes = [
-  `https://resumematchprodev.onmicrosoft.com/resumematchpro-api/Files.ReadWrite`
+  `https://${b2cAuth.tenant}.onmicrosoft.com/resumematchpro-api/Files.ReadWrite`
 ];
 
 // MSAL Configuration
@@ -57,17 +57,21 @@ export const msalConfig: Configuration = {
     authority: b2cPolicies.signUpSignIn.authority,
     redirectUri: redirectUri,
     knownAuthorities: [b2cAuth.authorityDomain],
-    // postLogoutRedirectUri: baseUrl,
-    // navigateToLoginRequestUrl: false,
-    // protocolMode: "OIDC"
+    postLogoutRedirectUri: baseUrl,
+    navigateToLoginRequestUrl: true
   },
   cache: {
-    cacheLocation: "sessionStorage",
-    storeAuthStateInCookie: false
+    cacheLocation: "localStorage",
+    storeAuthStateInCookie: true,
+    secureCookies: true
   },
   system: {
     ...msalLoggerConfig.loggerOptions,
-    allowNativeBroker: false
+    allowNativeBroker: false,
+    windowHashTimeout: 60000,
+    iframeHashTimeout: 6000,
+    loadFrameTimeout: 0,
+    asyncPopups: false
   }
 };
 

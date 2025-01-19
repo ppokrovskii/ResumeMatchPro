@@ -16,32 +16,24 @@ const AuthCallback: React.FC = () => {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        // Check if there's an error in the URL hash
-        const urlParams = new URLSearchParams(window.location.hash.substring(1));
-        const error = urlParams.get('error');
-        const errorDescription = urlParams.get('error_description');
-
-        if (error) {
-          // If there's an error, set it and don't redirect
-          setError({
-            errorCode: error,
-            errorMessage: decodeURIComponent(errorDescription || 'Unknown error')
-          });
-          return;
-        }
-
-        // No error, proceed with normal flow
         await instance.handleRedirectPromise();
         const account = instance.getActiveAccount();
         if (!account) {
-          await instance.acquireTokenSilent(loginRequest);
+          console.error('No active account found after redirect');
+          const accounts = instance.getAllAccounts();
+          if (accounts.length > 0) {
+            instance.setActiveAccount(accounts[0]);
+          } else {
+            await instance.loginRedirect(loginRequest);
+            return;
+          }
         }
         navigate('/');
       } catch (error) {
         console.error('Authentication callback error:', error);
         setError({
           errorCode: 'unknown_error',
-          errorMessage: 'An unexpected error occurred during authentication.'
+          errorMessage: error instanceof Error ? error.message : 'An unexpected error occurred during authentication.'
         });
       }
     };
