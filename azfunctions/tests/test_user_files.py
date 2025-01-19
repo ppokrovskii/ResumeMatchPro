@@ -69,7 +69,7 @@ def test_delete_file_integration(repository, blob_service, sample_file_metadata)
     # Create mock B2C claims
     mock_claims = {
         "claims": [
-            {"typ": "sub", "val": "test-user-123"},
+            {"typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "val": "test-user-123"},
             {"typ": "name", "val": "Test User"},
             {"typ": "emails", "val": "test@example.com"}
         ]
@@ -170,7 +170,7 @@ def test_delete_file_logic():
     # Create mock B2C claims
     mock_claims = {
         "claims": [
-            {"typ": "sub", "val": "user-123"},
+            {"typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "val": "user-123"},
             {"typ": "name", "val": "Test User"},
             {"typ": "emails", "val": "test@example.com"}
         ]
@@ -217,7 +217,7 @@ def test_delete_file_logic_not_found():
     # Create mock B2C claims
     mock_claims = {
         "claims": [
-            {"typ": "sub", "val": "user-123"},
+            {"typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "val": "user-123"},
             {"typ": "name", "val": "Test User"},
             {"typ": "emails", "val": "test@example.com"}
         ]
@@ -326,7 +326,7 @@ def test_delete_file_forbidden():
     # Create mock B2C claims
     mock_claims = {
         "claims": [
-            {"typ": "sub", "val": "user-123"},
+            {"typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "val": "user-123"},
             {"typ": "name", "val": "Test User"},
             {"typ": "emails", "val": "test@example.com"}
         ]

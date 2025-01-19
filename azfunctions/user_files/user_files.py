@@ -103,11 +103,12 @@ def _delete_file(req: func.HttpRequest, files_blob_service: FilesBlobService, fi
         try:
             claims_json = base64.b64decode(client_principal).decode('utf-8')
             claims = json.loads(claims_json)
-            user_id = next((claim['val'] for claim in claims['claims'] if claim['typ'] == 'sub'), None)
+            user_id = next((claim['val'] for claim in claims['claims'] 
+                          if claim['typ'] == 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'), None)
             
             if not user_id:
                 return func.HttpResponse(
-                    body=json.dumps({"error": "Unauthorized - Missing user ID in claims. claims: " + str(claims)}),
+                    body=json.dumps({"error": "Unauthorized - Missing user ID in claims"}),
                     mimetype="application/json",
                     status_code=401
                 )
