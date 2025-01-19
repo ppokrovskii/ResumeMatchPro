@@ -20,11 +20,11 @@ name: Deploy azfunctions to Azure Function App
 
 on:
   push:
-    branches: ["develop"]
-    paths: ["azfunctions/**"]
+    branches: ["main", "develop"]
+    paths: ["azfunctions/**", ".github/workflows/azure-functions-app-python.yml"]
 
 env:
-  AZURE_FUNCTIONAPP_NAME: 'resumematchpro-dev-function-app'
+  AZURE_FUNCTIONAPP_NAME: ${{ github.ref_name == 'main' && 'resumematchpro-prod-function-app' || 'resumematchpro-dev-function-app' }}
   AZURE_FUNCTIONAPP_PACKAGE_PATH: 'azfunctions'
   PYTHON_VERSION: '3.11'
   # Runtime settings
@@ -35,7 +35,7 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment: dev
+    environment: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
 
     steps:
     - name: 'Checkout GitHub Action'
