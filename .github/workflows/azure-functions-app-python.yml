@@ -21,7 +21,7 @@ name: Deploy azfunctions to Azure Function App
 on:
   push:
     branches: ["main", "develop"]
-    paths: ["azfunctions/**"]
+    paths: ["azfunctions/**", ".github/workflows/azure-functions-app-python.yml"]
 
 env:
   AZURE_FUNCTIONAPP_NAME: ${{ github.ref_name == 'main' && 'resumematchpro-prod-function-app' || 'resumematchpro-dev-function-app' }}
