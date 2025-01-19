@@ -2,17 +2,108 @@ import json
 from unittest import mock
 import azure.functions as func
 from uuid import uuid4
-
-
+import os
+from pathlib import Path
+import pytest
+from azure.cosmos import CosmosClient
+from dotenv import load_dotenv
+import base64
 
 # add project root to sys.path
 import sys
-from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from user_files.user_files import _get_files, _delete_file
 from user_files.models import UserFilesRequest, UserFilesResponse
 from shared.models import FileMetadataDb, FileType
+from shared.files_repository import FilesRepository
+from shared.blob_service import FilesBlobService
+
+# Load test environment variables
+load_dotenv(Path(__file__).parent / ".env.test")
+
+@pytest.fixture
+def repository():
+    # Create a Cosmos DB client and initialize the repository
+    client = CosmosClient(
+        url=os.getenv("COSMOS_DB_URL"),
+        credential=os.getenv("COSMOS_DB_KEY"),
+        connection_verify=False  # Skip SSL verification for emulator
+    )
+    # Create database if not exists
+    database = client.create_database_if_not_exists(os.getenv("COSMOS_DB_DATABASE"))
+    return FilesRepository(database)
+
+@pytest.fixture
+def blob_service():
+    return FilesBlobService()
+
+@pytest.fixture
+def sample_file_content():
+    return b"Test file content"
+
+@pytest.fixture
+def sample_file_metadata(repository, blob_service, sample_file_content):
+    # Create a unique filename
+    filename = f"test_file_{uuid4()}.txt"
+    
+    # Upload file to blob storage
+    blob_url = blob_service.upload_blob(
+        container_name="resume-match-pro-files",
+        filename=filename,
+        content=sample_file_content
+    )
+    
+    # Create file metadata
+    file_metadata = FileMetadataDb(
+        filename=filename,
+        type=FileType.CV,
+        user_id="test-user-123",
+        url=blob_url
+    )
+    
+    # Save to database
+    return repository.upsert_file(file_metadata.model_dump(mode="json"))
+
+def test_delete_file_integration(repository, blob_service, sample_file_metadata):
+    # Create mock B2C claims
+    mock_claims = {
+        "claims": [
+            {"typ": "sub", "val": "test-user-123"},
+            {"typ": "name", "val": "Test User"},
+            {"typ": "emails", "val": "test@example.com"}
+        ]
+    }
+    encoded_claims = base64.b64encode(json.dumps(mock_claims).encode()).decode()
+    
+    # Create mock request with B2C headers
+    req = func.HttpRequest(
+        method='DELETE',
+        url=f'/api/files/{sample_file_metadata.id}',
+        route_params={'file_id': str(sample_file_metadata.id)},
+        headers={
+            'X-MS-CLIENT-PRINCIPAL': encoded_claims,
+            'X-MS-CLIENT-PRINCIPAL-ID': 'test-user-123',
+            'X-MS-CLIENT-PRINCIPAL-NAME': 'test@example.com'
+        },
+        body=None
+    )
+    
+    # Call the delete function
+    response = _delete_file(req, blob_service, repository)
+    
+    # Assert response
+    assert response.status_code == 204
+    assert response.get_body() == b''
+    
+    # Verify file is deleted from Cosmos DB
+    assert repository.get_file_by_id('test-user-123', str(sample_file_metadata.id)) is None
+    
+    # Verify file is deleted from blob storage
+    assert not blob_service.blob_exists(
+        container_name="resume-match-pro-files",
+        filename=sample_file_metadata.filename
+    )
 
 def test_get_files_logic():
     # Mock the repository
@@ -76,15 +167,28 @@ def test_delete_file_logic():
     mock_files_repository.get_file_by_id.return_value = mock_file
     mock_files_repository.delete_file.return_value = True
     
-    # Create mock request with token claims
+    # Create mock B2C claims
+    mock_claims = {
+        "claims": [
+            {"typ": "sub", "val": "user-123"},
+            {"typ": "name", "val": "Test User"},
+            {"typ": "emails", "val": "test@example.com"}
+        ]
+    }
+    encoded_claims = base64.b64encode(json.dumps(mock_claims).encode()).decode()
+    
+    # Create mock request with B2C headers
     req = func.HttpRequest(
         method='DELETE',
         url=f'/api/files/{file_id}',
         route_params={'file_id': str(file_id)},
+        headers={
+            'X-MS-CLIENT-PRINCIPAL': encoded_claims,
+            'X-MS-CLIENT-PRINCIPAL-ID': 'user-123',
+            'X-MS-CLIENT-PRINCIPAL-NAME': 'test@example.com'
+        },
         body=None
     )
-    # Mock the get_claims method
-    req.get_claims = mock.Mock(return_value={'sub': 'user-123'})
     
     # Call the function
     response = _delete_file(req, mock_blob_service, mock_files_repository)
@@ -110,15 +214,28 @@ def test_delete_file_logic_not_found():
     # Setup repository mock to return None (file not found)
     mock_files_repository.get_file_by_id.return_value = None
     
-    # Create mock request with token claims
+    # Create mock B2C claims
+    mock_claims = {
+        "claims": [
+            {"typ": "sub", "val": "user-123"},
+            {"typ": "name", "val": "Test User"},
+            {"typ": "emails", "val": "test@example.com"}
+        ]
+    }
+    encoded_claims = base64.b64encode(json.dumps(mock_claims).encode()).decode()
+    
+    # Create mock request with B2C headers
     req = func.HttpRequest(
         method='DELETE',
-        url='/api/files/file-123',
+        url=f'/api/files/file-123',
         route_params={'file_id': 'file-123'},
+        headers={
+            'X-MS-CLIENT-PRINCIPAL': encoded_claims,
+            'X-MS-CLIENT-PRINCIPAL-ID': 'user-123',
+            'X-MS-CLIENT-PRINCIPAL-NAME': 'test@example.com'
+        },
         body=None
     )
-    # Mock the get_claims method
-    req.get_claims = mock.Mock(return_value={'sub': 'user-123'})
     
     # Call the function
     response = _delete_file(req, mock_blob_service, mock_files_repository)
@@ -164,15 +281,14 @@ def test_delete_file_unauthorized():
     mock_files_repository = mock.Mock()
     mock_blob_service = mock.Mock()
     
-    # Create mock request without token claims
+    # Create mock request without claims header
     req = func.HttpRequest(
         method='DELETE',
         url='/api/files/file-123',
         route_params={'file_id': 'file-123'},
+        headers={},
         body=None
     )
-    # Mock the get_claims method to return None
-    req.get_claims = mock.Mock(return_value=None)
     
     # Call the function
     response = _delete_file(req, mock_blob_service, mock_files_repository)
@@ -180,7 +296,7 @@ def test_delete_file_unauthorized():
     # Assert response
     assert response.status_code == 401
     error_response = json.loads(response.get_body())
-    assert error_response['error'] == "Unauthorized - Missing user ID in token"
+    assert error_response['error'] == "Unauthorized - Missing user claims"
     
     # Verify no service calls were made
     mock_blob_service.assert_not_called()
@@ -207,15 +323,28 @@ def test_delete_file_forbidden():
     # Setup repository mock
     mock_files_repository.get_file_by_id.return_value = mock_file
     
-    # Create mock request with token claims
+    # Create mock B2C claims
+    mock_claims = {
+        "claims": [
+            {"typ": "sub", "val": "user-123"},
+            {"typ": "name", "val": "Test User"},
+            {"typ": "emails", "val": "test@example.com"}
+        ]
+    }
+    encoded_claims = base64.b64encode(json.dumps(mock_claims).encode()).decode()
+    
+    # Create mock request with B2C headers
     req = func.HttpRequest(
         method='DELETE',
         url=f'/api/files/{file_id}',
         route_params={'file_id': str(file_id)},
+        headers={
+            'X-MS-CLIENT-PRINCIPAL': encoded_claims,
+            'X-MS-CLIENT-PRINCIPAL-ID': 'user-123',
+            'X-MS-CLIENT-PRINCIPAL-NAME': 'test@example.com'
+        },
         body=None
     )
-    # Mock the get_claims method
-    req.get_claims = mock.Mock(return_value={'sub': 'user-123'})
     
     # Call the function
     response = _delete_file(req, mock_blob_service, mock_files_repository)

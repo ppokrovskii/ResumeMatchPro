@@ -3,6 +3,7 @@ import json
 import azure.functions as func
 import logging
 from pydantic import ValidationError
+import base64
 
 from shared.db_service import get_cosmos_db_client
 from shared.files_repository import FilesRepository
@@ -80,7 +81,7 @@ def delete_file(req: func.HttpRequest) -> func.HttpResponse:
 
 
 def _delete_file(req: func.HttpRequest, files_blob_service: FilesBlobService, files_repository: FilesRepository) -> func.HttpResponse:
-    # Get file_id from route parameters and user_id from token claims
+    # Get file_id from route parameters
     file_id = req.route_params.get('file_id')
     if not file_id:
         return func.HttpResponse(
@@ -90,15 +91,33 @@ def _delete_file(req: func.HttpRequest, files_blob_service: FilesBlobService, fi
         )
     
     try:
-        # Get user_id from token claims
-        token_claims = req.get_claims()
-        if not token_claims or 'sub' not in token_claims:
+        # Get user_id from B2C claims
+        client_principal = req.headers.get('X-MS-CLIENT-PRINCIPAL')
+        if not client_principal:
             return func.HttpResponse(
-                body=json.dumps({"error": "Unauthorized - Missing user ID in token"}),
+                body=json.dumps({"error": "Unauthorized - Missing user claims"}),
                 mimetype="application/json",
                 status_code=401
             )
-        user_id = token_claims['sub']
+
+        try:
+            claims_json = base64.b64decode(client_principal).decode('utf-8')
+            claims = json.loads(claims_json)
+            user_id = next((claim['val'] for claim in claims['claims'] if claim['typ'] == 'sub'), None)
+            
+            if not user_id:
+                return func.HttpResponse(
+                    body=json.dumps({"error": "Unauthorized - Missing user ID in claims"}),
+                    mimetype="application/json",
+                    status_code=401
+                )
+        except Exception as e:
+            logging.error(f"Error decoding claims: {str(e)}")
+            return func.HttpResponse(
+                body=json.dumps({"error": "Unauthorized - Invalid claims format"}),
+                mimetype="application/json",
+                status_code=401
+            )
         
         # Get file metadata from database
         file_metadata = files_repository.get_file_by_id(user_id, file_id)
@@ -130,7 +149,6 @@ def _delete_file(req: func.HttpRequest, files_blob_service: FilesBlobService, fi
             body="",
             status_code=204
         )
-        
     except Exception as e:
         logging.error(f"Error deleting file: {str(e)}")
         return func.HttpResponse(
