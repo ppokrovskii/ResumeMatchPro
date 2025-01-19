@@ -1,8 +1,8 @@
 import { InboxOutlined } from '@ant-design/icons';
 import { useMsal } from '@azure/msal-react';
 import { Upload } from 'antd';
-import { UploadRequestOption } from 'rc-upload/lib/interface';
-import React from 'react';
+import { RcFile, UploadRequestOption } from 'rc-upload/lib/interface';
+import React, { useRef } from 'react';
 import { uploadFiles } from '../../services/fileService';
 
 interface FilesUploadProps {
@@ -13,12 +13,22 @@ interface FilesUploadProps {
 const FilesUpload: React.FC<FilesUploadProps> = ({ onFilesUploaded, fileType }) => {
     const { instance, accounts } = useMsal();
     const account = accounts[0];
-    const claims = account?.idTokenClaims as { oid?: string };
-    const userId = claims?.oid || '1'; // Fallback to '1' for development
+    const claims = account?.idTokenClaims as { sub?: string };
+    const userId = claims?.sub || '1'; // Fallback to '1' for development
+    const uploadingFiles = useRef<Set<string>>(new Set());
 
     const handleUpload = async (options: UploadRequestOption) => {
         const { file, onSuccess, onError } = options;
+        const rcFile = file as RcFile;
+
+        // Check if this file is already being uploaded
+        const fileKey = `${rcFile.name}-${rcFile.size}-${rcFile.lastModified}`;
+        if (uploadingFiles.current.has(fileKey)) {
+            return;
+        }
+
         try {
+            uploadingFiles.current.add(fileKey);
             const response = await uploadFiles([file as File], userId, fileType, account, instance);
             if (response.files) {
                 onFilesUploaded(response.files, fileType);
@@ -29,6 +39,8 @@ const FilesUpload: React.FC<FilesUploadProps> = ({ onFilesUploaded, fileType }) 
         } catch (error) {
             console.error('Error uploading files:', error);
             onError?.(error as Error);
+        } finally {
+            uploadingFiles.current.delete(fileKey);
         }
     };
 
