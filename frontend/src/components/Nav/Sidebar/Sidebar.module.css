@@ -1,0 +1,114 @@
+/* Sidebar Container */
+.wrapper {
+    width: 560px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    right: -100%;
+    padding: 100px 1rem 1rem;
+    z-index: 998;
+    background-color: #fff;
+    transition: transform 0.3s ease-in-out;
+    overflow-y: auto;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+    transform: translateX(0);
+
+    /* Hide scrollbar but keep functionality */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+}
+
+.wrapper::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari, Opera */
+}
+
+.wrapper[data-open="true"] {
+    right: 0;
+    transform: translateX(0);
+}
+
+.wrapper[data-open="false"] {
+    transform: translateX(100%);
+}
+
+/* User Info */
+.userInfo {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.username {
+    font-family: 'Montserrat Light Alt1', sans-serif;
+    font-size: clamp(1.3rem, 2.25vw, 1.5rem);
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+/* List Style */
+.ulStyle {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.ulStyle li {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.signOutButton {
+    background-color: #1976d2;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s ease;
+    width: auto;
+    min-width: 100px;
+}
+
+.signOutButton:hover {
+    background-color: #1565c0;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .closeBtn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .wrapper {
+        width: 100%;
+        right: 0;
+        transform: translateX(100%);
+    }
+
+    .sidebarHeader {
+        height: 60px;
+    }
+}
+
+@media screen and (min-width: 601px) and (max-width: 1024px) {
+    .wrapper {
+        width: 50%;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .wrapper {
+        width: 100%;
+        right: 0;
+        transform: translateX(100%);
+    }
+}
