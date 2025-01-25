@@ -1,9 +1,9 @@
 import { DeleteOutlined, StarFilled, StarOutlined } from '@ant-design/icons';
 import { useMsal } from '@azure/msal-react';
-import { Button, List, message } from 'antd';
+import { Button, List, message, Spin } from 'antd';
 import React, { useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
-import { RmpFile, deleteFile } from '../../services/fileService';
+import { deleteFile, RmpFile } from '../../services/fileService';
 import styles from './FilesList.module.css';
 
 interface FilesListProps {
@@ -13,6 +13,7 @@ interface FilesListProps {
   fileType: string;
   matchingScores: { [key: string]: number };
   refreshFiles: () => Promise<void>;
+  isLoading?: boolean;
 }
 
 const FilesList: React.FC<FilesListProps> = ({
@@ -21,7 +22,8 @@ const FilesList: React.FC<FilesListProps> = ({
   selectedFile,
   fileType,
   matchingScores,
-  refreshFiles
+  refreshFiles,
+  isLoading = false
 }) => {
   const { instance, accounts } = useMsal();
   const { isAuthenticated } = useContext(AuthContext);
@@ -67,36 +69,41 @@ const FilesList: React.FC<FilesListProps> = ({
   };
 
   return (
-    <List
-      className={styles.filesList}
-      itemLayout="horizontal"
-      dataSource={files}
-      renderItem={file => (
-        <List.Item
-          className={`${styles.fileItem} ${selectedFile?.id === file.id ? styles.selected : ''}`}
-          actions={[
-            <Button
-              key="delete"
-              icon={<DeleteOutlined />}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(file.id);
-              }}
-              className={styles.deleteButton}
-            />
-          ]}
-          onClick={() => onFileSelect(file)}
-        >
-          <List.Item.Meta
-            title={file.filename}
-            description={
-              matchingScores[file.id] !== undefined &&
-              renderStarRating(matchingScores[file.id])
-            }
-          />
-        </List.Item>
-      )}
-    />
+    <div className={styles.filesListWrapper}>
+      <Spin spinning={isLoading} tip="Loading files...">
+        <List
+          className={styles.filesList}
+          itemLayout="horizontal"
+          dataSource={files}
+          locale={{ emptyText: isLoading ? ' ' : 'No files found' }}
+          renderItem={file => (
+            <List.Item
+              className={`${styles.fileItem} ${selectedFile?.id === file.id ? styles.selected : ''}`}
+              actions={[
+                <Button
+                  key="delete"
+                  icon={<DeleteOutlined />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(file.id);
+                  }}
+                  className={styles.deleteButton}
+                />
+              ]}
+              onClick={() => onFileSelect(file)}
+            >
+              <List.Item.Meta
+                title={file.filename}
+                description={
+                  matchingScores[file.id] !== undefined &&
+                  renderStarRating(matchingScores[file.id])
+                }
+              />
+            </List.Item>
+          )}
+        />
+      </Spin>
+    </div>
   );
 };
 

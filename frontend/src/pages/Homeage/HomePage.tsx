@@ -103,10 +103,6 @@ const HomePage: React.FC = () => {
     return <div>Loading...</div>;
   }
 
-  if (isLoading) {
-    return <div>Loading files...</div>;
-  }
-
   return (
     <div className={styles.container}>
       <div className={styles.columnsContainer}>
@@ -122,6 +118,7 @@ const HomePage: React.FC = () => {
             fileType="JD"
             matchingScores={selectedFile?.type === 'CV' ? matchingScores : {}}
             refreshFiles={refreshFiles}
+            isLoading={isLoading}
           />
         </div>
         <div className={styles.column}>
@@ -136,6 +133,7 @@ const HomePage: React.FC = () => {
             fileType="CV"
             matchingScores={selectedFile?.type === 'JD' ? matchingScores : {}}
             refreshFiles={refreshFiles}
+            isLoading={isLoading}
           />
         </div>
       </div>
