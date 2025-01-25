@@ -1,4 +1,6 @@
 /* eslint-disable no-console */
+import { InteractionRequiredAuthError, InteractionStatus } from '@azure/msal-browser';
+import { useMsal } from '@azure/msal-react';
 import React, { useContext, useEffect } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 
@@ -12,19 +14,31 @@ const AuthenticationTemplate: React.FC<AuthenticationTemplateProps> = ({
   onAuthenticated
 }) => {
   const { isAuthenticated, user, login } = useContext(AuthContext);
+  const { inProgress } = useMsal();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      login();
-      return;
-    }
+    const initiateLogin = async () => {
+      if (!isAuthenticated && inProgress === InteractionStatus.None) {
+        try {
+          await login();
+        } catch (error) {
+          if (!(error instanceof InteractionRequiredAuthError)) {
+            console.error('Login error:', error);
+          }
+        }
+      }
+    };
 
-    if (user) {
+    initiateLogin();
+  }, [isAuthenticated, login, inProgress]);
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
       onAuthenticated(user);
     }
-  }, [isAuthenticated, user, login, onAuthenticated]);
+  }, [isAuthenticated, user, onAuthenticated]);
 
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated || !user || inProgress !== InteractionStatus.None) {
     return <div>Loading...</div>;
   }
 

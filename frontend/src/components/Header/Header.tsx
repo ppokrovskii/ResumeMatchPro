@@ -8,7 +8,7 @@ import Sidebar from '../Sidebar/Sidebar';
 import styles from './Header.module.css';
 
 const Header: React.FC = () => {
-  const { isAuthenticated, user, login, logout } = useContext(AuthContext);
+  const { isAuthenticated, user, logout } = useContext(AuthContext);
   const [y, setY] = useState(window.scrollY);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -20,13 +20,15 @@ const Header: React.FC = () => {
     };
   }, [y]);
 
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <>
       <Sidebar
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
-        username={user?.name || ''}
-        onSignOut={logout}
       />
       <header
         className={styles.wrapper}
@@ -35,14 +37,10 @@ const Header: React.FC = () => {
         <div className={styles.navInner}>
           <Logo />
           <div className={styles.navLinks}>
-            {isAuthenticated && user ? (
-              <div className={styles.userInfo}>
-                <span className={styles.username}>{user.name}</span>
-                <button onClick={logout} className={styles.button}>Sign Out</button>
-              </div>
-            ) : (
-              <button onClick={login} className={styles.button}>Sign In</button>
-            )}
+            <div className={styles.userInfo}>
+              <span className={styles.username}>{user?.name}</span>
+              <button onClick={logout} className={styles.button}>Sign Out</button>
+            </div>
           </div>
           <button
             className={styles.burgerWrapper}
