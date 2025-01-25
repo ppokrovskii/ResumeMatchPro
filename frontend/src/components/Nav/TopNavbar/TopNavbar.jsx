@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useState } from 'react';
 import BurgerIcon from '../../../assets/svg/BurgerIcon';
 import { AuthContext } from '../../../contexts/AuthContext';
 import Logo from '../../Logo/Logo';
@@ -7,16 +7,7 @@ import styles from './TopNavbar.module.css';
 
 const TopNavbar = () => {
     const { isAuthenticated, user, logout } = useContext(AuthContext);
-    const [y, setY] = useState(window.scrollY);
     const [sidebarOpen, setSidebarOpen] = useState(false);
-
-    useEffect(() => {
-        const handleScroll = () => setY(window.scrollY);
-        window.addEventListener("scroll", handleScroll);
-        return () => {
-            window.removeEventListener("scroll", handleScroll);
-        };
-    }, [y]);
 
     if (!isAuthenticated) {
         return null;
@@ -28,10 +19,7 @@ const TopNavbar = () => {
                 sidebarOpen={sidebarOpen}
                 setSidebarOpen={setSidebarOpen}
             />
-            <header
-                className={styles.wrapper}
-                style={y > 100 ? { height: "60px" } : { height: "80px" }}
-            >
+            <header className={styles.wrapper}>
                 <div className={styles.navInner}>
                     <Logo />
                     <div className={styles.navLinks}>
