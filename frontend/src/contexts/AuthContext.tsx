@@ -8,16 +8,16 @@ export interface AuthContextType {
     name: string;
     isAdmin: boolean;
   } | null;
-  login: () => void;
-  logout: () => void;
+  login: () => Promise<void>;
+  logout: () => Promise<void>;
   isInitialized: boolean;
 }
 
 const defaultContext: AuthContextType = {
   isAuthenticated: false,
   user: null,
-  login: () => { },
-  logout: () => { },
+  login: async () => { },
+  logout: async () => { },
   isInitialized: false
 };
 
@@ -53,15 +53,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [accounts]);
 
-  const login = useCallback(() => {
-    if (!isInitialized) return;
-    instance.loginRedirect();
-  }, [instance, isInitialized]);
+  const login = useCallback(async () => {
+    if (!isInitialized || inProgress !== InteractionStatus.None) return;
+    await instance.loginRedirect();
+  }, [instance, isInitialized, inProgress]);
 
-  const logout = useCallback(() => {
-    if (!isInitialized) return;
-    instance.logoutRedirect();
-  }, [instance, isInitialized]);
+  const logout = useCallback(async () => {
+    if (!isInitialized || inProgress !== InteractionStatus.None) return;
+    await instance.logoutRedirect();
+  }, [instance, isInitialized, inProgress]);
 
   const contextValue = useMemo(() => ({
     isAuthenticated: accounts.length > 0 && inProgress === InteractionStatus.None,
