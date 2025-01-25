@@ -8,7 +8,7 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import styles from './App.module.css';
 import AppRoutes from './AppRoutes';
 import Footer from './components/Footer/Footer';
-import Header from './components/Header/Header';
+import TopNavbar from './components/Nav/TopNavbar/TopNavbar';
 import { AuthProvider } from './contexts/AuthContext';
 
 interface AppProps {
@@ -21,7 +21,7 @@ const App: React.FC<AppProps> = ({ pca }) => {
       <MsalProvider instance={pca}>
         <AuthProvider>
           <div className={styles.app}>
-            <Header />
+            <TopNavbar />
             <main className={styles.mainContent}>
               <div className={styles.container}>
                 <AppRoutes />

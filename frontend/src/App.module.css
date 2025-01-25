@@ -1,18 +1,20 @@
 .app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  position: relative;
 }
 
 .mainContent {
   flex: 1;
   background-color: #f5f5f5;
-  margin-top: 80px;
-  margin-bottom: 60px;
+  padding-top: 80px;
+  padding-bottom: calc(60px + 1rem);
+  /* Account for footer height plus some spacing */
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .container {
@@ -88,9 +90,21 @@
   color: #666;
 }
 
-@media screen and (max-width: 1024px) {
+@media screen and (max-width: 600px) {
   .mainContent {
-    margin-top: 60px;
+    padding-top: 60px;
+    padding-bottom: 1rem;
+    /* Remove footer spacing since footer is static on mobile */
+  }
+
+  .container {
+    max-width: 95%;
+  }
+}
+
+@media screen and (min-width: 601px) and (max-width: 1024px) {
+  .mainContent {
+    padding-top: 60px;
   }
 
   .container {

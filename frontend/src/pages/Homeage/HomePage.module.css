@@ -29,6 +29,8 @@
   flex-direction: column;
   overflow: hidden;
   /* Prevent content overflow */
+  min-height: 400px;
+  /* Ensure minimum height for content */
 }
 
 .columnTitle {
@@ -59,7 +61,7 @@
 
 @media screen and (max-width: 768px) {
   .container {
-    padding: 1.5rem;
+    padding: 1rem;
   }
 
   .columnsContainer {
@@ -69,5 +71,6 @@
 
   .column {
     min-height: 300px;
+    margin-bottom: 1rem;
   }
 }

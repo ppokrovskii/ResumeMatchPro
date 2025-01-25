@@ -1,25 +1,31 @@
 import React from 'react';
 import Footer from '../Footer/Footer';
-import Header from '../Header/Header';
+import TopNavbar from '../Nav/TopNavbar/TopNavbar';
+import styles from './MainLayout.module.css';
 
 /**
  * Props for the MainLayout component
  */
-interface Props {
+interface MainLayoutProps {
   /** The content to be rendered inside the main layout */
   children: React.ReactNode;
 }
 
 /**
- * MainLayout component that provides the common layout structure for the application
- * including header, main content area, and footer.
+ * MainLayout component that provides a consistent layout structure
+ * @param {MainLayoutProps} props - The props for the component
+ * @returns {JSX.Element} The rendered component
  */
-export const MainLayout: React.FC<Props> = ({ children }) => (
-  <div className="app">
-    <Header />
-    <main className="main-content">
-      {children}
-    </main>
-    <Footer />
-  </div>
-); 
+const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
+  return (
+    <div className={styles.layout}>
+      <TopNavbar />
+      <main className={styles.mainContent}>
+        {children}
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
+export default MainLayout; 
