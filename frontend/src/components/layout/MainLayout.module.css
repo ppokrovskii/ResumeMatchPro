@@ -1,0 +1,20 @@
+.layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.mainContent {
+    flex: 1;
+    width: 100%;
+    padding-top: 80px;
+    background-color: #f5f5f5;
+}
+
+@media screen and (max-width: 768px) {
+    .mainContent {
+        padding-top: 60px;
+    }
+}
