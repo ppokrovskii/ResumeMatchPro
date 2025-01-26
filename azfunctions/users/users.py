@@ -71,9 +71,9 @@ def create_user(req: func.HttpRequest) -> func.HttpResponse:
 
 def update_user_limits(req: HttpRequest) -> HttpResponse:
     try:
-        # Check if user is admin
-        claims = req.headers.get('X-MS-TOKEN-AAD-ID-TOKEN', '')
-        if not claims or '"isAdmin":true' not in claims:
+        # Check if user is admin from access token claims
+        claims = req.headers.get('Authorization', '').split(' ')[1]  # Get token part after 'Bearer '
+        if not claims or '"extension_IsAdmin":true' not in claims:
             return HttpResponse(
                 body=json.dumps({"error": "Unauthorized - Admin access required"}),
                 mimetype="application/json",
@@ -137,9 +137,9 @@ def update_user_limits(req: HttpRequest) -> HttpResponse:
 @users_bp.route(route="users/search", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
 def search_users(req: func.HttpRequest) -> func.HttpResponse:
     try:
-        # Check if user is admin
-        claims = req.headers.get('X-MS-TOKEN-AAD-ID-TOKEN', '')
-        if not claims or '"isAdmin":true' not in claims:
+        # Check if user is admin from access token claims
+        claims = req.headers.get('Authorization', '').split(' ')[1]  # Get token part after 'Bearer '
+        if not claims or '"extension_IsAdmin":true' not in claims:
             return func.HttpResponse(
                 body=json.dumps({"error": "Unauthorized - Admin access required"}),
                 mimetype="application/json",
