@@ -52,17 +52,6 @@ export async function registerUser(claims: ExtendedIdTokenClaims, account: Accou
     }
 
     const result = await apiResponse.json();
-
-    // Show welcome message only on successful registration (not on 409 conflict)
-    if (apiResponse.ok && apiResponse.status !== 409) {
-      notification.success({
-        message: 'Welcome to Resume Match Pro!',
-        description: 'Thank you for joining us. Get started by uploading your CV or job description.',
-        duration: 10,
-        placement: 'topRight'
-      });
-    }
-
     return result;
   } catch (error) {
     console.error('Error registering user:', error);
@@ -107,6 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { instance, accounts, inProgress } = useMsal();
   const [user, setUser] = useState<AuthContextType['user']>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [hasShownWelcome, setHasShownWelcome] = useState(false);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -139,17 +129,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const claims = response.idTokenClaims as ExtendedIdTokenClaims;
           const userIsNew = claims.newUser || false;
 
-          // If it's a new user, register them
-          if (userIsNew) {
+          // Check if we've already registered this user
+          const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+          const isAlreadyRegistered = registeredUsers.includes(claims.sub);
+
+          // If it's a new user and we haven't registered them yet
+          if (userIsNew && !isAlreadyRegistered) {
             try {
               await registerUser(claims, account, instance);
-              // Show welcome message when we detect a new user from token claims
-              notification.success({
-                message: 'Welcome to Resume Match Pro!',
-                description: 'Thank you for joining us. Get started by uploading your CV or job description.',
-                duration: 10,
-                placement: 'topRight'
-              });
+              // Add user to registered users list
+              registeredUsers.push(claims.sub);
+              localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+              // Show welcome message only once per session
+              if (!hasShownWelcome) {
+                notification.success({
+                  message: 'Welcome to Resume Match Pro!',
+                  description: 'Thank you for joining us. Get started by uploading your CV or job description.',
+                  duration: 10,
+                  placement: 'topRight'
+                });
+                setHasShownWelcome(true);
+              }
             } catch (error) {
               console.error('Failed to register new user:', error);
             }
@@ -200,7 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (inProgress === InteractionStatus.None) {
       updateUserInfo();
     }
-  }, [instance, accounts, inProgress]);
+  }, [instance, accounts, inProgress, hasShownWelcome]);
 
   const login = useCallback(async () => {
     if (!isInitialized || inProgress !== InteractionStatus.None) return;
