@@ -1,5 +1,6 @@
-import { AccountInfo, IdTokenClaims, InteractionStatus } from '@azure/msal-browser';
+import { AccountInfo, IdTokenClaims, InteractionStatus, IPublicClientApplication } from '@azure/msal-browser';
 import { useMsal } from '@azure/msal-react';
+import { notification } from 'antd';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 interface ExtendedIdTokenClaims extends IdTokenClaims {
@@ -8,7 +9,6 @@ interface ExtendedIdTokenClaims extends IdTokenClaims {
   extension_IsAdmin?: boolean;
 }
 
-const KNOWN_USERS_KEY = 'rmp_known_users';
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 // Helper function to construct API URLs
@@ -17,45 +17,57 @@ const getApiUrl = (path: string) => {
   return `${API_BASE_URL}/${cleanPath}`;
 };
 
-async function registerUser(claims: ExtendedIdTokenClaims, account: AccountInfo) {
+export async function registerUser(claims: ExtendedIdTokenClaims, account: AccountInfo, instance: IPublicClientApplication) {
   try {
-    const response = await fetch(getApiUrl('users'), {
+    // Get the token first
+    const response = await instance.acquireTokenSilent({
+      account,
+      scopes: ["openid", "profile", "https://resumematchprodev.onmicrosoft.com/resumematchpro-api/Files.ReadWrite"]
+    });
+
+    const token = response.accessToken;
+
+    // Make the API call with the token
+    const apiResponse = await fetch(getApiUrl('users'), {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
       },
+      credentials: 'include',
       body: JSON.stringify({
         userId: claims.sub,
         email: account.username,
-        name: account.name,
-        isAdmin: claims.extension_IsAdmin || false,
-        filesLimit: 20,        // Default limit
-        matchingLimit: 100     // Default limit
+        name: account.name
       })
     });
 
-    if (!response.ok) {
+    if (!apiResponse.ok) {
       // If it's a conflict (user exists), that's fine
-      if (response.status !== 409) {
-        throw new Error(`Failed to register user: ${response.statusText}`);
+      if (apiResponse.status !== 409) {
+        throw new Error(`Failed to register user: ${apiResponse.statusText}`);
       }
     }
 
-    return await response.json();
+    const result = await apiResponse.json();
+
+    // Show welcome message only on successful registration (not on 409 conflict)
+    if (apiResponse.ok && apiResponse.status !== 409) {
+      notification.success({
+        message: 'Welcome to Resume Match Pro!',
+        description: 'Thank you for joining us. Get started by uploading your CV or job description.',
+        duration: 10,
+        placement: 'topRight'
+      });
+    }
+
+    return result;
   } catch (error) {
     console.error('Error registering user:', error);
     throw error;
   }
-}
-
-function isNewUser(userId: string): boolean {
-  const knownUsers = JSON.parse(localStorage.getItem(KNOWN_USERS_KEY) || '[]');
-  if (!knownUsers.includes(userId)) {
-    knownUsers.push(userId);
-    localStorage.setItem(KNOWN_USERS_KEY, JSON.stringify(knownUsers));
-    return true;
-  }
-  return false;
 }
 
 export interface AuthContextType {
@@ -125,13 +137,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
 
           const claims = response.idTokenClaims as ExtendedIdTokenClaims;
-          const userId = claims.sub || account.localAccountId;
-          const userIsNew = isNewUser(userId);
+          const userIsNew = claims.newUser || false;
 
           // If it's a new user, register them
           if (userIsNew) {
             try {
-              await registerUser(claims, account);
+              await registerUser(claims, account, instance);
+              // Show welcome message when we detect a new user from token claims
+              notification.success({
+                message: 'Welcome to Resume Match Pro!',
+                description: 'Thank you for joining us. Get started by uploading your CV or job description.',
+                duration: 10,
+                placement: 'topRight'
+              });
             } catch (error) {
               console.error('Failed to register new user:', error);
             }
