@@ -2,6 +2,7 @@ import json
 from unittest import mock
 import azure.functions as func
 from datetime import datetime
+import pytest
 
 # add project root to sys.path
 import sys
@@ -144,4 +145,33 @@ def test_create_user_invalid_request(mock_user_repository, mock_get_cosmos_db_cl
     
     # Verify no repository calls were made
     assert mock_user_repository.return_value.get_user.call_count == 0
-    assert mock_user_repository.return_value.create_user.call_count == 0 
+    assert mock_user_repository.return_value.create_user.call_count == 0
+
+def test_user_db_datetime_serialization():
+    # Create a user with specific datetime values
+    test_date = datetime(2024, 1, 26, 5, 17, 59)
+    user = UserDb(
+        userId="test123",
+        email="test@example.com",
+        name="Test User",
+        createdAt=test_date,
+        lastMatchingReset=test_date
+    )
+
+    # Convert to JSON using the new method
+    user_json = user.model_dump_json()
+    user_dict = json.loads(user_json)
+
+    # Verify datetime fields are serialized as ISO format strings
+    assert user_dict["createdAt"] == "2024-01-26T05:17:59"
+    assert user_dict["lastMatchingReset"] == "2024-01-26T05:17:59"
+
+    # Verify other fields are present and correct
+    assert user_dict["userId"] == "test123"
+    assert user_dict["email"] == "test@example.com"
+    assert user_dict["name"] == "Test User"
+    assert user_dict["isAdmin"] is False
+    assert user_dict["filesLimit"] == 20
+    assert user_dict["matchingLimit"] == 100
+    assert user_dict["matchingUsedCount"] == 0
+    assert user_dict["filesCount"] == 0 

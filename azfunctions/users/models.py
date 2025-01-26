@@ -1,5 +1,12 @@
 from datetime import datetime
-from pydantic import BaseModel, Field
+from typing import Annotated
+from pydantic import BaseModel, Field, PlainSerializer
+
+# Create a custom datetime type that serializes to ISO format
+DateTimeISO = Annotated[
+    datetime,
+    PlainSerializer(lambda dt: dt.isoformat(), return_type=str)
+]
 
 class CreateUserRequest(BaseModel):
     userId: str
@@ -18,20 +25,20 @@ class CreateUserResponse(BaseModel):
     matchingLimit: int
     matchingUsedCount: int = 0
     filesCount: int = 0
-    createdAt: datetime = Field(default_factory=datetime.utcnow)
+    createdAt: DateTimeISO = Field(default_factory=datetime.utcnow)
 
 class UserDb(BaseModel):
     """Database model for user"""
     userId: str
     email: str
     name: str
-    isAdmin: bool
-    filesLimit: int
-    matchingLimit: int
+    isAdmin: bool = False
+    filesLimit: int = 20
+    matchingLimit: int = 100
     matchingUsedCount: int = 0
     filesCount: int = 0
-    createdAt: datetime = Field(default_factory=datetime.utcnow)
-    lastMatchingReset: datetime = Field(default_factory=datetime.utcnow)
+    createdAt: DateTimeISO = Field(default_factory=datetime.utcnow)
+    lastMatchingReset: DateTimeISO = Field(default_factory=datetime.utcnow)
 
 class UpdateUserLimitsRequest(BaseModel):
     userId: str
