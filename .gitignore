@@ -23,6 +23,7 @@ local.settings.json
 !*.tfvars.example
 .terraform/
 .terraform.lock.hcl
+tfplan
 
 # Local .terraform directories
 **/.terraform/*

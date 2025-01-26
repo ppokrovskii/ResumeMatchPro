@@ -30,11 +30,8 @@ resource "azurerm_linux_function_app" "landing_backend" {
   }
 
   lifecycle {
-        ignore_changes = [
-            app_settings["APPINSIGHTS_INSTRUMENTATIONKEY"],
-            app_settings["AzureWebJobsStorage"]
-        ]
-    }
+    ignore_changes = all
+  }
 
   tags = {
     environment = terraform.workspace
