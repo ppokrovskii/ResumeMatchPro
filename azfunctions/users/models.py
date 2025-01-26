@@ -29,6 +29,7 @@ class CreateUserResponse(BaseModel):
 
 class UserDb(BaseModel):
     """Database model for user"""
+    id: str = Field(default=None)  # Will be set to userId in model_config
     userId: str
     email: str
     name: str
@@ -39,6 +40,14 @@ class UserDb(BaseModel):
     filesCount: int = 0
     createdAt: DateTimeISO = Field(default_factory=datetime.utcnow)
     lastMatchingReset: DateTimeISO = Field(default_factory=datetime.utcnow)
+
+    model_config = {
+        "populate_by_name": True
+    }
+
+    def model_post_init(self, __context) -> None:
+        if self.id is None:
+            self.id = self.userId
 
 class UpdateUserLimitsRequest(BaseModel):
     userId: str

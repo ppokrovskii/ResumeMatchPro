@@ -147,6 +147,28 @@ def test_create_user_invalid_request(mock_user_repository, mock_get_cosmos_db_cl
     assert mock_user_repository.return_value.get_user.call_count == 0
     assert mock_user_repository.return_value.create_user.call_count == 0
 
+def test_user_db_cosmos_id_field():
+    # Case 1: When id is not provided, it should use userId
+    user_without_id = UserDb(
+        userId="test123",
+        email="test@example.com",
+        name="Test User"
+    )
+    user_dict = user_without_id.model_dump()
+    assert "id" in user_dict, "Cosmos DB requires an 'id' field"
+    assert user_dict["id"] == user_dict["userId"], "id should match userId when not provided"
+
+    # Case 2: When id is explicitly provided, it should use that value
+    user_with_id = UserDb(
+        id="custom-id",
+        userId="test123",
+        email="test@example.com",
+        name="Test User"
+    )
+    user_dict = user_with_id.model_dump()
+    assert user_dict["id"] == "custom-id", "id should use the provided value"
+    assert user_dict["userId"] == "test123", "userId should remain unchanged"
+
 def test_user_db_datetime_serialization():
     # Create a user with specific datetime values
     test_date = datetime(2024, 1, 26, 5, 17, 59)
