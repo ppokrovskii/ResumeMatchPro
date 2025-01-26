@@ -72,12 +72,37 @@ def create_user(req: func.HttpRequest) -> func.HttpResponse:
 def update_user_limits(req: HttpRequest) -> HttpResponse:
     try:
         # Check if user is admin from access token claims
-        claims = req.headers.get('Authorization', '').split(' ')[1]  # Get token part after 'Bearer '
-        if not claims or '"extension_IsAdmin":true' not in claims:
+        auth_header = req.headers.get('Authorization', '')
+        if not auth_header:
             return HttpResponse(
-                body=json.dumps({"error": "Unauthorized - Admin access required"}),
+                body=json.dumps({"error": "Unauthorized - No token provided"}),
                 mimetype="application/json",
-                status_code=403
+                status_code=401
+            )
+
+        # Get the claims from the X-MS-CLIENT-PRINCIPAL-CLAIMS header
+        claims_header = req.headers.get('X-MS-CLIENT-PRINCIPAL-CLAIMS', '')
+        if not claims_header:
+            return HttpResponse(
+                body=json.dumps({"error": "Unauthorized - No claims found"}),
+                mimetype="application/json",
+                status_code=401
+            )
+
+        try:
+            claims = json.loads(claims_header)
+            is_admin = any(claim.get('typ') == 'extension_IsAdmin' and claim.get('val') == 'true' for claim in claims)
+            if not is_admin:
+                return HttpResponse(
+                    body=json.dumps({"error": "Unauthorized - Admin access required"}),
+                    mimetype="application/json",
+                    status_code=403
+                )
+        except json.JSONDecodeError:
+            return HttpResponse(
+                body=json.dumps({"error": "Unauthorized - Invalid claims"}),
+                mimetype="application/json",
+                status_code=401
             )
 
         # Parse request body
@@ -138,12 +163,37 @@ def update_user_limits(req: HttpRequest) -> HttpResponse:
 def search_users(req: func.HttpRequest) -> func.HttpResponse:
     try:
         # Check if user is admin from access token claims
-        claims = req.headers.get('Authorization', '').split(' ')[1]  # Get token part after 'Bearer '
-        if not claims or '"extension_IsAdmin":true' not in claims:
+        auth_header = req.headers.get('Authorization', '')
+        if not auth_header:
             return func.HttpResponse(
-                body=json.dumps({"error": "Unauthorized - Admin access required"}),
+                body=json.dumps({"error": "Unauthorized - No token provided"}),
                 mimetype="application/json",
-                status_code=403
+                status_code=401
+            )
+
+        # Get the claims from the X-MS-CLIENT-PRINCIPAL-CLAIMS header
+        claims_header = req.headers.get('X-MS-CLIENT-PRINCIPAL-CLAIMS', '')
+        if not claims_header:
+            return func.HttpResponse(
+                body=json.dumps({"error": "Unauthorized - No claims found"}),
+                mimetype="application/json",
+                status_code=401
+            )
+
+        try:
+            claims = json.loads(claims_header)
+            is_admin = any(claim.get('typ') == 'extension_IsAdmin' and claim.get('val') == 'true' for claim in claims)
+            if not is_admin:
+                return func.HttpResponse(
+                    body=json.dumps({"error": "Unauthorized - Admin access required"}),
+                    mimetype="application/json",
+                    status_code=403
+                )
+        except json.JSONDecodeError:
+            return func.HttpResponse(
+                body=json.dumps({"error": "Unauthorized - Invalid claims"}),
+                mimetype="application/json",
+                status_code=401
             )
 
         # Get search query
