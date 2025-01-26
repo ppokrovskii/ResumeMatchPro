@@ -1,12 +1,15 @@
-import { useContext, useState } from 'react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import BurgerIcon from '../../../assets/svg/BurgerIcon';
-import { AuthContext } from '../../../contexts/AuthContext';
+import { useAuth } from '../../../contexts/AuthContext';
+import commonStyles from '../../../styles/common.module.css';
+import { DebugInfo } from '../../DebugInfo/DebugInfo';
 import Logo from '../../Logo/Logo';
 import Sidebar from '../Sidebar/Sidebar';
 import styles from './TopNavbar.module.css';
 
-const TopNavbar = () => {
-    const { isAuthenticated, user, logout } = useContext(AuthContext);
+const TopNavbar: React.FC = () => {
+    const { isAuthenticated, user, logout } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     if (!isAuthenticated) {
@@ -25,7 +28,11 @@ const TopNavbar = () => {
                     <div className={styles.navLinks}>
                         <div className={styles.userInfo}>
                             <span className={styles.username}>{user?.name}</span>
-                            <button onClick={logout} className={styles.button}>Sign Out</button>
+                            <DebugInfo claims={user} />
+                            {user?.idTokenClaims?.extension_IsAdmin && (
+                                <Link to="/admin" className={commonStyles.primaryButton}>Admin</Link>
+                            )}
+                            <button onClick={logout} className={commonStyles.primaryButton}>Sign Out</button>
                         </div>
                     </div>
                     <button

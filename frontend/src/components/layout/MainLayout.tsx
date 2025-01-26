@@ -20,7 +20,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className={styles.layout}>
       <TopNavbar />
-      <main className={styles.mainContent}>
+      <main className={styles.content}>
         {children}
       </main>
       <Footer />

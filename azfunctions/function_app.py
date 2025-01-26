@@ -30,6 +30,7 @@ from file_processing.file_processing import file_processing_bp
 from matching.matching import matching_bp
 from user_files.user_files import user_files_bp
 from matching_results.matching_results import matching_results_bp
+from users.users import users_bp
 
 # Register all blueprints
 app.register_blueprint(file_upload_bp)
@@ -37,3 +38,4 @@ app.register_blueprint(file_processing_bp)
 app.register_blueprint(matching_bp)
 app.register_blueprint(user_files_bp)
 app.register_blueprint(matching_results_bp)
+app.register_blueprint(users_bp)

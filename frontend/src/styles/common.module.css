@@ -1,0 +1,16 @@
+.primaryButton {
+    background-color: #1976d2;
+    color: white;
+    border: none;
+    padding: clamp(6px, 1vw, 8px) clamp(12px, 2vw, 16px);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: clamp(0.875rem, 1.5vw, 1rem);
+    font-family: 'Montserrat Light Alt1', sans-serif;
+    transition: background-color 0.2s ease;
+    white-space: nowrap;
+}
+
+.primaryButton:hover {
+    background-color: #1565c0;
+}
