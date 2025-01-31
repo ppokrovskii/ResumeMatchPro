@@ -13,6 +13,7 @@
     align-items: center;
     justify-content: center;
     white-space: nowrap;
+    text-decoration: none;
 
     /* Gradient for text */
     background: linear-gradient(to right, #000000, #7a7985);
@@ -20,7 +21,6 @@
     background-clip: text;
     -webkit-text-fill-color: transparent;
     display: inline-block;
-    text-decoration: none;
 }
 
 /* Additional size adjustments for very small screens */

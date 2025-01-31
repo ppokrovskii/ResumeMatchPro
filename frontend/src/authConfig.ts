@@ -46,7 +46,7 @@ const loginScopes = [
 ];
 
 const apiScopes = [
-  `https://${b2cAuth.tenant}.onmicrosoft.com/resumematchpro-api/Files.ReadWrite`
+  `api://${b2cAuth.backendClientId}/Files.ReadWrite`
 ];
 
 // MSAL Configuration

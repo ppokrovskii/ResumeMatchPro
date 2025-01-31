@@ -21,18 +21,18 @@ resource "azurerm_linux_function_app" "resumematchpro" {
     auth_settings_v2 {
         auth_enabled = true
         require_authentication = true
+        unauthenticated_action = "RedirectToLoginPage"
         default_provider = "azureactivedirectory"
-        require_https = true
         
-        active_directory_v2 {
-            client_id = var.BACKEND_B2C_CLIENT_ID
-            tenant_auth_endpoint = "https://${var.B2C_TENANT_NAME}.b2clogin.com/${var.B2C_TENANT_NAME}.onmicrosoft.com/B2C_1_signupsignin/v2.0"
-            # client_secret_setting_name = "BACKEND_B2C_CLIENT_SECRET"
-            allowed_audiences = ["api://${var.BACKEND_B2C_CLIENT_ID}"]
-        }
-
         login {
             token_store_enabled = true
+        }
+        
+        active_directory_v2 {
+            tenant_auth_endpoint = "https://${var.B2C_TENANT_NAME}.b2clogin.com/${var.B2C_TENANT_NAME}.onmicrosoft.com/v2.0"
+            client_id = var.FRONTEND_B2C_CLIENT_ID
+            client_secret_setting_name = "FRONTEND_B2C_CLIENT_SECRET"
+            allowed_audiences = ["openid offline_access https://${var.B2C_TENANT_NAME}.onmicrosoft.com/${var.BACKEND_B2C_CLIENT_ID}/user_impersonation"]
         }
     }
 
@@ -51,14 +51,15 @@ resource "azurerm_linux_function_app" "resumematchpro" {
 
         "COSMOS_URL" = azurerm_cosmosdb_account.cosmosdb.endpoint
         "COSMOS_KEY" = azurerm_cosmosdb_account.cosmosdb.primary_key
-        "COSMOS_DB_NAME" = "${var.project_name}-${terraform.workspace}"
+        "COSMOS_DB_NAME" = "${local.prefix}-cosmosdb"
 
         # CORS Configuration
         "ALLOWED_ORIGINS" = var.MAIN_FRONTEND_URLS
 
         # B2C Configuration
-        # "BACKEND_B2C_CLIENT_SECRET" = var.BACKEND_B2C_CLIENT_SECRET
-        "ALLOWED_REDIRECT_URIS" = terraform.workspace == "dev" ? "https://oauth.pstmn.io/v1/callback" : ""
+        "ALLOWED_REDIRECT_URIS" = "https://oauth.pstmn.io/v1/callback"
+
+        "WEBSITE_RUN_FROM_PACKAGE" = "1"
     }
 
     lifecycle {
