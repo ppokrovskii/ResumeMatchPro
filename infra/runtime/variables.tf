@@ -44,10 +44,16 @@ variable "B2C_TENANT_NAME" {
     type        = string
 }
 
-variable "FRONTEND_B2C_CLIENT_ID" {
+variable "BACKEND_B2C_CLIENT_ID" {
+    description = "Azure AD B2C Application (client) ID for the main backend API"
     type        = string
-    description = "The client ID of the Azure AD B2C application for the frontend"
 }
+
+# variable "BACKEND_B2C_CLIENT_SECRET" {
+#     description = "Azure AD B2C Client Secret for the main backend API"
+#     type        = string
+#     sensitive   = true
+# }
 
 # OpenAI Configuration
 variable "AZURE_OPENAI_API_KEY" {
@@ -80,7 +86,7 @@ variable "AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT" {
 
 # CORS Configuration
 variable "MAIN_FRONTEND_URLS" {
-    description = "Comma-separated list of allowed origins for CORS"
+    description = "Comma-separated list of allowed origins for main frontend"
     type        = string
 }
 
@@ -92,15 +98,9 @@ variable "LANDING_FRONTEND_URLS" {
 # Automatically detect workspace
 locals {
     env = terraform.workspace
-    prefix = "${var.project_name}-${terraform.workspace}"
 }
 
 variable "DIRECTORY_ID" {
-    description = "Azure AD B2C tenant directory ID"
+    description = "The directory (tenant) ID of the Azure AD B2C tenant"
     type        = string
-}
-
-variable "BACKEND_B2C_CLIENT_ID" {
-    type        = string
-    description = "The client ID of the Azure AD B2C application for the backend"
 }
