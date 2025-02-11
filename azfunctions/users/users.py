@@ -50,11 +50,10 @@ def require_admin(func):
         return func(req)
     return wrapper
 
-@users_bp.route(route="users", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 @require_admin
+@users_bp.route(name="create_user", route="users", methods=["POST"])
 def create_user(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Processing user registration request')
-    
     try:
         # Parse request body
         req_body = req.get_json()
@@ -94,7 +93,6 @@ def create_user(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="application/json",
             status_code=201
         )
-        
     except ValueError as e:
         return func.HttpResponse(
             body=json.dumps({"error": str(e)}),
@@ -109,8 +107,8 @@ def create_user(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500
         )
 
-@users_bp.route(route="users/limits", methods=["PUT"], auth_level=func.AuthLevel.ANONYMOUS)
 @require_admin
+@users_bp.route(name="update_user_limits", route="users/limits", methods=["PUT"])
 def update_user_limits(req: HttpRequest) -> HttpResponse:
     try:
         # Parse request body
@@ -167,8 +165,8 @@ def update_user_limits(req: HttpRequest) -> HttpResponse:
             status_code=500
         )
 
-@users_bp.route(route="users/search", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
 @require_admin
+@users_bp.route(name="search_users", route="users/search", methods=["GET"])
 def search_users(req: func.HttpRequest) -> func.HttpResponse:
     try:
         # Get search query
