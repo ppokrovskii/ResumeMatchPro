@@ -5,5 +5,9 @@ cd frontend
 echo "Running lint-staged..."
 npx lint-staged || exit 1
 
-echo "Running all tests..."
+echo "Running frontend tests..."
 npm run test:ci || exit 1
+
+cd ../azfunctions
+echo "Running Azure Functions tests..."
+.venv/Scripts/python -m pytest tests/ -v || exit 1

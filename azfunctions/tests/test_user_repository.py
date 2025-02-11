@@ -44,6 +44,30 @@ def sample_user() -> UserDb:
         lastMatchingReset=datetime.utcnow()
     )
 
+@pytest.fixture(autouse=True)
+def cleanup(repository, sample_user):
+    # This will run before each test
+    try:
+        # Try to get the user
+        user = repository.get_user(sample_user.userId)
+        if user:
+            # If user exists, delete it
+            repository.container.delete_item(user.id, partition_key=user.userId)
+    except:
+        pass
+    
+    yield  # This is where the test runs
+    
+    # This will run after each test
+    try:
+        # Try to get the user
+        user = repository.get_user(sample_user.userId)
+        if user:
+            # If user exists, delete it
+            repository.container.delete_item(user.id, partition_key=user.userId)
+    except:
+        pass
+
 def test_create_and_get_user(repository, sample_user):
     # Create a user
     created_user = repository.create_user(sample_user.model_dump())

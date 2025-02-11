@@ -51,7 +51,7 @@ def require_admin(func):
     return wrapper
 
 
-@users_bp.route(name="create_user", route="users", methods=["POST"])
+@users_bp.route(route="users", methods=["POST"])
 def create_user(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Processing user registration request')
     try:
@@ -108,7 +108,7 @@ def create_user(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 
-@users_bp.route(name="update_user_limits", route="users/limits", methods=["PUT"])
+@users_bp.route(route="users/limits", methods=["PUT"])
 def update_user_limits(req: HttpRequest) -> HttpResponse:
     try:
         # Parse request body
@@ -166,7 +166,7 @@ def update_user_limits(req: HttpRequest) -> HttpResponse:
         )
 
 
-@users_bp.route(name="search_users", route="users/search", methods=["GET"])
+@users_bp.route(route="users/search", methods=["GET"])
 def search_users(req: func.HttpRequest) -> func.HttpResponse:
     try:
         # Get search query
