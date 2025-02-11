@@ -12,9 +12,13 @@ sys.path.append(str(Path(__file__).parent.parent))
 from users.users import create_user
 from users.models import CreateUserRequest, CreateUserResponse, UserDb
 
+# Mock admin token for tests
+MOCK_ADMIN_TOKEN = "Bearer mock_admin_token"
+
+@mock.patch("users.users.verify_admin_token", return_value=True)
 @mock.patch("users.users.get_cosmos_db_client")
 @mock.patch("users.users.UserRepository")
-def test_create_user_success(mock_user_repository, mock_get_cosmos_db_client):
+def test_create_user_success(mock_user_repository, mock_get_cosmos_db_client, mock_verify_admin):
     # Mock the necessary dependencies
     mock_user_repository.return_value.get_user.return_value = None  # User doesn't exist
     mock_saved_user = UserDb(
@@ -32,7 +36,7 @@ def test_create_user_success(mock_user_repository, mock_get_cosmos_db_client):
     mock_user_repository.return_value.create_user.return_value = mock_saved_user
     mock_get_cosmos_db_client.return_value = "mock_cosmos_db_client"
 
-    # Create test request
+    # Create test request with admin token
     req = func.HttpRequest(
         method='POST',
         url='/api/users',
@@ -44,6 +48,7 @@ def test_create_user_success(mock_user_repository, mock_get_cosmos_db_client):
             "filesLimit": 20,
             "matchingLimit": 100
         }).encode(),
+        headers={'Authorization': MOCK_ADMIN_TOKEN},
         params={}
     )
 
@@ -77,9 +82,10 @@ def test_create_user_success(mock_user_repository, mock_get_cosmos_db_client):
     assert mock_user_repository.return_value.create_user.call_count == 1
     assert mock_get_cosmos_db_client.call_count == 1
 
+@mock.patch("users.users.verify_admin_token", return_value=True)
 @mock.patch("users.users.get_cosmos_db_client")
 @mock.patch("users.users.UserRepository")
-def test_create_user_already_exists(mock_user_repository, mock_get_cosmos_db_client):
+def test_create_user_already_exists(mock_user_repository, mock_get_cosmos_db_client, mock_verify_admin):
     # Mock existing user
     mock_existing_user = UserDb(
         userId="test-user-123",
@@ -96,7 +102,7 @@ def test_create_user_already_exists(mock_user_repository, mock_get_cosmos_db_cli
     mock_user_repository.return_value.get_user.return_value = mock_existing_user
     mock_get_cosmos_db_client.return_value = "mock_cosmos_db_client"
 
-    # Create test request
+    # Create test request with admin token
     req = func.HttpRequest(
         method='POST',
         url='/api/users',
@@ -105,6 +111,7 @@ def test_create_user_already_exists(mock_user_repository, mock_get_cosmos_db_cli
             "email": "test@example.com",
             "name": "Test User"
         }).encode(),
+        headers={'Authorization': MOCK_ADMIN_TOKEN},
         params={}
     )
 
@@ -122,16 +129,18 @@ def test_create_user_already_exists(mock_user_repository, mock_get_cosmos_db_cli
     assert mock_user_repository.return_value.get_user.call_count == 1
     assert mock_user_repository.return_value.create_user.call_count == 0
 
+@mock.patch("users.users.verify_admin_token", return_value=True)
 @mock.patch("users.users.get_cosmos_db_client")
 @mock.patch("users.users.UserRepository")
-def test_create_user_invalid_request(mock_user_repository, mock_get_cosmos_db_client):
-    # Create test request with missing required fields
+def test_create_user_invalid_request(mock_user_repository, mock_get_cosmos_db_client, mock_verify_admin):
+    # Create test request with missing required fields and admin token
     req = func.HttpRequest(
         method='POST',
         url='/api/users',
         body=json.dumps({
             "email": "test@example.com"  # Missing required fields
         }).encode(),
+        headers={'Authorization': MOCK_ADMIN_TOKEN},
         params={}
     )
 
