@@ -29,31 +29,34 @@ def verify_admin_token(auth_header: str) -> bool:
         logging.error(f"Error verifying admin token: {str(e)}")
         return False
 
-def require_admin(func):
-    """Decorator to require admin access for endpoints."""
-    def wrapper(req: HttpRequest, *args, **kwargs) -> HttpResponse:
-        auth_header = req.headers.get('Authorization', '')
-        if not auth_header:
-            return HttpResponse(
-                body=json.dumps({"error": "Unauthorized - No token provided"}),
-                mimetype="application/json",
-                status_code=401
-            )
-        
-        if not verify_admin_token(auth_header):
-            return HttpResponse(
-                body=json.dumps({"error": "Unauthorized - Admin access required"}),
-                mimetype="application/json",
-                status_code=403
-            )
-            
-        return func(req, *args, **kwargs)
-    return wrapper
+def require_admin(req: HttpRequest) -> HttpResponse | None:
+    """Check if the request is from an admin user.
+    Returns None if authorized, HttpResponse with error if not."""
+    auth_header = req.headers.get('Authorization', '')
+    if not auth_header:
+        return HttpResponse(
+            body=json.dumps({"error": "Unauthorized - No token provided"}),
+            mimetype="application/json",
+            status_code=401
+        )
+    
+    if not verify_admin_token(auth_header):
+        return HttpResponse(
+            body=json.dumps({"error": "Unauthorized - Admin access required"}),
+            mimetype="application/json",
+            status_code=403
+        )
+    return None
 
 @users_bp.route(route="users", methods=["POST"])
-@require_admin
 def create_user(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Processing user registration request')
+    
+    # Check admin authorization
+    auth_response = require_admin(req)
+    if auth_response:
+        return auth_response
+    
     try:
         # Parse request body
         req_body = req.get_json()
@@ -108,8 +111,12 @@ def create_user(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 @users_bp.route(route="users/limits", methods=["PUT"])
-@require_admin
 def update_user_limits(req: HttpRequest) -> HttpResponse:
+    # Check admin authorization
+    auth_response = require_admin(req)
+    if auth_response:
+        return auth_response
+    
     try:
         # Parse request body
         try:
@@ -166,8 +173,12 @@ def update_user_limits(req: HttpRequest) -> HttpResponse:
         )
 
 @users_bp.route(route="users/search", methods=["GET"])
-@require_admin
 def search_users(req: func.HttpRequest) -> func.HttpResponse:
+    # Check admin authorization
+    auth_response = require_admin(req)
+    if auth_response:
+        return auth_response
+    
     try:
         # Get search query
         search_query = req.params.get('q', '')
