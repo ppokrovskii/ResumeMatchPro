@@ -13,7 +13,7 @@ from user_files.models import UserFilesRequest, UserFilesResponse
 # create blueprint
 user_files_bp = func.Blueprint()
 
-@user_files_bp.route(route="files", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+@user_files_bp.route(route="files", methods=["GET"])
 def get_files(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('get_files function processed a request.')
     

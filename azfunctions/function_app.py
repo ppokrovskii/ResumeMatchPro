@@ -19,7 +19,7 @@ from matching_results.matching_results import matching_results_bp
 from users.users import users_bp
 
 # Create the app with explicit function names
-app = func.FunctionApp()
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 # Register all blueprints with explicit function names
 app.register_functions(file_upload_bp)
