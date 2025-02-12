@@ -1,4 +1,5 @@
-import { AccountInfo, IPublicClientApplication } from '@azure/msal-browser';
+import { AccountInfo, IPublicClientApplication, InteractionRequiredAuthError } from '@azure/msal-browser';
+import { apiTokenRequest, interactiveRequest } from '../authConfig';
 
 export interface UserDetails {
     userId: string;
@@ -20,13 +21,18 @@ const getApiUrl = (path: string) => {
 
 const getAuthToken = async (instance: IPublicClientApplication, account: AccountInfo): Promise<string> => {
     try {
+        // Try to acquire token silently first
         const response = await instance.acquireTokenSilent({
-            account,
-            scopes: ["openid", "profile", "https://resumematchprodev.onmicrosoft.com/resumematchpro-api/Files.ReadWrite"]
+            ...apiTokenRequest,
+            account: account
         });
         return response.accessToken;
     } catch (error) {
-        console.error('Failed to get access token:', error);
+        if (error instanceof InteractionRequiredAuthError) {
+            // If silent token acquisition fails, fall back to interactive method
+            const response = await instance.acquireTokenPopup(interactiveRequest);
+            return response.accessToken;
+        }
         throw error;
     }
 };
