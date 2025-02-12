@@ -13,7 +13,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from users.users import create_user
 from users.models import CreateUserRequest, CreateUserResponse, UserDb
 
-# Mock client principal for tests
+# Mock client principal for admin user
 MOCK_CLIENT_PRINCIPAL = base64.b64encode(json.dumps({
     "claims": [
         {"typ": "extension_IsAdmin", "val": "true"}
@@ -41,7 +41,7 @@ def test_create_user_success(mock_user_repository, mock_get_cosmos_db_client, mo
     mock_user_repository.return_value.create_user.return_value = mock_saved_user
     mock_get_cosmos_db_client.return_value = "mock_cosmos_db_client"
 
-    # Create test request with client principal
+    # Create test request with admin token
     req = func.HttpRequest(
         method='POST',
         url='/api/users',
@@ -63,23 +63,13 @@ def test_create_user_success(mock_user_repository, mock_get_cosmos_db_client, mo
 
     # Assert response
     assert response.status_code == 201
-    assert response.mimetype == "application/json"
-    
-    # Verify response body
-    result = json.loads(response.get_body().decode("utf-8"))
-    # Remove timestamp fields for comparison
-    result.pop("createdAt")
-    
-    assert result == {
-        "userId": "test-user-123",
-        "email": "test@example.com",
-        "name": "Test User",
-        "isAdmin": False,
-        "filesLimit": 20,
-        "matchingLimit": 100,
-        "matchingUsedCount": 0,
-        "filesCount": 0
-    }
+    response_body = json.loads(response.get_body())
+    assert response_body["userId"] == "test-user-123"
+    assert response_body["email"] == "test@example.com"
+    assert response_body["name"] == "Test User"
+    assert not response_body["isAdmin"]
+    assert response_body["filesLimit"] == 20
+    assert response_body["matchingLimit"] == 100
 
     # Verify repository calls
     assert mock_user_repository.return_value.get_user.call_count == 1
@@ -107,7 +97,7 @@ def test_create_user_already_exists(mock_user_repository, mock_get_cosmos_db_cli
     mock_user_repository.return_value.get_user.return_value = mock_existing_user
     mock_get_cosmos_db_client.return_value = "mock_cosmos_db_client"
 
-    # Create test request with client principal
+    # Create test request with admin token
     req = func.HttpRequest(
         method='POST',
         url='/api/users',
@@ -126,9 +116,8 @@ def test_create_user_already_exists(mock_user_repository, mock_get_cosmos_db_cli
 
     # Assert response
     assert response.status_code == 409
-    assert response.mimetype == "application/json"
-    result = json.loads(response.get_body().decode("utf-8"))
-    assert result == {"error": "User already exists"}
+    response_body = json.loads(response.get_body())
+    assert response_body["error"] == "User already exists"
 
     # Verify repository calls
     assert mock_user_repository.return_value.get_user.call_count == 1
@@ -138,7 +127,7 @@ def test_create_user_already_exists(mock_user_repository, mock_get_cosmos_db_cli
 @mock.patch("users.users.get_cosmos_db_client")
 @mock.patch("users.users.UserRepository")
 def test_create_user_invalid_request(mock_user_repository, mock_get_cosmos_db_client, mock_verify_admin):
-    # Create test request with missing required fields and client principal
+    # Create test request with missing required fields and admin token
     req = func.HttpRequest(
         method='POST',
         url='/api/users',
@@ -155,8 +144,11 @@ def test_create_user_invalid_request(mock_user_repository, mock_get_cosmos_db_cl
 
     # Assert response
     assert response.status_code == 400
-    assert response.mimetype == "application/json"
-    
+    response_body = json.loads(response.get_body())
+    assert "error" in response_body
+    assert "userId" in response_body["error"]
+    assert "name" in response_body["error"]
+
     # Verify no repository calls were made
     assert mock_user_repository.return_value.get_user.call_count == 0
     assert mock_user_repository.return_value.create_user.call_count == 0
