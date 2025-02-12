@@ -1,5 +1,5 @@
 import { useMsal } from '@azure/msal-react';
-import { Alert, Card, Form, Input, Space, Typography } from 'antd';
+import { Alert, Card, Form, Input, List, Space, Typography } from 'antd';
 import React, { useState } from 'react';
 import { UserDetails, searchUser, updateUserLimits } from '../../services/userService';
 import commonStyles from '../../styles/common.module.css';
@@ -9,7 +9,8 @@ const { Title, Text } = Typography;
 export const UserManagement: React.FC = () => {
     const { instance } = useMsal();
     const [searchQuery, setSearchQuery] = useState('');
-    const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
+    const [users, setUsers] = useState<UserDetails[]>([]);
+    const [selectedUser, setSelectedUser] = useState<UserDetails | null>(null);
     const [filesLimit, setFilesLimit] = useState('');
     const [matchingLimit, setMatchingLimit] = useState('');
     const [loading, setLoading] = useState(false);
@@ -22,6 +23,7 @@ export const UserManagement: React.FC = () => {
         setLoading(true);
         setError('');
         setSuccess('');
+        setSelectedUser(null);
 
         try {
             const account = instance.getActiveAccount();
@@ -29,20 +31,27 @@ export const UserManagement: React.FC = () => {
                 throw new Error('No active account');
             }
 
-            const data = await searchUser(searchQuery, account, instance);
-            setUserDetails(data);
-            setFilesLimit(data.filesLimit.toString());
-            setMatchingLimit(data.matchingLimit.toString());
+            const foundUsers = await searchUser(searchQuery, account, instance);
+            setUsers(foundUsers);
+            if (foundUsers.length === 0) {
+                setError('No users found');
+            }
         } catch (err) {
             setError('Failed to find user. Please try again.');
-            setUserDetails(null);
+            setUsers([]);
         } finally {
             setLoading(false);
         }
     };
 
+    const handleSelectUser = (user: UserDetails) => {
+        setSelectedUser(user);
+        setFilesLimit(user.filesLimit.toString());
+        setMatchingLimit(user.matchingLimit.toString());
+    };
+
     const handleUpdateLimits = async () => {
-        if (!userDetails) return;
+        if (!selectedUser) return;
 
         setLoading(true);
         setError('');
@@ -55,13 +64,14 @@ export const UserManagement: React.FC = () => {
             }
 
             const updatedUser = await updateUserLimits(
-                userDetails.userId,
+                selectedUser.userId,
                 parseInt(filesLimit),
                 parseInt(matchingLimit),
                 account,
                 instance
             );
-            setUserDetails(updatedUser);
+            setSelectedUser(updatedUser);
+            setUsers(users.map(u => u.userId === updatedUser.userId ? updatedUser : u));
             setSuccess('User limits updated successfully');
         } catch (err) {
             setError('Failed to update limits. Please try again.');
@@ -111,20 +121,45 @@ export const UserManagement: React.FC = () => {
                 />
             )}
 
-            {userDetails && (
+            {users.length > 0 && (
+                <Card style={{ marginBottom: 16 }}>
+                    <Title level={5}>Search Results</Title>
+                    <List
+                        dataSource={users}
+                        renderItem={user => (
+                            <List.Item
+                                onClick={() => handleSelectUser(user)}
+                                style={{ cursor: 'pointer', background: selectedUser?.userId === user.userId ? '#f0f0f0' : 'transparent' }}
+                            >
+                                <List.Item.Meta
+                                    title={user.name}
+                                    description={
+                                        <Space direction="vertical">
+                                            <Text>Email: {user.email}</Text>
+                                            <Text>User ID: {user.userId}</Text>
+                                        </Space>
+                                    }
+                                />
+                            </List.Item>
+                        )}
+                    />
+                </Card>
+            )}
+
+            {selectedUser && (
                 <Card>
-                    <Title level={5}>User Details</Title>
+                    <Title level={5}>Edit User Limits</Title>
                     <Space direction="vertical" style={{ width: '100%' }}>
                         <Text strong>Name:</Text>
-                        <Text>{userDetails.name}</Text>
+                        <Text>{selectedUser.name}</Text>
                         <Text strong>Email:</Text>
-                        <Text>{userDetails.email}</Text>
+                        <Text>{selectedUser.email}</Text>
                         <Text strong>User ID:</Text>
-                        <Text>{userDetails.userId}</Text>
+                        <Text>{selectedUser.userId}</Text>
                         <Text strong>Current Files:</Text>
-                        <Text>{userDetails.filesCount}</Text>
+                        <Text>{selectedUser.filesCount}</Text>
                         <Text strong>Matching Used:</Text>
-                        <Text>{userDetails.matchingUsedCount}</Text>
+                        <Text>{selectedUser.matchingUsedCount}</Text>
 
                         <Form layout="vertical" style={{ marginTop: 16 }}>
                             <Form.Item label="Files Limit">
