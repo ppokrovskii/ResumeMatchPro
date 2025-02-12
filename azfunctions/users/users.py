@@ -174,6 +174,12 @@ def update_user_limits(req: HttpRequest) -> HttpResponse:
 
 @users_bp.route(route="users/search", methods=["GET"])
 def search_users(req: func.HttpRequest) -> func.HttpResponse:
+    # Debug logging for headers
+    auth_header = req.headers.get('Authorization', '')
+    client_principal = req.headers.get('x-ms-client-principal', '')
+    logging.info(f"Debug headers - Authorization: {auth_header}")
+    logging.info(f"Debug headers - x-ms-client-principal: {client_principal}")
+    
     # Check admin authorization
     auth_response = require_admin(req)
     if auth_response:

@@ -16,6 +16,13 @@ user_files_bp = func.Blueprint()
 @user_files_bp.route(route="files", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
 def get_files(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('get_files function processed a request.')
+    
+    # Debug logging for headers
+    auth_header = req.headers.get('Authorization', '')
+    client_principal = req.headers.get('x-ms-client-principal', '')
+    logging.info(f"Debug headers - Authorization: {auth_header}")
+    logging.info(f"Debug headers - x-ms-client-principal: {client_principal}")
+    
     try:
         cosmos_db_client = get_cosmos_db_client()
         files_repository = FilesRepository(cosmos_db_client)
