@@ -4,6 +4,7 @@ import azure.functions as func
 from azure.functions import HttpRequest, HttpResponse
 import jwt
 from jwt.exceptions import InvalidTokenError
+import base64
 
 from shared.db_service import get_cosmos_db_client
 from shared.user_repository import UserRepository
@@ -13,34 +14,53 @@ from datetime import datetime
 # create blueprint
 users_bp = func.Blueprint("users", __name__)
 
-def verify_admin_token(auth_header: str) -> bool:
-    """Verify if the user is an admin from the JWT token."""
-    if not auth_header or not auth_header.startswith('Bearer '):
-        return False
-    
+def verify_admin_token(req: HttpRequest) -> bool:
+    """Verify if the user is an admin from the client principal."""
     try:
-        # Extract token from Bearer header
-        token = auth_header.split(' ')[1]
-        # Decode token without verification (we trust Azure B2C)
-        decoded = jwt.decode(token, options={"verify_signature": False})
-        # Check if user is admin
-        return decoded.get('extension_IsAdmin') == True
-    except (InvalidTokenError, IndexError) as e:
-        logging.error(f"Error verifying admin token: {str(e)}")
+        # Get client principal from headers
+        client_principal = req.headers.get('x-ms-client-principal')
+        if not client_principal:
+            logging.warning("No x-ms-client-principal header found")
+            return False
+
+        try:
+            # Decode and parse the client principal
+            claims_json = base64.b64decode(client_principal).decode('utf-8')
+            claims = json.loads(claims_json)
+            
+            # Log claims for debugging
+            logging.info(f"Claims received: {claims}")
+            
+            # Check for admin claim
+            is_admin = next((
+                claim['val'] for claim in claims['claims']
+                if claim['typ'] == 'extension_IsAdmin'
+            ), None) == 'true'
+            
+            logging.info(f"Admin check result: {is_admin}")
+            return is_admin
+            
+        except Exception as e:
+            logging.error(f"Error decoding claims: {str(e)}")
+            return False
+            
+    except Exception as e:
+        logging.error(f"Error checking admin status: {str(e)}")
         return False
 
 def require_admin(req: HttpRequest) -> HttpResponse | None:
     """Check if the request is from an admin user.
     Returns None if authorized, HttpResponse with error if not."""
-    auth_header = req.headers.get('Authorization', '')
-    if not auth_header:
+    # Get client principal
+    client_principal = req.headers.get('x-ms-client-principal')
+    if not client_principal:
         return HttpResponse(
-            body=json.dumps({"error": "Unauthorized - No token provided"}),
+            body=json.dumps({"error": "Unauthorized - No authentication found"}),
             mimetype="application/json",
             status_code=401
         )
     
-    if not verify_admin_token(auth_header):
+    if not verify_admin_token(req):
         return HttpResponse(
             body=json.dumps({"error": "Unauthorized - Admin access required"}),
             mimetype="application/json",
