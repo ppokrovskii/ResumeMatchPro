@@ -51,7 +51,7 @@ export const searchUser = async (
     query: string,
     account: AccountInfo,
     instance: IPublicClientApplication
-): Promise<UserDetails> => {
+): Promise<UserDetails[]> => {
     try {
         const headers = await getAuthHeaders(instance, account);
         const response = await fetch(getApiUrl(`users/search?q=${encodeURIComponent(query)}`), {
