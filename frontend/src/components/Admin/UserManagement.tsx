@@ -90,6 +90,11 @@ export const UserManagement: React.FC = () => {
                         placeholder="Search by name, email, or ID"
                         value={searchQuery}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && searchQuery.trim()) {
+                                handleSearch();
+                            }
+                        }}
                         style={{ width: '80%' }}
                     />
                     <button
@@ -137,6 +142,10 @@ export const UserManagement: React.FC = () => {
                                         <Space direction="vertical">
                                             <Text>Email: {user.email}</Text>
                                             <Text>User ID: {user.userId}</Text>
+                                            <Space>
+                                                <Text>Files: {user.filesCount}/{user.filesLimit}</Text>
+                                                <Text>Matches: {user.matchingUsedCount}/{user.matchingLimit}</Text>
+                                            </Space>
                                         </Space>
                                     }
                                 />
@@ -156,10 +165,10 @@ export const UserManagement: React.FC = () => {
                         <Text>{selectedUser.email}</Text>
                         <Text strong>User ID:</Text>
                         <Text>{selectedUser.userId}</Text>
-                        <Text strong>Current Files:</Text>
-                        <Text>{selectedUser.filesCount}</Text>
-                        <Text strong>Matching Used:</Text>
-                        <Text>{selectedUser.matchingUsedCount}</Text>
+                        <Text strong>Files:</Text>
+                        <Text>{selectedUser.filesCount}/{selectedUser.filesLimit}</Text>
+                        <Text strong>Matches:</Text>
+                        <Text>{selectedUser.matchingUsedCount}/{selectedUser.matchingLimit}</Text>
 
                         <Form layout="vertical" style={{ marginTop: 16 }}>
                             <Form.Item label="Files Limit">
