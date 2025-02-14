@@ -36,13 +36,27 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
             else:
                 logging.info(f"{header}: [REDACTED]")
 
-        # validate request
-        if not req.files:
+        # Log request details
+        logging.info("Files list type: %s", type(req.files.get('content', [])))
+        logging.info("Files list content: %s", req.files.get('content', []))
+        logging.info("Form data: %s", req.form)
+        logging.info("Files data: %s", req.files)
+
+        # Get file from request
+        input_files = req.files.get('content', [])
+        if not input_files:
+            logging.error("No files found in request")
             return func.HttpResponse(
-                json.dumps("No files in request"),
+                json.dumps("Invalid request: No files provided"),
                 status_code=400,
                 mimetype="application/json"
             )
+        
+        # Ensure input_files is a list
+        if not isinstance(input_files, list):
+            input_files = [input_files]
+        
+        input_file = input_files[0]
 
         # Get user_id from B2C claims
         client_principal = req.headers.get('X-MS-CLIENT-PRINCIPAL')
@@ -114,10 +128,10 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
                 if hasattr(input_file, '__dict__'):
                     logging.info(f"Input file attributes: {input_file.__dict__}")
 
-                # Handle both file-like objects and raw bytes
-                if hasattr(input_file, 'filename'):
+                # Handle FileStorage objects from form data
+                if hasattr(input_file, 'filename') and input_file.filename:
                     filename = input_file.filename
-                    content = input_file.stream.read() if hasattr(input_file, 'stream') else input_file.read()
+                    content = input_file.read()
                 else:
                     # For raw bytes or other formats
                     filename = None
@@ -125,8 +139,6 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
                     # Try to get filename from various sources
                     if hasattr(input_file, 'name'):
                         filename = input_file.name
-                    elif hasattr(input_file, 'filename'):
-                        filename = input_file.filename
                     elif 'filename' in req.form:
                         filename = req.form['filename']
                     

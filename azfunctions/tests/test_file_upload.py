@@ -46,7 +46,18 @@ class MockStream:
 class MockFile:
     def __init__(self, filename, content=b'test content'):
         self.filename = filename
-        self.stream = MockStream(content)
+        self._content = content
+        self._position = 0
+
+    def read(self, *args):
+        if self._position < len(self._content):
+            content = self._content[self._position:]
+            self._position = len(self._content)
+            return content
+        return b''
+
+    def seek(self, position):
+        self._position = position
 
 class MockHttpRequest(func.HttpRequest):
     def __init__(self, *args, **kwargs):
@@ -293,10 +304,7 @@ def test_file_upload_limit_reached(repository, user_repository, blob_service, te
     try:
         # First, upload files up to the limit
         for i in range(test_user.filesLimit):
-            mock_file = type('MockFile', (), {
-                'filename': f'test_{i}_{uuid4()}.pdf',
-                'stream': MockStream()
-            })
+            mock_file = MockFile(f'test_{i}_{uuid4()}.pdf')
             req = MockHttpRequest(
                 method='POST',
                 url='/api/files/upload',
@@ -310,10 +318,7 @@ def test_file_upload_limit_reached(repository, user_repository, blob_service, te
             assert response.status_code == 200
         
         # Try to upload one more file
-        mock_file = type('MockFile', (), {
-            'filename': f'test_extra_{uuid4()}.pdf',
-            'stream': MockStream()
-        })
+        mock_file = MockFile(f'test_extra_{uuid4()}.pdf')
         req = MockHttpRequest(
             method='POST',
             url='/api/files/upload',
@@ -431,7 +436,7 @@ def test_file_upload_no_files(repository, user_repository, blob_service, test_us
     # Assert response
     assert response.status_code == 400
     error_response = json.loads(response.get_body())
-    assert error_response == "No files in request"
+    assert error_response == "Invalid request: No files provided"
     
     # Verify no file was saved
     files = repository.get_files_from_db(test_user.userId)
@@ -471,6 +476,73 @@ def test_file_upload_with_content_disposition(repository, user_repository, blob_
         result = json.loads(response.get_body())
         assert len(result['files']) == 1
         assert result['files'][0]['filename'] == filename
+        
+        # Verify file was saved
+        files = repository.get_files_from_db(test_user.userId)
+        assert len(files) == 1
+        assert files[0].filename == filename
+        
+        # Verify file exists in blob storage
+        assert blob_service.blob_exists(TEST_CONTAINER_NAME, filename)
+        
+        # Verify user's file count was incremented
+        updated_user = user_repository.get_user(test_user.userId)
+        assert updated_user.filesCount == 1
+    finally:
+        # Restore original container name
+        blob_service.container_name = original_container 
+
+def test_file_upload_with_form_data_boundary(repository, user_repository, blob_service, test_user):
+    # Create request with exact same format as the cURL request
+    filename = "CV_Gleb F.-Fullstack_Developer.pdf"
+    content = b'test content'  # In real request this would be PDF content
+    
+    # Create request
+    req = MockHttpRequest(
+        method='POST',
+        url='/api/files/upload',
+        params={},
+        body=None
+    )
+    
+    # Set up headers exactly as in cURL request
+    req.headers = {
+        'Accept': 'application/json',
+        'Accept-Language': 'en-US,en;q=0.9,ru-RU;q=0.8,ru;q=0.7,ar;q=0.6',
+        'Authorization': 'Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6Ilg1ZVhrNHh5b2pORnVtMWtsMll0djhkbE5QNC1jNTdkTzZRR1RWQndhTmsiLCJ0eXAiOiJKV1QifQ...',
+        'Connection': 'keep-alive',
+        'Content-Type': 'multipart/form-data; boundary=----WebKitFormBoundaryPWWfyszh0L8W2KB1',
+        'Origin': 'https://app.dev.resumematch.pro',
+        'Referer': 'https://app.dev.resumematch.pro/',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'cross-site',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+        'X-MS-CLIENT-PRINCIPAL': create_mock_b2c_token(test_user.userId)
+    }
+    
+    # Set up form data exactly as in cURL request
+    mock_file = MockFile(filename, content)
+    req.files = {'content': [mock_file]}
+    req.form = {
+        'user_id': '20561245-a60c-4c4e-b5f8-65b31a11e866',
+        'type': 'CV'
+    }
+    
+    # Override container name for test
+    original_container = blob_service.container_name
+    blob_service.container_name = TEST_CONTAINER_NAME
+    
+    try:
+        # Call the function
+        response = _files_upload(req, blob_service, repository, user_repository)
+        
+        # Assert response
+        assert response.status_code == 200
+        result = json.loads(response.get_body())
+        assert len(result['files']) == 1
+        assert result['files'][0]['filename'] == filename
+        assert result['files'][0]['type'] == 'CV'
         
         # Verify file was saved
         files = repository.get_files_from_db(test_user.userId)
