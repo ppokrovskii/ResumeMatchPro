@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
+import { UserInfoModal } from '../../UserInfoModal/UserInfoModal';
 import styles from './Sidebar.module.css';
 
 interface SidebarProps {
@@ -9,26 +10,38 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
     const { logout, user } = useAuth();
+    const [userInfoModalOpen, setUserInfoModalOpen] = useState(false);
 
     return (
-        <nav className={styles.wrapper} data-open={sidebarOpen}>
-            <div className={styles.userInfo}>
-                <span className={styles.username}>{user?.name}</span>
-            </div>
-            <ul className={styles.ulStyle}>
-                <li>
+        <>
+            <UserInfoModal
+                isOpen={userInfoModalOpen}
+                onClose={() => setUserInfoModalOpen(false)}
+            />
+            <nav className={styles.wrapper} data-open={sidebarOpen}>
+                <div className={styles.userInfo}>
                     <button
-                        onClick={() => {
-                            setSidebarOpen(false);
-                            logout();
-                        }}
-                        className={styles.signOutButton}
+                        className={styles.usernameButton}
+                        onClick={() => setUserInfoModalOpen(true)}
                     >
-                        Sign Out
+                        {user?.name}
                     </button>
-                </li>
-            </ul>
-        </nav>
+                </div>
+                <ul className={styles.ulStyle}>
+                    <li>
+                        <button
+                            onClick={() => {
+                                setSidebarOpen(false);
+                                logout();
+                            }}
+                            className={styles.signOutButton}
+                        >
+                            Sign Out
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </>
     );
 };
 

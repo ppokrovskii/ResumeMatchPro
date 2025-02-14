@@ -244,4 +244,79 @@ def search_users(req: func.HttpRequest) -> func.HttpResponse:
             body=json.dumps({"error": f"Internal server error: {str(e)}"}),
             mimetype="application/json",
             status_code=500
+        )
+
+@users_bp.route(route="users/me", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def get_current_user(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Processing get current user request')
+    
+    try:
+        # Get user_id from B2C claims
+        client_principal = req.headers.get('X-MS-CLIENT-PRINCIPAL')
+        if not client_principal:
+            logging.error("Missing X-MS-CLIENT-PRINCIPAL header")
+            return func.HttpResponse(
+                json.dumps({"error": "Unauthorized - Missing user claims"}),
+                mimetype="application/json",
+                status_code=401
+            )
+
+        try:
+            claims_json = base64.b64decode(client_principal).decode('utf-8')
+            claims = json.loads(claims_json)
+            user_id = next((claim['val'] for claim in claims['claims'] 
+                        if claim['typ'] == 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'), None)
+            
+            if not user_id:
+                logging.error("No user ID found in claims")
+                return func.HttpResponse(
+                    json.dumps({"error": "Unauthorized - Missing user ID in claims"}),
+                    mimetype="application/json",
+                    status_code=401
+                )
+        except Exception as e:
+            logging.error(f"Error decoding claims: {str(e)}")
+            return func.HttpResponse(
+                json.dumps({"error": "Unauthorized - Invalid claims format"}),
+                mimetype="application/json",
+                status_code=401
+            )
+
+        # Get user from repository
+        cosmos_client = get_cosmos_db_client()
+        user_repository = UserRepository(cosmos_client)
+        user = user_repository.get_user(user_id)
+        
+        if not user:
+            return func.HttpResponse(
+                json.dumps({"error": "User not found"}),
+                mimetype="application/json",
+                status_code=404
+            )
+
+        # Return user details
+        response_data = CreateUserResponse(
+            userId=user.userId,
+            email=user.email,
+            name=user.name,
+            isAdmin=user.isAdmin,
+            filesLimit=user.filesLimit,
+            matchingLimit=user.matchingLimit,
+            matchingUsedCount=user.matchingUsedCount,
+            filesCount=user.filesCount,
+            createdAt=user.createdAt
+        )
+
+        return func.HttpResponse(
+            json.dumps(response_data.model_dump(), default=str),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception as e:
+        logging.error(f"Error getting current user: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": f"Internal server error: {str(e)}"}),
+            mimetype="application/json",
+            status_code=500
         ) 

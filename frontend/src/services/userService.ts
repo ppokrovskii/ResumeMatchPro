@@ -112,4 +112,33 @@ export const updateUserLimits = async (
         console.error('Error updating user limits:', error);
         throw error;
     }
+};
+
+export const getCurrentUser = async (
+    account: AccountInfo,
+    instance: IPublicClientApplication
+): Promise<UserDetails> => {
+    try {
+        const headers = await getAuthHeaders(instance, account);
+        const response = await fetch(getApiUrl('users/me'), {
+            method: 'GET',
+            headers,
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            console.error('Failed to get current user:', {
+                status: response.status,
+                statusText: response.statusText,
+                headers: Object.fromEntries(response.headers.entries()),
+                body: await response.text()
+            });
+            throw new Error('Failed to get current user');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting current user:', error);
+        throw error;
+    }
 }; 

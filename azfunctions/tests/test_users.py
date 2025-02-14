@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from users.users import create_user
+from users.users import create_user, get_current_user
 from users.models import CreateUserRequest, CreateUserResponse, UserDb
 
 # Mock client principal for admin user
@@ -202,4 +202,182 @@ def test_user_db_datetime_serialization():
     assert user_dict["filesLimit"] == 20
     assert user_dict["matchingLimit"] == 100
     assert user_dict["matchingUsedCount"] == 0
-    assert user_dict["filesCount"] == 0 
+    assert user_dict["filesCount"] == 0
+
+@mock.patch("users.users.get_cosmos_db_client")
+@mock.patch("users.users.UserRepository")
+def test_get_current_user_success(mock_user_repository, mock_get_cosmos_db_client):
+    # Mock user data
+    mock_user = UserDb(
+        userId="test-user-123",
+        email="test@example.com",
+        name="Test User",
+        isAdmin=False,
+        filesLimit=20,
+        matchingLimit=100,
+        matchingUsedCount=0,
+        filesCount=0,
+        createdAt=datetime.utcnow(),
+        lastMatchingReset=datetime.utcnow()
+    )
+    mock_user_repository.return_value.get_user.return_value = mock_user
+    mock_get_cosmos_db_client.return_value = "mock_cosmos_db_client"
+
+    # Create test request with user claims
+    claims = {
+        "claims": [
+            {
+                "typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
+                "val": "test-user-123"
+            }
+        ]
+    }
+    client_principal = base64.b64encode(json.dumps(claims).encode()).decode()
+
+    req = func.HttpRequest(
+        method='GET',
+        url='/api/users/me',
+        body=None,
+        headers={'X-MS-CLIENT-PRINCIPAL': client_principal},
+        params={}
+    )
+
+    # Call the function
+    func_call = get_current_user.build().get_user_function()
+    response = func_call(req)
+
+    # Assert response
+    assert response.status_code == 200
+    response_body = json.loads(response.get_body())
+    assert response_body["userId"] == "test-user-123"
+    assert response_body["email"] == "test@example.com"
+    assert response_body["name"] == "Test User"
+    assert not response_body["isAdmin"]
+    assert response_body["filesLimit"] == 20
+    assert response_body["matchingLimit"] == 100
+    assert response_body["matchingUsedCount"] == 0
+    assert response_body["filesCount"] == 0
+
+    # Verify repository calls
+    mock_user_repository.return_value.get_user.assert_called_once_with("test-user-123")
+    mock_get_cosmos_db_client.assert_called_once()
+
+@mock.patch("users.users.get_cosmos_db_client")
+@mock.patch("users.users.UserRepository")
+def test_get_current_user_missing_claims(mock_user_repository, mock_get_cosmos_db_client):
+    # Create request without claims
+    req = func.HttpRequest(
+        method='GET',
+        url='/api/users/me',
+        body=None,
+        headers={},  # No claims header
+        params={}
+    )
+
+    # Call the function
+    func_call = get_current_user.build().get_user_function()
+    response = func_call(req)
+
+    # Assert response
+    assert response.status_code == 401
+    response_body = json.loads(response.get_body())
+    assert response_body["error"] == "Unauthorized - Missing user claims"
+
+    # Verify no repository calls were made
+    mock_user_repository.return_value.get_user.assert_not_called()
+
+@mock.patch("users.users.get_cosmos_db_client")
+@mock.patch("users.users.UserRepository")
+def test_get_current_user_invalid_claims(mock_user_repository, mock_get_cosmos_db_client):
+    # Create request with invalid claims
+    req = func.HttpRequest(
+        method='GET',
+        url='/api/users/me',
+        body=None,
+        headers={'X-MS-CLIENT-PRINCIPAL': 'invalid-base64'},
+        params={}
+    )
+
+    # Call the function
+    func_call = get_current_user.build().get_user_function()
+    response = func_call(req)
+
+    # Assert response
+    assert response.status_code == 401
+    response_body = json.loads(response.get_body())
+    assert response_body["error"] == "Unauthorized - Invalid claims format"
+
+    # Verify no repository calls were made
+    mock_user_repository.return_value.get_user.assert_not_called()
+
+@mock.patch("users.users.get_cosmos_db_client")
+@mock.patch("users.users.UserRepository")
+def test_get_current_user_not_found(mock_user_repository, mock_get_cosmos_db_client):
+    # Mock user repository to return None (user not found)
+    mock_user_repository.return_value.get_user.return_value = None
+    mock_get_cosmos_db_client.return_value = "mock_cosmos_db_client"
+
+    # Create test request with user claims
+    claims = {
+        "claims": [
+            {
+                "typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
+                "val": "non-existent-user"
+            }
+        ]
+    }
+    client_principal = base64.b64encode(json.dumps(claims).encode()).decode()
+
+    req = func.HttpRequest(
+        method='GET',
+        url='/api/users/me',
+        body=None,
+        headers={'X-MS-CLIENT-PRINCIPAL': client_principal},
+        params={}
+    )
+
+    # Call the function
+    func_call = get_current_user.build().get_user_function()
+    response = func_call(req)
+
+    # Assert response
+    assert response.status_code == 404
+    response_body = json.loads(response.get_body())
+    assert response_body["error"] == "User not found"
+
+    # Verify repository calls
+    mock_user_repository.return_value.get_user.assert_called_once_with("non-existent-user")
+
+@mock.patch("users.users.get_cosmos_db_client")
+@mock.patch("users.users.UserRepository")
+def test_get_current_user_missing_user_id_claim(mock_user_repository, mock_get_cosmos_db_client):
+    # Create test request with claims but missing user ID
+    claims = {
+        "claims": [
+            {
+                "typ": "some-other-claim",
+                "val": "some-value"
+            }
+        ]
+    }
+    client_principal = base64.b64encode(json.dumps(claims).encode()).decode()
+
+    req = func.HttpRequest(
+        method='GET',
+        url='/api/users/me',
+        body=None,
+        headers={'X-MS-CLIENT-PRINCIPAL': client_principal},
+        params={}
+    )
+
+    # Call the function
+    func_call = get_current_user.build().get_user_function()
+    response = func_call(req)
+
+    # Assert response
+    assert response.status_code == 401
+    response_body = json.loads(response.get_body())
+    assert response_body["error"] == "Unauthorized - Missing user ID in claims"
+
+    # Verify no repository calls were made
+    mock_user_repository.return_value.get_user.assert_not_called() 

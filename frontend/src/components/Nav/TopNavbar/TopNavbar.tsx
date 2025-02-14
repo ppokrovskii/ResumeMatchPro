@@ -6,12 +6,14 @@ import { useAuth } from '../../../contexts/AuthContext';
 import commonStyles from '../../../styles/common.module.css';
 import { DebugInfo } from '../../DebugInfo/DebugInfo';
 import Logo from '../../Logo/Logo';
+import { UserInfoModal } from '../../UserInfoModal/UserInfoModal';
 import Sidebar from '../Sidebar/Sidebar';
 import styles from './TopNavbar.module.css';
 
 const TopNavbar: React.FC = () => {
     const { isAuthenticated, user } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [userInfoModalOpen, setUserInfoModalOpen] = useState(false);
     const { instance } = useMsal();
 
     const handleSignOut = () => {
@@ -28,12 +30,21 @@ const TopNavbar: React.FC = () => {
                 sidebarOpen={sidebarOpen}
                 setSidebarOpen={setSidebarOpen}
             />
+            <UserInfoModal
+                isOpen={userInfoModalOpen}
+                onClose={() => setUserInfoModalOpen(false)}
+            />
             <header className={styles.wrapper}>
                 <div className={styles.navInner}>
                     <Logo />
                     <div className={styles.navLinks}>
                         <div className={styles.userInfo}>
-                            <span className={styles.username}>{user?.name}</span>
+                            <button
+                                className={styles.usernameButton}
+                                onClick={() => setUserInfoModalOpen(true)}
+                            >
+                                {user?.name}
+                            </button>
                             <DebugInfo claims={user} />
                             {user?.idTokenClaims?.extension_IsAdmin && (
                                 <Link to="/admin" className={commonStyles.primaryButton}>Admin</Link>

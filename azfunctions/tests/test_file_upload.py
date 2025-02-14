@@ -283,7 +283,7 @@ def test_file_upload_raw_bytes_missing_filename(repository, user_repository, blo
     # Assert response
     assert response.status_code == 400
     error_response = json.loads(response.get_body())
-    assert "Filename not provided in form data" in error_response
+    assert "Invalid request: Filename not provided" == error_response
 
 def test_file_upload_limit_reached(repository, user_repository, blob_service, test_user):
     # Override container name for test
@@ -439,4 +439,50 @@ def test_file_upload_no_files(repository, user_repository, blob_service, test_us
     
     # Verify user's file count wasn't changed
     updated_user = user_repository.get_user(test_user.userId)
-    assert updated_user.filesCount == 0 
+    assert updated_user.filesCount == 0
+
+def test_file_upload_with_content_disposition(repository, user_repository, blob_service, test_user):
+    # Create mock file with filename in content disposition
+    filename = f'test_{uuid4()}.pdf'
+    content = b'test content'
+    mock_file = MockFile(filename, content)
+    
+    # Create request
+    req = MockHttpRequest(
+        method='POST',
+        url='/api/files/upload',
+        params={},
+        body=None
+    )
+    req.files = {'content': [mock_file]}
+    req.form = {'type': 'CV'}
+    req.headers = {'X-MS-CLIENT-PRINCIPAL': create_mock_b2c_token(test_user.userId)}
+    
+    # Override container name for test
+    original_container = blob_service.container_name
+    blob_service.container_name = TEST_CONTAINER_NAME
+    
+    try:
+        # Call the function
+        response = _files_upload(req, blob_service, repository, user_repository)
+        
+        # Assert response
+        assert response.status_code == 200
+        result = json.loads(response.get_body())
+        assert len(result['files']) == 1
+        assert result['files'][0]['filename'] == filename
+        
+        # Verify file was saved
+        files = repository.get_files_from_db(test_user.userId)
+        assert len(files) == 1
+        assert files[0].filename == filename
+        
+        # Verify file exists in blob storage
+        assert blob_service.blob_exists(TEST_CONTAINER_NAME, filename)
+        
+        # Verify user's file count was incremented
+        updated_user = user_repository.get_user(test_user.userId)
+        assert updated_user.filesCount == 1
+    finally:
+        # Restore original container name
+        blob_service.container_name = original_container 

@@ -109,18 +109,33 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
         
         for input_file in files_list:
             try:
+                # Log input file details for debugging
+                logging.info(f"Input file type: {type(input_file)}")
+                if hasattr(input_file, '__dict__'):
+                    logging.info(f"Input file attributes: {input_file.__dict__}")
+
                 # Handle both file-like objects and raw bytes
                 if hasattr(input_file, 'filename'):
                     filename = input_file.filename
-                    content = input_file.stream.read()
+                    content = input_file.stream.read() if hasattr(input_file, 'stream') else input_file.read()
                 else:
-                    # For raw bytes, get filename from form data
-                    filename = req.form.get('filename')
+                    # For raw bytes or other formats
+                    filename = None
                     content = input_file
+                    # Try to get filename from various sources
+                    if hasattr(input_file, 'name'):
+                        filename = input_file.name
+                    elif hasattr(input_file, 'filename'):
+                        filename = input_file.filename
+                    elif 'filename' in req.form:
+                        filename = req.form['filename']
                     
                 if not filename:
+                    logging.error("No filename found in request")
+                    logging.info(f"Form data: {req.form}")
+                    logging.info(f"Files data: {req.files}")
                     return func.HttpResponse(
-                        json.dumps("Invalid request: Filename not provided in form data"),
+                        json.dumps("Invalid request: Filename not provided"),
                         status_code=400,
                         mimetype="application/json"
                     )
