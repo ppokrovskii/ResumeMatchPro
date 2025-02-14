@@ -9,6 +9,7 @@ from azure.cosmos import CosmosClient
 from dotenv import load_dotenv
 import base64
 import azure.core.exceptions
+import re
 
 # add project root to sys.path
 import sys
@@ -89,6 +90,15 @@ class MockHttpRequest(func.HttpRequest):
     @headers.setter
     def headers(self, value):
         self._headers = value
+
+class MockBytesFile(bytes):
+    def __new__(cls, content, headers):
+        obj = super().__new__(cls, content)
+        obj._headers = headers
+        return obj
+    @property
+    def headers(self):
+        return self._headers
 
 def create_mock_b2c_token(user_id: str) -> str:
     claims = {
@@ -558,3 +568,76 @@ def test_file_upload_with_form_data_boundary(repository, user_repository, blob_s
     finally:
         # Restore original container name
         blob_service.container_name = original_container 
+
+def test_file_upload_bytes_with_content_disposition():
+    # Setup dummy dependencies
+    repository = DummyFilesRepository()
+    user_repository = DummyUserRepository()
+    blob_service = DummyBlobService()
+    test_user = DummyTestUser('12345')
+
+    # Simulate a file upload request where the file is passed as raw bytes with a Content-Disposition header
+    filename = "Павел _ Lead Product Manager.pdf"
+    content = b'test content'
+    headers = {"Content-Disposition": f'form-data; name="content"; filename="{filename}"'}
+    mock_bytes = MockBytesFile(content, headers)
+
+    req = MockHttpRequest(
+        method='POST',
+        url='/api/files/upload',
+        params={},
+        body=None
+    )
+    # Set req.files to contain our mock_bytes object as a list under the key 'content'
+    req.files = {"content": [mock_bytes]}
+    # Provide form data without an explicit 'filename'
+    req.form = {"user_id": test_user.userId, "type": "CV"}
+    req.headers = {"X-MS-CLIENT-PRINCIPAL": create_mock_b2c_token(test_user.userId)}
+
+    # Call the file upload function
+    response = _files_upload(req, blob_service, repository, user_repository)
+
+    # We expect a 400 error response because the filename extraction from raw bytes fails
+    assert response.status_code == 400, f"Expected 400, got {response.status_code}"
+    # The response body is a JSON string; load it
+    body = response.get_body().decode('utf-8') if hasattr(response, 'get_body') else response._body
+    error_response = json.loads(body)
+    assert error_response == "Invalid request: Filename not provided", f"Unexpected error response: {error_response}"
+
+# Dummy implementations for dependencies
+class DummyFilesRepository:
+    def upsert_file(self, file_metadata):
+        # Return a dummy file metadata object with required attributes
+        return DummyFileMetadata(file_metadata)
+
+class DummyFileMetadata:
+    def __init__(self, file_metadata):
+        self.filename = file_metadata.get('filename')
+        self.type = file_metadata.get('type')
+        self.user_id = file_metadata.get('user_id')
+        self.url = 'http://dummyurl'
+
+    def model_dump(self, mode=None):
+        return {'filename': self.filename, 'type': self.type, 'user_id': self.user_id, 'url': self.url}
+
+class DummyUserRepository:
+    def can_upload_file(self, user_id):
+        return True
+
+    def increment_files_count(self, user_id):
+        pass
+
+class DummyBlobService:
+    container_name = 'dummy-container'
+
+    def upload_blob(self, container_name, filename, content):
+        return 'http://dummyurl'
+
+class DummyTestUser:
+    def __init__(self, user_id):
+        self.userId = user_id
+
+# Simple main to run the test if executed directly
+if __name__ == '__main__':
+    test_file_upload_bytes_with_content_disposition()
+    print("Test completed successfully") 

@@ -43,13 +43,15 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
         logging.info("Form data: %s", req.form)
         logging.info("Files data: %s", req.files)
 
-        # Retrieve file(s) from the request. Some implementations use a dict.
+        # Retrieve file(s) from the request robustly
         if hasattr(req.files, 'getlist'):
             input_files = req.files.getlist('content')
+        elif isinstance(req.files, list):
+            input_files = req.files
+        elif req.files:
+            input_files = [req.files]
         else:
-            input_files = req.files.get('content', [])
-            if not isinstance(input_files, list):
-                input_files = [input_files]
+            input_files = []
 
         if not input_files:
             logging.error("No files found in request")
@@ -122,27 +124,40 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
         logging.info(f"Files list type: {type(files_list)}")
         logging.info(f"Files list content: {files_list}")
         
-        for input_file in files_list:
+        for input_file in input_files:
             try:
                 # Log input file details for debugging
                 logging.info(f"Input file type: {type(input_file)}")
                 if hasattr(input_file, '__dict__'):
                     logging.info(f"Input file attributes: {input_file.__dict__}")
 
-                # Handle FileStorage objects from form data
+                # Handle each input_file
                 if hasattr(input_file, 'filename') and input_file.filename:
                     filename = input_file.filename
                     content = input_file.read()
+                elif isinstance(input_file, bytes):
+                    # If the file is already bytes, try to get the filename from the original FileStorage
+                    fs_obj = None
+                    if hasattr(req.files, 'get'):
+                        fs_obj = req.files.get('content')
+                    if fs_obj and hasattr(fs_obj, 'filename') and fs_obj.filename:
+                        filename = fs_obj.filename
+                    else:
+                        filename = None
+                    content = input_file
                 else:
-                    # For raw bytes or other formats
+                    # For other formats
                     filename = None
                     content = input_file
-                    # Try to get filename from various sources
                     if hasattr(input_file, 'name'):
                         filename = input_file.name
                     elif 'filename' in req.form:
                         filename = req.form['filename']
-                    
+                    elif hasattr(input_file, 'headers'):
+                        content_disp = input_file.headers.get('Content-Disposition', '')
+                        m = re.search('filename="([^"]+)"', content_disp)
+                        if m:
+                            filename = m.group(1)
                 if not filename:
                     logging.error("No filename found in request")
                     logging.info(f"Form data: {req.form}")
