@@ -102,13 +102,34 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
         files_list = req.files.get('content', [])
         if isinstance(files_list, dict):
             files_list = [files_list]
+            
+        # Log the files list for debugging
+        logging.info(f"Files list type: {type(files_list)}")
+        logging.info(f"Files list content: {files_list}")
+        
         for input_file in files_list:
             try:
+                # Handle both file-like objects and raw bytes
+                if hasattr(input_file, 'filename'):
+                    filename = input_file.filename
+                    content = input_file.stream.read()
+                else:
+                    # For raw bytes, get filename from form data
+                    filename = req.form.get('filename')
+                    content = input_file
+                    
+                if not filename:
+                    return func.HttpResponse(
+                        json.dumps("Invalid request: Filename not provided in form data"),
+                        status_code=400,
+                        mimetype="application/json"
+                    )
+                    
                 request_dict = {
                     "user_id": user_id,
                     "type": req.form.get("type"),
-                    "filename": input_file.filename,
-                    "content": input_file.stream.read()
+                    "filename": filename,
+                    "content": content
                 }
                 file_upload_request = FileUploadRequest(**request_dict)
             except ValidationError as e:

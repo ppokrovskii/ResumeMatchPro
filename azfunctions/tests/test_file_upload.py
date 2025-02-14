@@ -29,8 +29,24 @@ TEST_CONTAINER_NAME = "test-resume-match-pro-files"
 
 # Mock classes for testing
 class MockStream:
+    def __init__(self, content=b'test content'):
+        self._content = content
+        self._position = 0
+
     def read(self, *args):
-        return b'test content'
+        if self._position < len(self._content):
+            content = self._content[self._position:]
+            self._position = len(self._content)
+            return content
+        return b''
+
+    def seek(self, position):
+        self._position = position
+
+class MockFile:
+    def __init__(self, filename, content=b'test content'):
+        self.filename = filename
+        self.stream = MockStream(content)
 
 class MockHttpRequest(func.HttpRequest):
     def __init__(self, *args, **kwargs):
@@ -155,10 +171,8 @@ def test_user(user_repository) -> UserDb:
 
 def test_file_upload_success(repository, user_repository, blob_service, test_user):
     # Create mock file
-    mock_file = type('MockFile', (), {
-        'filename': f'test_{uuid4()}.pdf',
-        'stream': MockStream()
-    })
+    filename = f'test_{uuid4()}.pdf'
+    mock_file = MockFile(filename)
     
     # Create request
     req = MockHttpRequest(
@@ -183,15 +197,15 @@ def test_file_upload_success(repository, user_repository, blob_service, test_use
         assert response.status_code == 200
         result = json.loads(response.get_body())
         assert len(result['files']) == 1
-        assert result['files'][0]['filename'] == mock_file.filename
+        assert result['files'][0]['filename'] == filename
         
         # Verify file was saved
         files = repository.get_files_from_db(test_user.userId)
         assert len(files) == 1
-        assert files[0].filename == mock_file.filename
+        assert files[0].filename == filename
         
         # Verify file exists in blob storage
-        assert blob_service.blob_exists(TEST_CONTAINER_NAME, mock_file.filename)
+        assert blob_service.blob_exists(TEST_CONTAINER_NAME, filename)
         
         # Verify user's file count was incremented
         updated_user = user_repository.get_user(test_user.userId)
@@ -199,6 +213,77 @@ def test_file_upload_success(repository, user_repository, blob_service, test_use
     finally:
         # Restore original container name
         blob_service.container_name = original_container
+
+def test_file_upload_raw_bytes(repository, user_repository, blob_service, test_user):
+    # Create mock file as raw bytes
+    filename = f'test_{uuid4()}.pdf'
+    content = b'test content'
+    
+    # Create request
+    req = MockHttpRequest(
+        method='POST',
+        url='/api/files/upload',
+        params={},
+        body=None
+    )
+    req.files = {'content': [content]}
+    req.form = {
+        'type': 'CV',
+        'filename': filename
+    }
+    req.headers = {'X-MS-CLIENT-PRINCIPAL': create_mock_b2c_token(test_user.userId)}
+    
+    # Override container name for test
+    original_container = blob_service.container_name
+    blob_service.container_name = TEST_CONTAINER_NAME
+    
+    try:
+        # Call the function
+        response = _files_upload(req, blob_service, repository, user_repository)
+        
+        # Assert response
+        assert response.status_code == 200
+        result = json.loads(response.get_body())
+        assert len(result['files']) == 1
+        assert result['files'][0]['filename'] == filename
+        
+        # Verify file was saved
+        files = repository.get_files_from_db(test_user.userId)
+        assert len(files) == 1
+        assert files[0].filename == filename
+        
+        # Verify file exists in blob storage
+        assert blob_service.blob_exists(TEST_CONTAINER_NAME, filename)
+        
+        # Verify user's file count was incremented
+        updated_user = user_repository.get_user(test_user.userId)
+        assert updated_user.filesCount == 1
+    finally:
+        # Restore original container name
+        blob_service.container_name = original_container
+
+def test_file_upload_raw_bytes_missing_filename(repository, user_repository, blob_service, test_user):
+    # Create mock file as raw bytes
+    content = b'test content'
+    
+    # Create request without filename
+    req = MockHttpRequest(
+        method='POST',
+        url='/api/files/upload',
+        params={},
+        body=None
+    )
+    req.files = {'content': [content]}
+    req.form = {'type': 'CV'}  # No filename provided
+    req.headers = {'X-MS-CLIENT-PRINCIPAL': create_mock_b2c_token(test_user.userId)}
+    
+    # Call the function
+    response = _files_upload(req, blob_service, repository, user_repository)
+    
+    # Assert response
+    assert response.status_code == 400
+    error_response = json.loads(response.get_body())
+    assert "Filename not provided in form data" in error_response
 
 def test_file_upload_limit_reached(repository, user_repository, blob_service, test_user):
     # Override container name for test
