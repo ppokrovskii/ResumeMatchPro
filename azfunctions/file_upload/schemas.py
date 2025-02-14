@@ -10,7 +10,6 @@ class FileType(str, Enum):
 class FileUploadBase(BaseModel):
     filename: str
     type: FileType
-    user_id: str
 
 class FileUploadRequest(FileUploadBase):
     content: bytes
@@ -28,19 +27,3 @@ class FileUploadResponses(BaseModel):
         
 class FileUploadOutputQueueMessage(FileUploadResponse):
     pass
-
-
-# class FileMetadata(BaseModel):
-#     id: UUID = Field(default_factory=uuid4)
-#     filename: str
-#     type: FileType
-#     user_id: str
-#     url: str
-
-# class FilesRequest(BaseModel):
-#     # optional parameters
-#     user_id: str = None
-#     type: FileType = None
-
-# class FilesResponse(BaseModel):
-#     files: list[FileMetadata]

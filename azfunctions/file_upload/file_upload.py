@@ -77,6 +77,7 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
             claims = json.loads(claims_json)
             logging.info(f"Claims structure: {json.dumps(claims, indent=2)}")
             
+            # Ensure user_id is always taken from the token
             user_id = next((claim['val'] for claim in claims['claims'] 
                         if claim['typ'] == 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'), None)
             
@@ -168,8 +169,9 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
                         mimetype="application/json"
                     )
                     
+                # Remove any user_id extraction from request payload or parameters
                 request_dict = {
-                    "user_id": user_id,
+                    "user_id": user_id,  # Ensure user_id is from token
                     "type": req.form.get("type"),
                     "filename": filename,
                     "content": content
@@ -193,7 +195,7 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
                 file_metadata = FileMetadataDb(
                     filename=file_upload_request.filename,
                     type=file_upload_request.type,
-                    user_id=file_upload_request.user_id,
+                    user_id=user_id,
                     url=blob_url
                 )
                 file_metadata = files_repository.upsert_file(file_metadata.model_dump(mode="json"))
