@@ -65,7 +65,7 @@ const getAuthHeaders = async (instance: IPublicClientApplication, account: Accou
 export const fetchFiles = async (userId: string, account: AccountInfo, instance: IPublicClientApplication): Promise<RmpFile[]> => {
     try {
         const headers = await getAuthHeaders(instance, account);
-        const response = await fetch(getApiUrl(`files?user_id=${userId}`), {
+        const response = await fetch(getApiUrl('files'), {
             method: 'GET',
             headers,
             credentials: 'include'
@@ -132,7 +132,7 @@ export const uploadFiles = async (
     const formData = new FormData();
 
     // Add text fields first
-    formData.append('user_id', userId);
+    // formData.append('user_id', userId);
     formData.append('type', fileType);
 
     // Add file with explicit filename
