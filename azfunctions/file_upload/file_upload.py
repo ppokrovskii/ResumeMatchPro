@@ -3,6 +3,7 @@ import azure.functions as func
 import logging
 import json
 import base64
+import re
 
 from pydantic import ValidationError
 
@@ -42,8 +43,14 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
         logging.info("Form data: %s", req.form)
         logging.info("Files data: %s", req.files)
 
-        # Get file from request
-        input_files = req.files.get('content', [])
+        # Retrieve file(s) from the request. Some implementations use a dict.
+        if hasattr(req.files, 'getlist'):
+            input_files = req.files.getlist('content')
+        else:
+            input_files = req.files.get('content', [])
+            if not isinstance(input_files, list):
+                input_files = [input_files]
+
         if not input_files:
             logging.error("No files found in request")
             return func.HttpResponse(
@@ -52,12 +59,6 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
                 mimetype="application/json"
             )
         
-        # Ensure input_files is a list
-        if not isinstance(input_files, list):
-            input_files = [input_files]
-        
-        input_file = input_files[0]
-
         # Get user_id from B2C claims
         client_principal = req.headers.get('X-MS-CLIENT-PRINCIPAL')
         if not client_principal:
