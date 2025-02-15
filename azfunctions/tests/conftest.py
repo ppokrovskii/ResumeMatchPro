@@ -1,5 +1,11 @@
 import sys
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load test environment variables
+load_dotenv(Path(__file__).parent / ".env.test")
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import pytest

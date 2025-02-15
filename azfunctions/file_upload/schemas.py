@@ -10,6 +10,7 @@ class FileType(str, Enum):
 class FileUploadBase(BaseModel):
     filename: str
     type: FileType
+    user_id: str
 
 class FileUploadRequest(FileUploadBase):
     content: bytes

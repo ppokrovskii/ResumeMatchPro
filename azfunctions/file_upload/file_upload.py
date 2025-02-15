@@ -4,6 +4,7 @@ import logging
 import json
 import base64
 import re
+from uuid import uuid4
 
 from pydantic import ValidationError
 
@@ -193,6 +194,7 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
             # Save file metadata to database
             try:
                 file_metadata = FileMetadataDb(
+                    id=uuid4(),
                     filename=file_upload_request.filename,
                     type=file_upload_request.type,
                     user_id=user_id,
@@ -202,8 +204,9 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
                 # Increment the user's file count after successful upload
                 user_repository.increment_files_count(user_id)
             except ValidationError as e:
+                logging.error(f"Validation error creating file metadata: {str(e)}")
                 return func.HttpResponse(
-                    json.dumps("Internal Server Error!"),
+                    json.dumps({"error": "Internal Server Error", "details": str(e)}),
                     status_code=500,
                     mimetype="application/json"
                 )        

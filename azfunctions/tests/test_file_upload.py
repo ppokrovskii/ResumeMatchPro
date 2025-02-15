@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 import base64
 import azure.core.exceptions
 import re
+from unittest.mock import MagicMock
 
 # add project root to sys.path
 import sys
@@ -145,13 +146,23 @@ def user_repository():
 
 @pytest.fixture
 def blob_service():
-    service = FilesBlobService()
-    # Create test container if it doesn't exist
-    try:
-        service.blob_service_client.create_container(TEST_CONTAINER_NAME)
-    except azure.core.exceptions.ResourceExistsError:
-        pass  # Container already exists, which is fine
-    return service
+    mock_blob_service = MagicMock()
+    mock_blob_service.container_name = TEST_CONTAINER_NAME
+    mock_blob_service.blob_service_client = MagicMock()
+    mock_blob_service.blob_service_client.create_container.return_value = None
+    mock_blob_service.upload_blob.return_value = "https://example.com/test-blob"
+    
+    # Track uploaded blobs
+    uploaded_blobs = set()
+    def mock_upload_blob(container_name, filename, content):
+        uploaded_blobs.add((container_name, filename))
+        return "https://example.com/test-blob"
+    def mock_blob_exists(container_name, filename):
+        return (container_name, filename) in uploaded_blobs
+    
+    mock_blob_service.upload_blob.side_effect = mock_upload_blob
+    mock_blob_service.blob_exists.side_effect = mock_blob_exists
+    return mock_blob_service
 
 # add pytest fixture to clean up data before each test
 @pytest.fixture(autouse=True)
@@ -198,7 +209,10 @@ def test_user(user_repository) -> UserDb:
     )
     return user_repository.create_user(user.model_dump())
 
-def test_file_upload_success(repository, user_repository, blob_service, test_user):
+def test_file_upload_success(repository, user_repository, blob_service, test_user, monkeypatch):
+    # Mock QueueService
+    monkeypatch.setattr('file_upload.file_upload.QueueService', DummyQueueService)
+    
     # Create mock file
     filename = f'test_{uuid4()}.pdf'
     mock_file = MockFile(filename)
@@ -221,6 +235,11 @@ def test_file_upload_success(repository, user_repository, blob_service, test_use
     try:
         # Call the function
         response = _files_upload(req, blob_service, repository, user_repository)
+        
+        # Print error details if status code is 500
+        if response.status_code == 500:
+            error_body = json.loads(response.get_body())
+            print(f"Error response: {error_body}")
         
         # Assert response
         assert response.status_code == 200
@@ -301,7 +320,10 @@ def test_file_upload_raw_bytes_missing_filename(repository, user_repository, blo
     error_response = json.loads(response.get_body())
     assert "Invalid request: Filename not provided" == error_response
 
-def test_file_upload_limit_reached(repository, user_repository, blob_service, test_user):
+def test_file_upload_limit_reached(repository, user_repository, blob_service, test_user, monkeypatch):
+    # Mock QueueService
+    monkeypatch.setattr('file_upload.file_upload.QueueService', DummyQueueService)
+    
     # Override container name for test
     original_container = blob_service.container_name
     blob_service.container_name = TEST_CONTAINER_NAME
@@ -356,7 +378,10 @@ def test_file_upload_limit_reached(repository, user_repository, blob_service, te
         # Restore original container name
         blob_service.container_name = original_container
 
-def test_file_upload_user_not_found(repository, user_repository, blob_service):
+def test_file_upload_user_not_found(repository, user_repository, blob_service, monkeypatch):
+    # Mock QueueService
+    monkeypatch.setattr('file_upload.file_upload.QueueService', DummyQueueService)
+    
     # Create mock file
     mock_file = type('MockFile', (), {
         'filename': f'test_{uuid4()}.pdf',
@@ -451,7 +476,10 @@ def test_file_upload_no_files(repository, user_repository, blob_service, test_us
     updated_user = user_repository.get_user(test_user.userId)
     assert updated_user.filesCount == 0
 
-def test_file_upload_with_content_disposition(repository, user_repository, blob_service, test_user):
+def test_file_upload_with_content_disposition(repository, user_repository, blob_service, test_user, monkeypatch):
+    # Mock QueueService
+    monkeypatch.setattr('file_upload.file_upload.QueueService', DummyQueueService)
+    
     # Create mock file with filename in content disposition
     filename = f'test_{uuid4()}.pdf'
     content = b'test content'
@@ -497,7 +525,20 @@ def test_file_upload_with_content_disposition(repository, user_repository, blob_
         # Restore original container name
         blob_service.container_name = original_container 
 
-def test_file_upload_with_form_data_boundary(repository, user_repository, blob_service, test_user):
+class DummyQueueService:
+    def __init__(self, connection_string=None):
+        pass
+
+    def create_queue_if_not_exists(self, queue_name):
+        pass
+
+    def send_message(self, queue_name, message):
+        pass
+
+def test_file_upload_with_form_data_boundary(repository, user_repository, blob_service, test_user, monkeypatch):
+    # Mock QueueService
+    monkeypatch.setattr('file_upload.file_upload.QueueService', DummyQueueService)
+    
     # Create request with exact same format as the cURL request
     filename = "CV_Gleb F.-Fullstack_Developer.pdf"
     content = b'test content'  # In real request this would be PDF content
