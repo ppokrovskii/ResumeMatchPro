@@ -190,9 +190,9 @@ def test_user_db_datetime_serialization():
     user_json = user.model_dump_json()
     user_dict = json.loads(user_json)
 
-    # Verify datetime fields are serialized as ISO format strings
-    assert user_dict["createdAt"] == "2024-01-26T05:17:59"
-    assert user_dict["lastMatchingReset"] == "2024-01-26T05:17:59"
+    # Verify datetime fields are serialized as ISO format strings with UTC timezone
+    assert user_dict["createdAt"] == "2024-01-26T05:17:59Z"
+    assert user_dict["lastMatchingReset"] == "2024-01-26T05:17:59Z"
 
     # Verify other fields are present and correct
     assert user_dict["userId"] == "test123"
