@@ -1,5 +1,5 @@
-import { AccountInfo, IPublicClientApplication, InteractionRequiredAuthError } from '@azure/msal-browser';
-import { apiTokenRequest, interactiveRequest } from '../authConfig';
+import { AccountInfo, IPublicClientApplication } from '@azure/msal-browser';
+import { tokenService } from './tokenService';
 
 export interface UserDetails {
     userId: string;
@@ -19,41 +19,13 @@ const getApiUrl = (path: string) => {
     return `${API_BASE_URL}/${cleanPath}`;
 };
 
-const getAuthToken = async (instance: IPublicClientApplication, account: AccountInfo): Promise<string> => {
-    try {
-        // Try to acquire token silently first
-        const response = await instance.acquireTokenSilent({
-            ...apiTokenRequest,
-            account: account
-        });
-        return response.accessToken;
-    } catch (error) {
-        if (error instanceof InteractionRequiredAuthError) {
-            // If silent token acquisition fails, fall back to interactive method
-            const response = await instance.acquireTokenPopup(interactiveRequest);
-            return response.accessToken;
-        }
-        throw error;
-    }
-};
-
-const getAuthHeaders = async (instance: IPublicClientApplication, account: AccountInfo): Promise<HeadersInit> => {
-    const token = await getAuthToken(instance, account);
-    return {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-    };
-};
-
 export const searchUser = async (
     query: string,
     account: AccountInfo,
     instance: IPublicClientApplication
 ): Promise<UserDetails[]> => {
     try {
-        const headers = await getAuthHeaders(instance, account);
+        const headers = await tokenService.getAuthHeaders(instance, account);
         const response = await fetch(getApiUrl(`users/search?q=${encodeURIComponent(query)}`), {
             method: 'GET',
             headers,
@@ -85,7 +57,7 @@ export const updateUserLimits = async (
     instance: IPublicClientApplication
 ): Promise<UserDetails> => {
     try {
-        const headers = await getAuthHeaders(instance, account);
+        const headers = await tokenService.getAuthHeaders(instance, account);
         const response = await fetch(getApiUrl('users/limits'), {
             method: 'PUT',
             headers,
@@ -119,7 +91,7 @@ export const getCurrentUser = async (
     instance: IPublicClientApplication
 ): Promise<UserDetails> => {
     try {
-        const headers = await getAuthHeaders(instance, account);
+        const headers = await tokenService.getAuthHeaders(instance, account);
         const response = await fetch(getApiUrl('users/me'), {
             method: 'GET',
             headers,

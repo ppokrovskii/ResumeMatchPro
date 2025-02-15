@@ -2,6 +2,7 @@ import { AccountInfo, IdTokenClaims, InteractionStatus, IPublicClientApplication
 import { useMsal } from '@azure/msal-react';
 import { notification } from 'antd';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { tokenService } from '../services/tokenService';
 
 interface ExtendedIdTokenClaims extends IdTokenClaims {
   newUser?: boolean;
@@ -19,23 +20,12 @@ const getApiUrl = (path: string) => {
 
 export async function registerUser(claims: ExtendedIdTokenClaims, account: AccountInfo, instance: IPublicClientApplication) {
   try {
-    // Get the token first
-    const response = await instance.acquireTokenSilent({
-      account,
-      scopes: ["openid", "profile", "https://resumematchprodev.onmicrosoft.com/resumematchpro-api/Files.ReadWrite"]
-    });
-
-    const token = response.accessToken;
+    const headers = await tokenService.getAuthHeaders(instance, account);
 
     // Make the API call with the token
     const apiResponse = await fetch(getApiUrl('users'), {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-      },
+      headers,
       credentials: 'include',
       body: JSON.stringify({
         userId: claims.sub,

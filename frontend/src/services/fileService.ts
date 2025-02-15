@@ -1,6 +1,6 @@
 // services/fileService.ts
-import { AccountInfo, IPublicClientApplication, InteractionRequiredAuthError } from '@azure/msal-browser';
-import { apiTokenRequest, interactiveRequest } from '../authConfig';
+import { AccountInfo, IPublicClientApplication } from '@azure/msal-browser';
+import { tokenService } from './tokenService';
 
 export interface RmpFile {
     id: string;
@@ -35,36 +35,14 @@ const getApiUrl = (path: string) => {
     return `${API_BASE_URL}/${cleanPath}`;
 };
 
-const getAuthToken = async (instance: IPublicClientApplication, account: AccountInfo): Promise<string> => {
-    try {
-        // Try to acquire token silently first
-        const response = await instance.acquireTokenSilent({
-            ...apiTokenRequest,
-            account: account
-        });
-        return response.accessToken;
-    } catch (error) {
-        if (error instanceof InteractionRequiredAuthError) {
-            // If silent token acquisition fails, fall back to interactive method
-            const response = await instance.acquireTokenPopup(interactiveRequest);
-            return response.accessToken;
-        }
-        throw error;
-    }
-};
-
-const getAuthHeaders = async (instance: IPublicClientApplication, account: AccountInfo): Promise<HeadersInit> => {
-    const token = await getAuthToken(instance, account);
-    return {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-    };
+// Helper function to get auth headers using cached token
+const getAuthHeadersWithCache = async (instance: IPublicClientApplication, account: AccountInfo): Promise<HeadersInit> => {
+    return tokenService.getAuthHeaders(instance, account);
 };
 
 export const fetchFiles = async (userId: string, account: AccountInfo, instance: IPublicClientApplication): Promise<RmpFile[]> => {
     try {
-        const headers = await getAuthHeaders(instance, account);
+        const headers = await getAuthHeadersWithCache(instance, account);
         const response = await fetch(getApiUrl('files'), {
             method: 'GET',
             headers,
@@ -93,7 +71,7 @@ export const fetchFiles = async (userId: string, account: AccountInfo, instance:
 
 export const deleteFile = async (fileId: string, account: AccountInfo, instance: IPublicClientApplication): Promise<void> => {
     try {
-        const headers = await getAuthHeaders(instance, account);
+        const headers = await getAuthHeadersWithCache(instance, account);
         const response = await fetch(getApiUrl(`files/${fileId}`), {
             method: 'DELETE',
             headers,
@@ -130,29 +108,23 @@ export const uploadFiles = async (
     instance: IPublicClientApplication
 ): Promise<FileUploadResponse> => {
     const formData = new FormData();
-
-    // Add text fields first
-    // formData.append('user_id', userId);
     formData.append('type', fileType);
-
-    // Add file with explicit filename
     files.forEach(file => {
-        // Ensure we're sending the file with the correct field name and filename
         formData.append('content', file);
     });
 
-    const headers = await getAuthHeaders(instance, account);
+    // For file uploads, let the browser set the content-type with boundary
+    const headers = await getAuthHeadersWithCache(instance, account) as Record<string, string>;
+    delete headers['Content-Type'];
+
     const response = await fetch(getApiUrl('files/upload'), {
         method: 'POST',
-        headers: {
-            ...headers,
-        } as HeadersInit,
+        headers,
         credentials: 'include',
         body: formData,
     });
 
     if (!response.ok) {
-        // eslint-disable-next-line no-console
         console.error('Upload failed:', {
             status: response.status,
             statusText: response.statusText,
@@ -172,7 +144,7 @@ export const getMatchingResults = async (
     account: AccountInfo,
     instance: IPublicClientApplication
 ): Promise<Result[]> => {
-    const headers = await getAuthHeaders(instance, account);
+    const headers = await getAuthHeadersWithCache(instance, account);
     const response = await fetch(
         getApiUrl(`results?user_id=${userId}&file_id=${fileId}&file_type=${fileType}`),
         {

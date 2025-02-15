@@ -1,4 +1,3 @@
-import { InteractionRequiredAuthError } from '@azure/msal-browser';
 import { useMsal } from '@azure/msal-react';
 import { message } from 'antd';
 import React, { useContext, useState } from 'react';
@@ -8,11 +7,6 @@ import { AuthContext } from '../../contexts/AuthContext';
 import { useFiles } from '../../hooks/useFiles';
 import { getMatchingResults, RmpFile } from '../../services/fileService';
 import styles from './HomePage.module.css';
-
-interface IdTokenClaims {
-  sub: string;
-  [key: string]: unknown;
-}
 
 const HomePage: React.FC = () => {
   const { isAuthenticated, user, isInitialized } = useContext(AuthContext);
@@ -30,25 +24,9 @@ const HomePage: React.FC = () => {
         throw new Error('No account found');
       }
 
-      let tokenResponse;
-      try {
-        tokenResponse = await instance.acquireTokenSilent({
-          scopes: ['openid', 'https://resumematchprob2c.onmicrosoft.com/api/Files.ReadWrite'],
-          account: account
-        });
-      } catch (error) {
-        if (error instanceof InteractionRequiredAuthError) {
-          tokenResponse = await instance.acquireTokenPopup({
-            scopes: ['openid', 'https://resumematchprob2c.onmicrosoft.com/api/Files.ReadWrite'],
-            account: account
-          });
-        } else {
-          throw error;
-        }
-      }
-
-      const claims = tokenResponse.idTokenClaims as IdTokenClaims;
-      const userId = claims.sub;
+      // Get user ID from cached token claims
+      const claims = instance.getActiveAccount()?.idTokenClaims;
+      const userId = claims?.sub;
       if (!userId) {
         throw new Error('No user ID found in token claims');
       }
@@ -62,33 +40,30 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const handleFileSelect = (file: RmpFile) => {
+  const handleFileSelect = async (file: RmpFile) => {
     try {
       setSelectedFile(file);
 
       const account = accounts[0];
-      instance.acquireTokenSilent({
-        scopes: ['openid'],
-        account: account
-      }).then(tokenResponse => {
-        const claims = tokenResponse.idTokenClaims as IdTokenClaims;
-        const userId = claims.sub;
-        if (!userId) {
-          throw new Error('No user ID found in token claims');
-        }
+      if (!account) {
+        throw new Error('No account found');
+      }
 
-        getMatchingResults(userId, file.id, file.type, account, instance).then(results => {
-          const scoresMap: { [key: string]: number } = {};
-          results.forEach(result => {
-            const targetFile = file.type === 'CV' ? result.jd : result.cv;
-            scoresMap[targetFile.id] = result.overall_match_percentage;
-          });
-          setMatchingScores(scoresMap);
-        });
-      }).catch(error => {
-        console.error('Error getting matching results:', error);
-        message.error('Failed to get matching results');
+      // Get user ID from cached token claims
+      const claims = instance.getActiveAccount()?.idTokenClaims;
+      const userId = claims?.sub;
+      if (!userId) {
+        throw new Error('No user ID found in token claims');
+      }
+
+      // Get matching results using tokenService for auth
+      const results = await getMatchingResults(userId, file.id, file.type, account, instance);
+      const scoresMap: { [key: string]: number } = {};
+      results.forEach(result => {
+        const targetFile = file.type === 'CV' ? result.jd : result.cv;
+        scoresMap[targetFile.id] = result.overall_match_percentage;
       });
+      setMatchingScores(scoresMap);
     } catch (error) {
       console.error('Error getting matching results:', error);
       message.error('Failed to get matching results');
