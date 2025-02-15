@@ -261,3 +261,24 @@ def test_matching_counter_reset_in_can_upload_file(repository, sample_user):
     updated_user = repository.get_user(sample_user.userId)
     assert updated_user.matchingUsedCount == 0
     assert updated_user.lastMatchingReset > sample_user.lastMatchingReset 
+
+def test_can_upload_file_with_naive_datetime(repository, sample_user):
+    # Create a user with naive datetime for lastMatchingReset
+    naive_datetime = datetime.now() - timedelta(days=31)
+    # Simulate how the data might come from Cosmos DB by converting to string and back
+    naive_datetime_str = naive_datetime.isoformat()
+    
+    # Create user data as it would come from Cosmos DB
+    user_data = sample_user.model_dump()
+    user_data['lastMatchingReset'] = naive_datetime_str
+    
+    # Create user with the naive datetime string
+    repository.container.create_item(user_data)
+    
+    # Should not raise timezone error
+    assert repository.can_upload_file(sample_user.userId) is True
+    
+    # Verify the reset happened
+    updated_user = repository.get_user(sample_user.userId)
+    assert updated_user.matchingUsedCount == 0
+    assert updated_user.lastMatchingReset.tzinfo is not None  # Should be timezone-aware 

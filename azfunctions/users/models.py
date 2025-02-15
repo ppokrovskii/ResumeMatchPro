@@ -68,6 +68,12 @@ class UserDb(BaseModel):
         # Set id to the provided value or userId
         if not self.id:
             self.id = self.userId
+            
+        # Ensure datetime fields are timezone-aware
+        if not self.createdAt.tzinfo:
+            self.createdAt = self.createdAt.replace(tzinfo=UTC)
+        if not self.lastMatchingReset.tzinfo:
+            self.lastMatchingReset = self.lastMatchingReset.replace(tzinfo=UTC)
 
 class UpdateUserLimitsRequest(BaseModel):
     userId: str
