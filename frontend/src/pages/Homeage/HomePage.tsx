@@ -24,13 +24,6 @@ const HomePage: React.FC = () => {
         throw new Error('No account found');
       }
 
-      // Get user ID from cached token claims
-      const claims = instance.getActiveAccount()?.idTokenClaims;
-      const userId = claims?.sub;
-      if (!userId) {
-        throw new Error('No user ID found in token claims');
-      }
-
       // Refresh the files list after successful upload
       await refreshFiles();
       message.success('Files uploaded successfully');
@@ -49,15 +42,8 @@ const HomePage: React.FC = () => {
         throw new Error('No account found');
       }
 
-      // Get user ID from cached token claims
-      const claims = instance.getActiveAccount()?.idTokenClaims;
-      const userId = claims?.sub;
-      if (!userId) {
-        throw new Error('No user ID found in token claims');
-      }
-
       // Get matching results using tokenService for auth
-      const results = await getMatchingResults(userId, file.id, file.type, account, instance);
+      const results = await getMatchingResults(file.id, file.type, account, instance);
       const scoresMap: { [key: string]: number } = {};
       results.forEach(result => {
         const targetFile = file.type === 'CV' ? result.jd : result.cv;

@@ -40,7 +40,7 @@ const getAuthHeadersWithCache = async (instance: IPublicClientApplication, accou
     return tokenService.getAuthHeaders(instance, account);
 };
 
-export const fetchFiles = async (userId: string, account: AccountInfo, instance: IPublicClientApplication): Promise<RmpFile[]> => {
+export const fetchFiles = async (account: AccountInfo, instance: IPublicClientApplication): Promise<RmpFile[]> => {
     try {
         const headers = await getAuthHeadersWithCache(instance, account);
         const response = await fetch(getApiUrl('files'), {
@@ -102,7 +102,6 @@ interface FileUploadResponse {
 
 export const uploadFiles = async (
     files: File[],
-    userId: string,
     fileType: string,
     account: AccountInfo,
     instance: IPublicClientApplication
@@ -138,7 +137,6 @@ export const uploadFiles = async (
 };
 
 export const getMatchingResults = async (
-    userId: string,
     fileId: string,
     fileType: string,
     account: AccountInfo,
@@ -146,7 +144,7 @@ export const getMatchingResults = async (
 ): Promise<Result[]> => {
     const headers = await getAuthHeadersWithCache(instance, account);
     const response = await fetch(
-        getApiUrl(`results?user_id=${userId}&file_id=${fileId}&file_type=${fileType}`),
+        getApiUrl(`results?file_id=${fileId}&file_type=${fileType}`),
         {
             headers,
             credentials: 'include'

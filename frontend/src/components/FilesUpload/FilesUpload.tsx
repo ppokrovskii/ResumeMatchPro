@@ -11,11 +11,6 @@ interface FilesUploadProps {
     fileType: string;
 }
 
-interface IdTokenClaims {
-    sub: string;
-    [key: string]: unknown;
-}
-
 const FilesUpload: React.FC<FilesUploadProps> = ({ onFilesUploaded, fileType }) => {
     const { isAuthenticated, user } = useContext(AuthContext);
     const { instance, accounts } = useMsal();
@@ -39,18 +34,7 @@ const FilesUpload: React.FC<FilesUploadProps> = ({ onFilesUploaded, fileType }) 
                 throw new Error('No account found');
             }
 
-            // Get the sub claim from the token
-            const tokenResponse = await instance.acquireTokenSilent({
-                scopes: ['openid'],
-                account: account
-            });
-            const claims = tokenResponse.idTokenClaims as IdTokenClaims;
-            const userId = claims.sub;
-            if (!userId) {
-                throw new Error('No user ID found in token claims');
-            }
-
-            const response = await uploadFiles([rcFile], userId, fileType, account, instance);
+            const response = await uploadFiles([rcFile], fileType, account, instance);
             onFilesUploaded(response);
             onSuccess?.(response);
             message.success(`${rcFile.name} uploaded successfully`);

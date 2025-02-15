@@ -2,11 +2,6 @@ import { AccountInfo, IPublicClientApplication } from '@azure/msal-browser';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchFiles, RmpFile } from '../services/fileService';
 
-interface IdTokenClaims {
-    sub: string;
-    [key: string]: unknown;
-}
-
 export const useFiles = (
     instance: IPublicClientApplication,
     accounts: AccountInfo[],
@@ -25,15 +20,7 @@ export const useFiles = (
             setIsLoading(true);
             const account = accounts[0];
 
-            // Get user ID from cached token claims
-            const claims = instance.getActiveAccount()?.idTokenClaims as IdTokenClaims;
-            const userId = claims?.sub;
-
-            if (!userId) {
-                throw new Error('No user ID found in token claims');
-            }
-
-            const loadedFiles = await fetchFiles(userId, account, instance);
+            const loadedFiles = await fetchFiles(account, instance);
             setCvFiles(loadedFiles.filter((file: RmpFile) => file.type === 'CV'));
             setJdFiles(loadedFiles.filter((file: RmpFile) => file.type === 'JD'));
         } catch (error) {
