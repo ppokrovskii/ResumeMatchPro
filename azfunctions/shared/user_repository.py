@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import List, Optional
 from azure.cosmos import DatabaseProxy, PartitionKey, ContainerProxy
 from users.models import UserDb
@@ -53,9 +53,9 @@ class UserRepository:
             raise ValueError(f"User {user_id} not found")
             
         # Reset matching count if 30 days passed
-        if datetime.utcnow() - user.lastMatchingReset > timedelta(days=30):
+        if datetime.now(UTC) - user.lastMatchingReset > timedelta(days=30):
             user.matchingUsedCount = 0
-            user.lastMatchingReset = datetime.utcnow()
+            user.lastMatchingReset = datetime.now(UTC)
             
         user.matchingUsedCount += 1
         return self.update_user(user)
@@ -65,7 +65,14 @@ class UserRepository:
         user = self.get_user(user_id)
         if not user:
             raise ValueError(f"User {user_id} not found")
-        return user.filesCount < user.filesLimit
+            
+        # Reset matching count if 30 days passed
+        if datetime.now(UTC) - user.lastMatchingReset > timedelta(days=30):
+            user.matchingUsedCount = 0
+            user.lastMatchingReset = datetime.now(UTC)
+            self.update_user(user)
+            
+        return user.filesCount < user.filesLimit and user.matchingUsedCount < user.matchingLimit
     
     def can_perform_matching(self, user_id: str) -> bool:
         """Check if user can perform more matchings"""
@@ -74,7 +81,7 @@ class UserRepository:
             raise ValueError(f"User {user_id} not found")
             
         # Reset matching count if 30 days passed
-        if datetime.utcnow() - user.lastMatchingReset > timedelta(days=30):
+        if datetime.now(UTC) - user.lastMatchingReset > timedelta(days=30):
             return True
             
         return user.matchingUsedCount < user.matchingLimit

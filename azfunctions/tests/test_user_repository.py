@@ -1,6 +1,6 @@
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from pathlib import Path
 from unittest import mock
 
@@ -40,8 +40,8 @@ def sample_user() -> UserDb:
         matchingLimit=100,
         matchingUsedCount=0,
         filesCount=0,
-        createdAt=datetime.utcnow(),
-        lastMatchingReset=datetime.utcnow()
+        createdAt=datetime.now(UTC),
+        lastMatchingReset=datetime.now(UTC)
     )
 
 @pytest.fixture(autouse=True)
@@ -131,7 +131,7 @@ def test_increment_matching_count(repository, sample_user):
     assert updated_user.matchingUsedCount == 1
     
     # Set last reset to more than 30 days ago
-    updated_user.lastMatchingReset = datetime.utcnow() - timedelta(days=31)
+    updated_user.lastMatchingReset = datetime.now(UTC) - timedelta(days=31)
     repository.update_user(updated_user)
     
     # Increment again - should reset count first
@@ -169,7 +169,7 @@ def test_can_perform_matching(repository, sample_user):
     assert repository.can_perform_matching(sample_user.userId) is False
     
     # Set last reset to more than 30 days ago
-    sample_user.lastMatchingReset = datetime.utcnow() - timedelta(days=31)
+    sample_user.lastMatchingReset = datetime.now(UTC) - timedelta(days=31)
     repository.update_user(sample_user)
     
     # Should be able to match again after 30 days
@@ -183,4 +183,81 @@ def test_get_nonexistent_user(repository):
 def test_increment_files_count_nonexistent_user(repository):
     # Try to increment files count for nonexistent user
     with pytest.raises(ValueError, match="User nonexistent-user not found"):
-        repository.increment_files_count("nonexistent-user") 
+        repository.increment_files_count("nonexistent-user")
+
+def test_matching_counter_increment_during_matching(repository, sample_user):
+    # Create a user
+    repository.create_user(sample_user.model_dump())
+    
+    # Increment matching count multiple times
+    for i in range(3):
+        updated_user = repository.increment_matching_count(sample_user.userId)
+        assert updated_user.matchingUsedCount == i + 1
+
+def test_matching_counter_reset_after_30_days(repository, sample_user):
+    # Create a user with some matching count
+    sample_user.matchingUsedCount = 50
+    sample_user.lastMatchingReset = datetime.now(UTC) - timedelta(days=31)
+    repository.create_user(sample_user.model_dump())
+    
+    # Increment matching count - should reset first
+    updated_user = repository.increment_matching_count(sample_user.userId)
+    assert updated_user.matchingUsedCount == 1  # Should be 1 after reset and increment
+    assert updated_user.lastMatchingReset > sample_user.lastMatchingReset
+
+def test_can_upload_file_with_matching_limit_not_exceeded(repository, sample_user):
+    # Create a user with matching count below limit
+    sample_user.matchingLimit = 10
+    sample_user.matchingUsedCount = 5
+    repository.create_user(sample_user.model_dump())
+    
+    # Should be able to upload
+    assert repository.can_upload_file(sample_user.userId) is True
+
+def test_cannot_upload_file_with_matching_limit_exceeded(repository, sample_user):
+    # Create a user with matching count at limit
+    sample_user.matchingLimit = 10
+    sample_user.matchingUsedCount = 10
+    repository.create_user(sample_user.model_dump())
+    
+    # Should not be able to upload
+    assert repository.can_upload_file(sample_user.userId) is False
+
+def test_cannot_upload_file_with_either_limit_exceeded(repository, sample_user):
+    # Create user once
+    repository.create_user(sample_user.model_dump())
+    
+    # Test cases with different limit combinations
+    test_cases = [
+        # (filesCount, filesLimit, matchingUsedCount, matchingLimit, expected_result)
+        (19, 20, 100, 100, False),  # Matching limit reached
+        (20, 20, 50, 100, False),   # Files limit reached
+        (20, 20, 100, 100, False),  # Both limits reached
+        (19, 20, 50, 100, True),    # Neither limit reached
+    ]
+    
+    for files_count, files_limit, matching_used, matching_limit, expected in test_cases:
+        # Update user with test case values
+        sample_user.filesCount = files_count
+        sample_user.filesLimit = files_limit
+        sample_user.matchingUsedCount = matching_used
+        sample_user.matchingLimit = matching_limit
+        repository.update_user(sample_user)
+        
+        # Check if can upload matches expected result
+        assert repository.can_upload_file(sample_user.userId) is expected
+
+def test_matching_counter_reset_in_can_upload_file(repository, sample_user):
+    # Create a user with matching count at limit but old reset date
+    sample_user.matchingLimit = 10
+    sample_user.matchingUsedCount = 10
+    sample_user.lastMatchingReset = datetime.now(UTC) - timedelta(days=31)
+    repository.create_user(sample_user.model_dump())
+    
+    # Should be able to upload after reset
+    assert repository.can_upload_file(sample_user.userId) is True
+    
+    # Verify counter was reset
+    updated_user = repository.get_user(sample_user.userId)
+    assert updated_user.matchingUsedCount == 0
+    assert updated_user.lastMatchingReset > sample_user.lastMatchingReset 
