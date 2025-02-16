@@ -2,7 +2,7 @@ import { InboxOutlined } from '@ant-design/icons';
 import { useMsal } from '@azure/msal-react';
 import { Upload, message } from 'antd';
 import { RcFile, UploadRequestOption } from 'rc-upload/lib/interface';
-import React, { useContext, useRef } from 'react';
+import React, { useContext, useRef, useState } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { uploadFiles } from '../../services/fileService';
 
@@ -11,15 +11,11 @@ interface FilesUploadProps {
     fileType: string;
 }
 
-interface IdTokenClaims {
-    sub: string;
-    [key: string]: unknown;
-}
-
 const FilesUpload: React.FC<FilesUploadProps> = ({ onFilesUploaded, fileType }) => {
     const { isAuthenticated, user } = useContext(AuthContext);
     const { instance, accounts } = useMsal();
     const uploadingFiles = useRef<Set<string>>(new Set());
+    const [fileList, setFileList] = useState<RcFile[]>([]);
 
     const handleUpload = async (options: UploadRequestOption) => {
         const { file, onSuccess, onError } = options;
@@ -38,21 +34,12 @@ const FilesUpload: React.FC<FilesUploadProps> = ({ onFilesUploaded, fileType }) 
                 throw new Error('No account found');
             }
 
-            // Get the sub claim from the token
-            const tokenResponse = await instance.acquireTokenSilent({
-                scopes: ['openid'],
-                account: account
-            });
-            const claims = tokenResponse.idTokenClaims as IdTokenClaims;
-            const userId = claims.sub;
-            if (!userId) {
-                throw new Error('No user ID found in token claims');
-            }
-
-            const response = await uploadFiles([rcFile], userId, fileType, account, instance);
+            const response = await uploadFiles([rcFile], fileType, account, instance);
             onFilesUploaded(response);
             onSuccess?.(response);
             message.success(`${rcFile.name} uploaded successfully`);
+            // Clear the file list after successful upload
+            setFileList([]);
         } catch (error) {
             console.error('Error uploading files:', error);
             onError?.(error as Error);
@@ -72,6 +59,8 @@ const FilesUpload: React.FC<FilesUploadProps> = ({ onFilesUploaded, fileType }) 
             accept=".pdf,.docx"
             customRequest={handleUpload}
             className="drop-area"
+            fileList={fileList}
+            onChange={({ fileList }) => setFileList(fileList as RcFile[])}
         >
             <p className="ant-upload-drag-icon">
                 <InboxOutlined />

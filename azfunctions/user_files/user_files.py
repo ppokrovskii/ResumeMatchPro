@@ -13,9 +13,16 @@ from user_files.models import UserFilesRequest, UserFilesResponse
 # create blueprint
 user_files_bp = func.Blueprint()
 
-@user_files_bp.route(route="files", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+@user_files_bp.route(route="files", methods=["GET"])
 def get_files(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('get_files function processed a request.')
+    
+    # Debug logging for headers
+    auth_header = req.headers.get('Authorization', '')
+    client_principal = req.headers.get('x-ms-client-principal', '')
+    logging.info(f"Debug headers - Authorization: {auth_header}")
+    logging.info(f"Debug headers - x-ms-client-principal: {client_principal}")
+    
     try:
         cosmos_db_client = get_cosmos_db_client()
         files_repository = FilesRepository(cosmos_db_client)
@@ -32,13 +39,29 @@ def get_files(req: func.HttpRequest) -> func.HttpResponse:
 
 def _get_files(req: func.HttpRequest, files_repository: FilesRepository) -> func.HttpResponse:
     try:
-        if not req.params.get('user_id'):
+        # Get user_id from B2C claims
+        client_principal = req.headers.get('X-MS-CLIENT-PRINCIPAL')
+        if not client_principal:
             return func.HttpResponse(
-                body=json.dumps({"error": "user_id is required"}),
+                body=json.dumps({"error": "Unauthorized - Missing user claims"}),
                 mimetype="application/json",
-                status_code=400
+                status_code=401
             )
-        request = UserFilesRequest(**req.params)
+
+        claims_json = base64.b64decode(client_principal).decode('utf-8')
+        claims = json.loads(claims_json)
+        user_id = next((claim['val'] for claim in claims['claims'] 
+                      if claim['typ'] == 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'), None)
+
+        if not user_id:
+            return func.HttpResponse(
+                body=json.dumps({"error": "Unauthorized - Missing user ID in claims"}),
+                mimetype="application/json",
+                status_code=401
+            )
+
+        # Use user_id from claims
+        request = UserFilesRequest(user_id=user_id, type=req.params.get('type'))
         files_metadata_db = files_repository.get_files_from_db(request.user_id, request.type)
         response = UserFilesResponse(files=[file_metadata.model_dump(mode="json") for file_metadata in files_metadata_db])
         return func.HttpResponse(

@@ -128,11 +128,24 @@ def test_get_files_logic():
     ]
     mock_files_repository.get_files_from_db.return_value = mock_files
 
-    # Create a mock HTTP request
+    # Create mock B2C claims
+    mock_claims = {
+        "claims": [
+            {"typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "val": "123"},
+            {"typ": "name", "val": "Test User"},
+            {"typ": "emails", "val": "test@example.com"}
+        ]
+    }
+    encoded_claims = base64.b64encode(json.dumps(mock_claims).encode()).decode()
+
+    # Create a mock HTTP request with B2C headers
     req = func.HttpRequest(
         method='GET',
         url='/api/files',
-        params={'user_id': '123', 'type': 'CV'},
+        params={'type': 'CV'},
+        headers={
+            'X-MS-CLIENT-PRINCIPAL': encoded_claims
+        },
         body=None
     )
 

@@ -4,6 +4,7 @@ from pydantic import ValidationError
 
 from shared.matching_results_repository import MatchingResultsRepository
 from shared.files_repository import FilesRepository
+from shared.user_repository import UserRepository
 from shared.db_service import get_cosmos_db_client
 from shared.openai_service.openai_service import OpenAIService
 from matching.schemas import FileModel, FileType, MatchingRequestMessage, MatchingResultModel
@@ -23,6 +24,7 @@ def match_resume(msg: func.QueueMessage):
     # fetch text from db
     cosmos_db_client = get_cosmos_db_client()
     files_repository = FilesRepository(cosmos_db_client)
+    user_repository = UserRepository(cosmos_db_client)
     
     file_metadata_db = files_repository.get_file_by_id(matching_request.user_id, matching_request.id)
     if not file_metadata_db:
@@ -58,4 +60,5 @@ def match_resume(msg: func.QueueMessage):
         )
         # store result in db
         matching_results_repository.upsert_result(matching_result_db.model_dump(mode="json"))
-        pass
+        # increment matching count for user
+        user_repository.increment_matching_count(file_metadata_db.user_id)

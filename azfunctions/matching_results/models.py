@@ -2,6 +2,7 @@ from openai import BaseModel
 from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
+from typing import Optional
 
 from pydantic import BaseModel, Field, model_validator
 from typing import List
@@ -13,9 +14,8 @@ class FileType(str, Enum):
     JD = "JD"
     
 class MatchingResultsRequest(BaseModel):
-    user_id: str
     file_id: str
-    file_type: FileType    
+    file_type: FileType
     
 class MatchingBaseModel(BaseModel):
     pass
@@ -38,7 +38,6 @@ class MatchingRequestBase(MatchingBaseModel):
     id: UUID = Field(default_factory=uuid4)
     filename: str
     type: FileType
-    user_id: str
     url: str
     
 class MatchingRequestMessage(MatchingRequestBase):
@@ -48,7 +47,6 @@ class MatchingRequestModel(MatchingBaseModel):
     id: UUID
     filename: str
     type: FileType
-    user_id: str
     url: str
     text: str
 
@@ -57,7 +55,6 @@ class FileModel(MatchingBaseModel):
     id: UUID = Field(default_factory=uuid4)
     filename: str
     type: FileType
-    user_id: str
     url: str
     # text: str
     

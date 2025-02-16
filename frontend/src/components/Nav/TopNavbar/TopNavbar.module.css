@@ -61,21 +61,19 @@
     max-width: clamp(100px, 20vw, 200px);
 }
 
-.button {
-    background-color: #1976d2;
-    color: white;
+.usernameButton {
+    background: none;
     border: none;
-    padding: clamp(6px, 1vw, 8px) clamp(12px, 2vw, 16px);
-    border-radius: 4px;
+    color: var(--color-text-primary);
+    font-size: 1rem;
+    padding: 4px 8px;
     cursor: pointer;
-    font-size: clamp(0.875rem, 1.5vw, 1rem);
-    font-family: 'Montserrat Light Alt1', sans-serif;
-    transition: background-color 0.2s ease;
-    white-space: nowrap;
+    transition: all 0.2s ease;
+    border-radius: 4px;
 }
 
-.button:hover {
-    background-color: #1565c0;
+.usernameButton:hover {
+    background-color: var(--color-background-hover);
 }
 
 @media screen and (max-width: 768px) {

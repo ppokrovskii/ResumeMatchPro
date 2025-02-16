@@ -50,6 +50,23 @@
     display: block;
 }
 
+.usernameButton {
+    background: none;
+    border: none;
+    color: var(--color-text-primary);
+    font-size: 1rem;
+    padding: 4px 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    width: 100%;
+    text-align: left;
+}
+
+.usernameButton:hover {
+    background-color: var(--color-background-hover);
+}
+
 /* List Style */
 .ulStyle {
     list-style: none;
