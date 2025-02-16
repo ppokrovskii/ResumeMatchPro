@@ -319,4 +319,91 @@ def get_current_user(req: func.HttpRequest) -> func.HttpResponse:
             json.dumps({"error": f"Internal server error: {str(e)}"}),
             mimetype="application/json",
             status_code=500
+        )
+
+@users_bp.route(route="users/me", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+def create_or_update_current_user(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Processing current user creation/update request')
+    
+    try:
+        # Get user_id from B2C claims
+        client_principal = req.headers.get('X-MS-CLIENT-PRINCIPAL')
+        if not client_principal:
+            return func.HttpResponse(
+                body=json.dumps({"error": "Unauthorized - Missing user claims"}),
+                mimetype="application/json",
+                status_code=401
+            )
+
+        try:
+            claims_json = base64.b64decode(client_principal).decode('utf-8')
+            claims = json.loads(claims_json)
+            user_id = next((claim['val'] for claim in claims['claims'] 
+                        if claim['typ'] == 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'), None)
+            
+            if not user_id:
+                return func.HttpResponse(
+                    body=json.dumps({"error": "Unauthorized - Missing user ID in claims"}),
+                    mimetype="application/json",
+                    status_code=401
+                )
+        except Exception as e:
+            logging.error(f"Error decoding claims: {str(e)}")
+            return func.HttpResponse(
+                body=json.dumps({"error": "Unauthorized - Invalid claims format"}),
+                mimetype="application/json",
+                status_code=401
+            )
+            
+        # Parse request body
+        req_body = req.get_json()
+        
+        # Get DB client and repository
+        cosmos_db_client = get_cosmos_db_client()
+        user_repository = UserRepository(cosmos_db_client)
+        
+        # Check if user exists
+        existing_user = user_repository.get_user(user_id)
+        
+        if existing_user:
+            # Update existing user
+            existing_user.email = req_body.get('email', existing_user.email)
+            existing_user.name = req_body.get('name', existing_user.name)
+            updated_user = user_repository.update_user(existing_user)
+            response_data = CreateUserResponse(**updated_user.model_dump())
+            return func.HttpResponse(
+                body=response_data.model_dump_json(),
+                mimetype="application/json",
+                status_code=200
+            )
+        else:
+            # Create new user
+            user_db = UserDb(
+                userId=user_id,
+                email=req_body.get('email'),
+                name=req_body.get('name'),
+                isAdmin=False,  # New users are never admin by default
+                filesLimit=20,  # Default file limit
+                matchingLimit=100  # Default matching limit
+            )
+            saved_user = user_repository.create_user(user_db.model_dump())
+            response_data = CreateUserResponse(**saved_user.model_dump())
+            return func.HttpResponse(
+                body=response_data.model_dump_json(),
+                mimetype="application/json",
+                status_code=201
+            )
+            
+    except ValueError as e:
+        return func.HttpResponse(
+            body=json.dumps({"error": str(e)}),
+            mimetype="application/json",
+            status_code=400
+        )
+    except Exception as e:
+        logging.error(f"Error creating/updating user: {str(e)}")
+        return func.HttpResponse(
+            body=json.dumps({"error": "Internal server error"}),
+            mimetype="application/json",
+            status_code=500
         ) 

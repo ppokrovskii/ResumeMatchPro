@@ -113,4 +113,37 @@ export const getCurrentUser = async (
         console.error('Error getting current user:', error);
         throw error;
     }
+};
+
+export const createOrUpdateUser = async (
+    account: AccountInfo,
+    instance: IPublicClientApplication
+): Promise<UserDetails> => {
+    try {
+        const headers = await tokenService.getAuthHeaders(instance, account);
+        const response = await fetch(getApiUrl('users/me'), {
+            method: 'POST',
+            headers,
+            credentials: 'include',
+            body: JSON.stringify({
+                email: account.username,
+                name: account.name
+            })
+        });
+
+        if (!response.ok) {
+            console.error('Failed to create/update user:', {
+                status: response.status,
+                statusText: response.statusText,
+                headers: Object.fromEntries(response.headers.entries()),
+                body: await response.text()
+            });
+            throw new Error('Failed to create/update user');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error creating/updating user:', error);
+        throw error;
+    }
 }; 

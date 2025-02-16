@@ -2,7 +2,7 @@ import { AccountInfo, IdTokenClaims, InteractionStatus, IPublicClientApplication
 import { useMsal } from '@azure/msal-react';
 import { notification } from 'antd';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { tokenService } from '../services/tokenService';
+import { createOrUpdateUser } from '../services/userService';
 
 interface ExtendedIdTokenClaims extends IdTokenClaims {
   newUser?: boolean;
@@ -10,38 +10,9 @@ interface ExtendedIdTokenClaims extends IdTokenClaims {
   extension_IsAdmin?: boolean;
 }
 
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || '';
-
-// Helper function to construct API URLs
-const getApiUrl = (path: string) => {
-  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-  return `${API_BASE_URL}/${cleanPath}`;
-};
-
 export async function registerUser(claims: ExtendedIdTokenClaims, account: AccountInfo, instance: IPublicClientApplication) {
   try {
-    const headers = await tokenService.getAuthHeaders(instance, account);
-
-    // Make the API call with the token
-    const apiResponse = await fetch(getApiUrl('users'), {
-      method: 'POST',
-      headers,
-      credentials: 'include',
-      body: JSON.stringify({
-        userId: claims.sub,
-        email: account.username,
-        name: account.name
-      })
-    });
-
-    if (!apiResponse.ok) {
-      // If it's a conflict (user exists), that's fine
-      if (apiResponse.status !== 409) {
-        throw new Error(`Failed to register user: ${apiResponse.statusText}`);
-      }
-    }
-
-    const result = await apiResponse.json();
+    const result = await createOrUpdateUser(account, instance);
     return result;
   } catch (error) {
     console.error('Error registering user:', error);
