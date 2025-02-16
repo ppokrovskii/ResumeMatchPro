@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { AccountInfo, IPublicClientApplication, InteractionRequiredAuthError } from '@azure/msal-browser';
 import { apiTokenRequest, interactiveRequest } from '../authConfig';
 
@@ -43,16 +44,17 @@ class TokenService {
         }
 
         try {
+            // Always try silent token acquisition first
             const response = await instance.acquireTokenSilent({
                 account,
                 scopes,
-                forceRefresh: false
+                forceRefresh: !cachedToken // Force refresh if no cached token
             });
 
             // Cache the new token
             this.tokenCache.set(cacheKey, {
                 accessToken: response.accessToken,
-                expiresAt: response.expiresOn?.getTime() || Date.now() + 3600 * 1000, // Default to 1 hour if no expiration
+                expiresAt: response.expiresOn?.getTime() || Date.now() + 3600 * 1000,
                 account,
                 scopes
             });
@@ -60,6 +62,24 @@ class TokenService {
             return response.accessToken;
         } catch (error) {
             if (error instanceof InteractionRequiredAuthError) {
+                // For API scopes, first ensure we have the basic scopes
+                if (scopes.some(scope => scope.includes('resumematchpro-api'))) {
+                    try {
+                        // First get/refresh the basic token
+                        await instance.acquireTokenSilent({
+                            account,
+                            scopes: ['openid', 'profile', 'offline_access'],
+                            forceRefresh: true
+                        });
+                    } catch (basicError) {
+                        // If basic token refresh fails, try interactive
+                        await instance.acquireTokenPopup({
+                            scopes: ['openid', 'profile', 'offline_access']
+                        });
+                    }
+                }
+
+                // Now try to get the API token
                 const response = await instance.acquireTokenPopup({
                     ...interactiveRequest,
                     scopes
@@ -83,7 +103,19 @@ class TokenService {
         instance: IPublicClientApplication,
         account: AccountInfo
     ): Promise<HeadersInit> {
+        console.log('Getting auth headers for:', {
+            account: account.username,
+            scopes: apiTokenRequest.scopes
+        });
+
         const token = await this.getAccessToken(instance, account);
+
+        console.log('Auth headers prepared:', {
+            account: account.username,
+            hasToken: !!token,
+            tokenLength: token?.length
+        });
+
         return {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json',
