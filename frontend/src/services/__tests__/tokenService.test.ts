@@ -1,12 +1,23 @@
+// Mock environment variables for B2C configuration
 import { AccountInfo, AuthenticationResult, IPublicClientApplication } from '@azure/msal-browser';
 import { tokenService } from '../tokenService';
 
-// Mock environment variables for B2C configuration
 process.env.REACT_APP_B2C_TENANT = 'test-tenant';
 process.env.REACT_APP_FRONTEND_CLIENT_ID = 'test-client-id';
 process.env.REACT_APP_B2C_AUTHORITY_DOMAIN = 'test-authority-domain';
 process.env.REACT_APP_BACKEND_CLIENT_ID = 'test-backend-client-id';
 process.env.REACT_APP_BASE_URL = 'http://localhost:3000';
+
+// Mock authConfig module
+jest.mock('../../authConfig', () => ({
+    apiTokenRequest: {
+        scopes: ['test-scope']
+    },
+    interactiveRequest: {
+        scopes: ['test-scope'],
+        prompt: 'select_account'
+    }
+}));
 
 describe('TokenService', () => {
     let mockInstance: jest.Mocked<IPublicClientApplication>;
