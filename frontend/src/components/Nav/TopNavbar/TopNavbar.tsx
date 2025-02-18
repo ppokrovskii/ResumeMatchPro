@@ -10,6 +10,8 @@ import { UserInfoModal } from '../../UserInfoModal/UserInfoModal';
 import Sidebar from '../Sidebar/Sidebar';
 import styles from './TopNavbar.module.css';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const TopNavbar: React.FC = () => {
     const { isAuthenticated, user } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -45,7 +47,7 @@ const TopNavbar: React.FC = () => {
                             >
                                 {user?.name}
                             </button>
-                            <DebugInfo claims={user} />
+                            {!isProduction && <DebugInfo claims={user} />}
                             {user?.idTokenClaims?.extension_IsAdmin && (
                                 <Link to="/admin" className={commonStyles.primaryButton}>Admin</Link>
                             )}
