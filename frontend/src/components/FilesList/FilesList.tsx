@@ -74,7 +74,11 @@ const FilesList: React.FC<FilesListProps> = ({
         <List
           className={styles.filesList}
           itemLayout="horizontal"
-          dataSource={files}
+          dataSource={files.sort((a, b) => {
+            const scoreA = matchingScores[a.id] || 0;
+            const scoreB = matchingScores[b.id] || 0;
+            return scoreB - scoreA;
+          })}
           locale={{ emptyText: isLoading ? ' ' : 'No files found' }}
           renderItem={file => (
             <List.Item
