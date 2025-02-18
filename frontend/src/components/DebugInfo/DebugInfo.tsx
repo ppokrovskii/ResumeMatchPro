@@ -6,6 +6,8 @@ interface DebugInfoProps {
     claims: AuthContextType['user'];
 }
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 export const DebugInfo: React.FC<DebugInfoProps> = ({ claims }) => {
     const [showDebug, setShowDebug] = useState(false);
     const { user } = useAuth();
@@ -28,6 +30,10 @@ export const DebugInfo: React.FC<DebugInfoProps> = ({ claims }) => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [showDebug]);
+
+    if (isProduction) {
+        return null;
+    }
 
     return (
         <>

@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { AccountInfo, IPublicClientApplication, InteractionRequiredAuthError } from '@azure/msal-browser';
+import { AccountInfo, IPublicClientApplication, SilentRequest } from '@azure/msal-browser';
 import { apiTokenRequest, interactiveRequest } from '../authConfig';
 
 interface CachedToken {
@@ -9,9 +9,16 @@ interface CachedToken {
     scopes: string[];
 }
 
+// Add interface for MSAL error
+interface MsalError {
+    errorCode: string;
+    errorMessage: string;
+}
+
 class TokenService {
     private static instance: TokenService;
     private tokenCache: Map<string, CachedToken> = new Map();
+    private refreshInProgress: Map<string, Promise<string>> = new Map();
 
     private constructor() { }
 
@@ -31,28 +38,23 @@ class TokenService {
         return Date.now() >= token.expiresAt - 5 * 60 * 1000;
     }
 
-    public async getAccessToken(
+    private async refreshToken(
         instance: IPublicClientApplication,
         account: AccountInfo,
-        scopes: string[] = apiTokenRequest.scopes
+        scopes: string[],
+        forceRefresh: boolean = false
     ): Promise<string> {
-        const cacheKey = this.getCacheKey(account, scopes);
-        const cachedToken = this.tokenCache.get(cacheKey);
-
-        if (cachedToken && !this.isTokenExpired(cachedToken)) {
-            return cachedToken.accessToken;
-        }
-
         try {
-            // Always try silent token acquisition first
-            const response = await instance.acquireTokenSilent({
+            const request: SilentRequest = {
                 account,
                 scopes,
-                forceRefresh: !cachedToken // Force refresh if no cached token
-            });
+                forceRefresh
+            };
+
+            const response = await instance.acquireTokenSilent(request);
 
             // Cache the new token
-            this.tokenCache.set(cacheKey, {
+            this.tokenCache.set(this.getCacheKey(account, scopes), {
                 accessToken: response.accessToken,
                 expiresAt: response.expiresOn?.getTime() || Date.now() + 3600 * 1000,
                 account,
@@ -61,32 +63,28 @@ class TokenService {
 
             return response.accessToken;
         } catch (error) {
-            if (error instanceof InteractionRequiredAuthError) {
-                // For API scopes, first ensure we have the basic scopes
+            const msalError = error as MsalError;
+            if (msalError.errorCode === 'interaction_required' || msalError.errorCode === 'consent_required') {
+                // If it's an API scope, first ensure we have valid basic scopes
                 if (scopes.some(scope => scope.includes('resumematchpro-api'))) {
                     try {
-                        // First get/refresh the basic token
-                        await instance.acquireTokenSilent({
-                            account,
-                            scopes: ['openid', 'profile', 'offline_access'],
-                            forceRefresh: true
-                        });
+                        // Try to refresh the basic token first
+                        await this.refreshToken(instance, account, ['openid', 'profile', 'offline_access'], true);
                     } catch (basicError) {
-                        // If basic token refresh fails, try interactive
-                        await instance.acquireTokenPopup({
-                            scopes: ['openid', 'profile', 'offline_access']
-                        });
+                        console.log('Failed to refresh basic token, proceeding with interactive login');
                     }
                 }
 
-                // Now try to get the API token
+                // Fallback to interactive login
+                console.log('Token refresh failed, proceeding with interactive login');
                 const response = await instance.acquireTokenPopup({
                     ...interactiveRequest,
-                    scopes
+                    scopes,
+                    account
                 });
 
                 // Cache the new token
-                this.tokenCache.set(cacheKey, {
+                this.tokenCache.set(this.getCacheKey(account, scopes), {
                     accessToken: response.accessToken,
                     expiresAt: response.expiresOn?.getTime() || Date.now() + 3600 * 1000,
                     account,
@@ -96,6 +94,38 @@ class TokenService {
                 return response.accessToken;
             }
             throw error;
+        }
+    }
+
+    public async getAccessToken(
+        instance: IPublicClientApplication,
+        account: AccountInfo,
+        scopes: string[] = apiTokenRequest.scopes
+    ): Promise<string> {
+        const cacheKey = this.getCacheKey(account, scopes);
+        const cachedToken = this.tokenCache.get(cacheKey);
+
+        // Check if there's already a refresh in progress for this token
+        const existingRefresh = this.refreshInProgress.get(cacheKey);
+        if (existingRefresh) {
+            return existingRefresh;
+        }
+
+        // If we have a valid cached token, use it
+        if (cachedToken && !this.isTokenExpired(cachedToken)) {
+            return cachedToken.accessToken;
+        }
+
+        try {
+            // Start a new refresh
+            const refreshPromise = this.refreshToken(instance, account, scopes, !cachedToken);
+            this.refreshInProgress.set(cacheKey, refreshPromise);
+
+            const token = await refreshPromise;
+            return token;
+        } finally {
+            // Clean up the refresh promise
+            this.refreshInProgress.delete(cacheKey);
         }
     }
 
@@ -126,6 +156,7 @@ class TokenService {
 
     public clearCache(): void {
         this.tokenCache.clear();
+        this.refreshInProgress.clear();
     }
 }
 
