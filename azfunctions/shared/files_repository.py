@@ -82,12 +82,15 @@ class FilesRepository:
         """Get a file by user_id and file_id."""
         if isinstance(file_id, UUID):
             file_id = str(file_id)
-        query = "SELECT * FROM c WHERE c.user_id = @user_id AND c.id = @file_id"
-        parameters = [
-            {"name": "@user_id", "value": user_id},
-            {"name": "@file_id", "value": file_id}
-        ]
-        items = list(self.container.query_items(query, parameters=parameters))
-        if items:
-            return FileMetadataDb(**items[0])
-        return None
+        # First check if file exists for any user
+        query = "SELECT * FROM c WHERE c.id = @file_id"
+        parameters = [{"name": "@file_id", "value": file_id}]
+        items = list(self.container.query_items(query, parameters=parameters, enable_cross_partition_query=True))
+        if not items:
+            return None
+            
+        file = FileMetadataDb(**items[0])
+        if file.user_id != user_id:
+            raise PermissionError("You don't have permission to access this file")
+            
+        return file

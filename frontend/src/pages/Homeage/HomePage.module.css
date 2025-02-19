@@ -1,50 +1,63 @@
 /* File: src/pages/HomePage.module.css */
 
 .container {
-  padding: 2rem;
-  flex: 1;
+  padding: 24px;
+  height: 100vh;
+  /* Use viewport height */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   width: 100%;
   box-sizing: border-box;
-  /* Include padding in width calculation */
 }
 
 .columnsContainer {
   display: flex;
-  gap: 2rem;
+  gap: 24px;
   flex: 1;
+  /* Take remaining height */
   min-height: 0;
   /* Allow container to shrink */
 }
 
 .column {
   flex: 1;
-  background: #fff;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  /* Prevent flex items from overflowing */
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
   overflow: hidden;
-  /* Prevent content overflow */
-  min-height: 400px;
-  /* Ensure minimum height for content */
+  max-width: 50%;
 }
 
 .columnTitle {
-  margin: 0 0 1.5rem 0;
-  font-size: 1.5rem;
-  color: #333;
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  font-weight: 600;
   flex-shrink: 0;
   /* Prevent title from shrinking */
 }
 
 .uploadSection {
-  margin-bottom: 1.5rem;
+  margin-bottom: 16px;
   flex-shrink: 0;
   /* Prevent upload section from shrinking */
+}
+
+/* FilesList container */
+.column>div:not(.columnTitle):not(.uploadSection) {
+  flex: 1;
+  min-height: 0;
+  /* Allow content to scroll */
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Ensure the upload area has a nice style */
@@ -62,6 +75,8 @@
 @media screen and (max-width: 768px) {
   .container {
     padding: 1rem;
+    height: auto;
+    min-height: 100vh;
   }
 
   .columnsContainer {
@@ -71,6 +86,6 @@
 
   .column {
     min-height: 300px;
-    margin-bottom: 1rem;
+    max-width: 100%;
   }
 }
