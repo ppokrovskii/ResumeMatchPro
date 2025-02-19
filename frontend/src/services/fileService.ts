@@ -191,3 +191,43 @@ export const getFile = async (fileId: string, account: AccountInfo, instance: IP
         throw error;
     }
 };
+
+export const downloadFile = async (fileId: string, account: AccountInfo, instance: IPublicClientApplication): Promise<void> => {
+    try {
+        const headers = await getAuthHeadersWithCache(instance, account);
+        const response = await fetch(getApiUrl(`files/${fileId}/download`), {
+            method: 'GET',
+            headers,
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            console.error('Failed to download file:', {
+                status: response.status,
+                statusText: response.statusText,
+                headers: Object.fromEntries(response.headers.entries()),
+                body: await response.text()
+            });
+            throw new Error('Failed to download file');
+        }
+
+        // Get filename from Content-Disposition header
+        const contentDisposition = response.headers.get('Content-Disposition');
+        const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
+        const filename = filenameMatch ? filenameMatch[1] : 'download';
+
+        // Create blob from response and trigger download
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    } catch (error) {
+        console.error('Error downloading file:', error);
+        throw error;
+    }
+};

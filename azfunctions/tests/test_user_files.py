@@ -13,7 +13,7 @@ import base64
 import sys
 sys.path.append(str(Path(__file__).parent.parent))
 
-from user_files.user_files import _get_files, _delete_file
+from user_files.user_files import _get_files, _delete_file, user_files_bp
 from user_files.models import UserFilesRequest, UserFilesResponse
 from shared.models import FileMetadataDb, FileType
 from shared.files_repository import FilesRepository
@@ -21,6 +21,17 @@ from shared.blob_service import FilesBlobService
 
 # Load test environment variables
 load_dotenv(Path(__file__).parent / ".env.test")
+
+@pytest.fixture
+def client():
+    """Create a test client for the Azure Functions app."""
+    from azure.functions import WsgiMiddleware
+    from flask import Flask
+
+    app = Flask(__name__)
+    app.wsgi_app = WsgiMiddleware(user_files_bp.as_flask_app())
+    app.config['TESTING'] = True
+    return app.test_client()
 
 @pytest.fixture
 def repository():
@@ -467,3 +478,102 @@ def test_get_file_unauthorized(repository, sample_file_metadata):
     assert resp.status_code == 403, f"Expected 403, got {resp.status_code}"
     data = json.loads(resp.get_body().decode())
     assert "don't have permission" in data.get("error", ""), "Expected unauthorized access error message"
+
+def test_download_file_success(repository, blob_service, sample_file_metadata, sample_file_content):
+    # Create mock B2C claims
+    mock_claims = {
+        "claims": [
+            {"typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "val": sample_file_metadata.user_id}
+        ]
+    }
+    encoded_claims = base64.b64encode(json.dumps(mock_claims).encode()).decode()
+    
+    # Create mock request
+    req = func.HttpRequest(
+        method='GET',
+        url=f'/files/{sample_file_metadata.id}/download',
+        route_params={'file_id': str(sample_file_metadata.id)},
+        headers={'X-MS-CLIENT-PRINCIPAL': encoded_claims},
+        body=None
+    )
+    
+    from user_files.user_files import _download_file
+    response = _download_file(req, repository, blob_service)
+    
+    assert response.status_code == 200
+    assert response.get_body() == sample_file_content
+    assert response.headers['Content-Disposition'] == f'attachment; filename="{sample_file_metadata.filename}"'
+    assert response.headers['Content-Type'] == 'application/octet-stream'
+
+
+def test_download_file_not_found(repository, blob_service):
+    user_id = str(uuid4())
+    non_existent_file_id = str(uuid4())
+    
+    # Create mock B2C claims
+    mock_claims = {
+        "claims": [
+            {"typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "val": user_id}
+        ]
+    }
+    encoded_claims = base64.b64encode(json.dumps(mock_claims).encode()).decode()
+    
+    # Create mock request
+    req = func.HttpRequest(
+        method='GET',
+        url=f'/files/{non_existent_file_id}/download',
+        route_params={'file_id': str(non_existent_file_id)},
+        headers={'X-MS-CLIENT-PRINCIPAL': encoded_claims},
+        body=None
+    )
+    
+    from user_files.user_files import _download_file
+    response = _download_file(req, repository, blob_service)
+    
+    assert response.status_code == 404
+    assert json.loads(response.get_body())['error'] == 'File not found'
+
+
+def test_download_file_unauthorized(repository, blob_service):
+    # Create mock request without claims header
+    req = func.HttpRequest(
+        method='GET',
+        url='/files/some-id/download',
+        route_params={'file_id': 'some-id'},
+        headers={},
+        body=None
+    )
+    
+    from user_files.user_files import _download_file
+    response = _download_file(req, repository, blob_service)
+    
+    assert response.status_code == 401
+    assert json.loads(response.get_body())['error'] == 'Unauthorized - Missing user claims'
+
+
+def test_download_file_forbidden(repository, blob_service, sample_file_metadata):
+    different_user_id = str(uuid4())
+    
+    # Create mock B2C claims with different user_id
+    mock_claims = {
+        "claims": [
+            {"typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "val": different_user_id}
+        ]
+    }
+    encoded_claims = base64.b64encode(json.dumps(mock_claims).encode()).decode()
+    
+    # Create mock request
+    req = func.HttpRequest(
+        method='GET',
+        url=f'/files/{sample_file_metadata.id}/download',
+        route_params={'file_id': str(sample_file_metadata.id)},
+        headers={'X-MS-CLIENT-PRINCIPAL': encoded_claims},
+        body=None
+    )
+    
+    from user_files.user_files import _download_file
+    response = _download_file(req, repository, blob_service)
+    
+    assert response.status_code == 403
+    error_response = json.loads(response.get_body())
+    assert "don't have permission" in error_response['error']

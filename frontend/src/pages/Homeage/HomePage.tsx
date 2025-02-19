@@ -60,13 +60,11 @@ const HomePage: React.FC = () => {
       // Fetch file details first
       const fileDetails = await getFile(file.id, account, instance);
 
-      // Update the appropriate column state with both file and its details
+      // Update only the relevant column state without affecting the other column
       if (file.type === 'JD') {
         setJdColumnState({ isShowingDetails: true, selectedFile: file, fileDetails });
-        setCvColumnState(prev => ({ ...prev, selectedFile: null, fileDetails: null }));
       } else {
         setCvColumnState({ isShowingDetails: true, selectedFile: file, fileDetails });
-        setJdColumnState(prev => ({ ...prev, selectedFile: null, fileDetails: null }));
       }
 
       // Get matching results
