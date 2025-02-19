@@ -165,3 +165,29 @@ export const getMatchingResults = async (
     const data: ResultsResponse = await response.json();
     return data.results;
 };
+
+export const getFile = async (fileId: string, account: AccountInfo, instance: IPublicClientApplication): Promise<RmpFile> => {
+    try {
+        const headers = await getAuthHeadersWithCache(instance, account);
+        const response = await fetch(getApiUrl(`files/${fileId}`), {
+            method: 'GET',
+            headers,
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            console.error('Failed to get file:', {
+                status: response.status,
+                statusText: response.statusText,
+                headers: Object.fromEntries(response.headers.entries()),
+                body: await response.text()
+            });
+            throw new Error('Failed to get file');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting file:', error);
+        throw error;
+    }
+};

@@ -370,3 +370,100 @@ def test_delete_file_forbidden():
     # Verify no delete calls were made
     mock_blob_service.delete_blob.assert_not_called()
     mock_files_repository.delete_file.assert_not_called()
+
+def create_mock_claims(user_id: str) -> str:
+    claims = {"claims": [{
+        "typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
+        "val": user_id
+    }]}
+    return base64.b64encode(json.dumps(claims).encode()).decode()
+
+def test_get_file_success(repository, sample_file_metadata):
+    # Assume sample_file_metadata is a fixture providing a file metadata object with attributes id, user_id, filename, etc.
+    user_id = sample_file_metadata.user_id
+    file_id = sample_file_metadata.id
+    client_principal = create_mock_claims(user_id)
+    req = func.HttpRequest(
+        method="GET",
+        url=f"/api/files/{file_id}",
+        body=None,
+        params={},
+        route_params={"file_id": file_id},
+        headers={"X-MS-CLIENT-PRINCIPAL": client_principal}
+    )
+    
+    from azfunctions.user_files.user_files import _get_file
+    resp = _get_file(req, repository)
+    assert resp.status_code == 200, f"Expected 200, got {resp.status_code}"
+    data = json.loads(resp.get_body().decode())
+    assert data["filename"] == sample_file_metadata.filename, "Filename mismatch"
+
+def test_get_file_missing_file_id(repository):
+    user_id = "test_user"
+    client_principal = create_mock_claims(user_id)
+    req = func.HttpRequest(
+        method="GET",
+        url="/api/files/",
+        body=None,
+        params={},
+        route_params={},  # Missing file_id
+        headers={"X-MS-CLIENT-PRINCIPAL": client_principal}
+    )
+    from azfunctions.user_files.user_files import _get_file
+    resp = _get_file(req, repository)
+    assert resp.status_code == 400, f"Expected 400, got {resp.status_code}"
+    data = json.loads(resp.get_body().decode())
+    assert "file_id is required" in data.get("error", ""), "Missing error message for missing file_id"
+
+def test_get_file_missing_claims(repository):
+    file_id = "some_file_id"
+    req = func.HttpRequest(
+        method="GET",
+        url=f"/api/files/{file_id}",
+        body=None,
+        params={},
+        route_params={"file_id": file_id},
+        headers={}  # Missing X-MS-CLIENT-PRINCIPAL header
+    )
+    from azfunctions.user_files.user_files import _get_file
+    resp = _get_file(req, repository)
+    assert resp.status_code == 401, f"Expected 401, got {resp.status_code}"
+    data = json.loads(resp.get_body().decode())
+    assert "Missing user claims" in data.get("error", ""), "Expected missing claims error message"
+
+def test_get_file_not_found(repository):
+    user_id = "test_user"
+    file_id = "nonexistent_file"
+    client_principal = create_mock_claims(user_id)
+    req = func.HttpRequest(
+        method="GET",
+        url=f"/api/files/{file_id}",
+        body=None,
+        params={},
+        route_params={"file_id": file_id},
+        headers={"X-MS-CLIENT-PRINCIPAL": client_principal}
+    )
+    from azfunctions.user_files.user_files import _get_file
+    resp = _get_file(req, repository)
+    assert resp.status_code == 404, f"Expected 404, got {resp.status_code}"
+    data = json.loads(resp.get_body().decode())
+    assert "File not found" in data.get("error", ""), "Expected file not found error message"
+
+def test_get_file_unauthorized(repository, sample_file_metadata):
+    # File exists but the authenticated user's id does not match the file's user_id
+    file_id = sample_file_metadata.id
+    different_user_id = "different_user"
+    client_principal = create_mock_claims(different_user_id)
+    req = func.HttpRequest(
+        method="GET",
+        url=f"/api/files/{file_id}",
+        body=None,
+        params={},
+        route_params={"file_id": file_id},
+        headers={"X-MS-CLIENT-PRINCIPAL": client_principal}
+    )
+    from azfunctions.user_files.user_files import _get_file
+    resp = _get_file(req, repository)
+    assert resp.status_code == 403, f"Expected 403, got {resp.status_code}"
+    data = json.loads(resp.get_body().decode())
+    assert "don't have permission" in data.get("error", ""), "Expected unauthorized access error message"
