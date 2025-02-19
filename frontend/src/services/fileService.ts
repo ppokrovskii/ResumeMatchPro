@@ -192,7 +192,7 @@ export const getFile = async (fileId: string, account: AccountInfo, instance: IP
     }
 };
 
-export const downloadFile = async (fileId: string, account: AccountInfo, instance: IPublicClientApplication): Promise<void> => {
+export const downloadFile = async (fileId: string, account: AccountInfo, instance: IPublicClientApplication, filename: string): Promise<void> => {
     try {
         const headers = await getAuthHeadersWithCache(instance, account);
         const response = await fetch(getApiUrl(`files/${fileId}/download`), {
@@ -211,17 +211,17 @@ export const downloadFile = async (fileId: string, account: AccountInfo, instanc
             throw new Error('Failed to download file');
         }
 
-        // Get filename from Content-Disposition header
+        // Get filename from Content-Disposition header or use provided filename
         const contentDisposition = response.headers.get('Content-Disposition');
         const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
-        const filename = filenameMatch ? filenameMatch[1] : 'download';
+        const downloadFilename = filenameMatch ? filenameMatch[1] : filename;
 
         // Create blob from response and trigger download
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = filename;
+        a.download = downloadFilename;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);

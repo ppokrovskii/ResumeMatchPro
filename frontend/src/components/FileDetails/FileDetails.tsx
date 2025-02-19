@@ -21,7 +21,7 @@ const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack }) => {
             if (!account) {
                 throw new Error('No account found');
             }
-            await downloadFile(file.id, account, instance);
+            await downloadFile(file.id, account, instance, file.filename);
         } catch (error) {
             console.error('Error downloading file:', error);
             message.error('Failed to download file');
