@@ -249,8 +249,21 @@ def _get_file(req: func.HttpRequest, files_repository: FilesRepository) -> func.
                     status_code=404
                 )
             
+            # Create response with all structured information
+            response_data = file_metadata.model_dump(mode="json", exclude_none=True)
+            
+            # Add additional information about structured content
+            if response_data.get('pages'):
+                logging.info(f"File has {len(response_data['pages'])} pages")
+            if response_data.get('tables'):
+                logging.info(f"File has {len(response_data['tables'])} tables")
+            if response_data.get('paragraphs'):
+                logging.info(f"File has {len(response_data['paragraphs'])} paragraphs")
+            if response_data.get('styles'):
+                logging.info(f"File has {len(response_data['styles'])} different styles")
+            
             return func.HttpResponse(
-                body=file_metadata.model_dump_json(),
+                body=json.dumps(response_data),
                 mimetype="application/json",
                 status_code=200
             )

@@ -8,6 +8,7 @@ import pytest
 from azure.cosmos import CosmosClient
 from dotenv import load_dotenv
 import base64
+from user_files.user_files import _get_file, _download_file
 
 # add project root to sys.path
 import sys
@@ -403,7 +404,6 @@ def test_get_file_success(repository, sample_file_metadata):
         headers={"X-MS-CLIENT-PRINCIPAL": client_principal}
     )
     
-    from azfunctions.user_files.user_files import _get_file
     resp = _get_file(req, repository)
     assert resp.status_code == 200, f"Expected 200, got {resp.status_code}"
     data = json.loads(resp.get_body().decode())
@@ -420,7 +420,6 @@ def test_get_file_missing_file_id(repository):
         route_params={},  # Missing file_id
         headers={"X-MS-CLIENT-PRINCIPAL": client_principal}
     )
-    from azfunctions.user_files.user_files import _get_file
     resp = _get_file(req, repository)
     assert resp.status_code == 400, f"Expected 400, got {resp.status_code}"
     data = json.loads(resp.get_body().decode())
@@ -436,7 +435,6 @@ def test_get_file_missing_claims(repository):
         route_params={"file_id": file_id},
         headers={}  # Missing X-MS-CLIENT-PRINCIPAL header
     )
-    from azfunctions.user_files.user_files import _get_file
     resp = _get_file(req, repository)
     assert resp.status_code == 401, f"Expected 401, got {resp.status_code}"
     data = json.loads(resp.get_body().decode())
@@ -454,7 +452,6 @@ def test_get_file_not_found(repository):
         route_params={"file_id": file_id},
         headers={"X-MS-CLIENT-PRINCIPAL": client_principal}
     )
-    from azfunctions.user_files.user_files import _get_file
     resp = _get_file(req, repository)
     assert resp.status_code == 404, f"Expected 404, got {resp.status_code}"
     data = json.loads(resp.get_body().decode())
@@ -473,7 +470,6 @@ def test_get_file_unauthorized(repository, sample_file_metadata):
         route_params={"file_id": file_id},
         headers={"X-MS-CLIENT-PRINCIPAL": client_principal}
     )
-    from azfunctions.user_files.user_files import _get_file
     resp = _get_file(req, repository)
     assert resp.status_code == 403, f"Expected 403, got {resp.status_code}"
     data = json.loads(resp.get_body().decode())
@@ -497,7 +493,6 @@ def test_download_file_success(repository, blob_service, sample_file_metadata, s
         body=None
     )
     
-    from user_files.user_files import _download_file
     response = _download_file(req, repository, blob_service)
     
     assert response.status_code == 200
@@ -527,7 +522,6 @@ def test_download_file_not_found(repository, blob_service):
         body=None
     )
     
-    from user_files.user_files import _download_file
     response = _download_file(req, repository, blob_service)
     
     assert response.status_code == 404
@@ -544,7 +538,6 @@ def test_download_file_unauthorized(repository, blob_service):
         body=None
     )
     
-    from user_files.user_files import _download_file
     response = _download_file(req, repository, blob_service)
     
     assert response.status_code == 401
@@ -571,9 +564,161 @@ def test_download_file_forbidden(repository, blob_service, sample_file_metadata)
         body=None
     )
     
-    from user_files.user_files import _download_file
     response = _download_file(req, repository, blob_service)
     
     assert response.status_code == 403
     error_response = json.loads(response.get_body())
     assert "don't have permission" in error_response['error']
+
+@pytest.fixture
+def structured_docx_file_metadata(repository, blob_service):
+    # Create a unique filename
+    filename = f"test_docx_{uuid4()}.docx"
+    user_id = "test-user-123"
+    
+    # Create file metadata with structured information
+    file_metadata = FileMetadataDb(
+        filename=filename,
+        type=FileType.CV,
+        user_id=user_id,
+        url=f"https://test.blob.core.windows.net/{filename}",
+        text="Sample CV text",
+        pages=[{
+            "page_number": 1,
+            "content": "Page 1 content",
+            "lines": ["Line 1", "Line 2"],
+            "tables": [[["Header 1", "Header 2"], ["Data 1", "Data 2"]]]
+        }],
+        paragraphs=["Paragraph 1", "Paragraph 2"],
+        tables=[[["Header 1", "Header 2"], ["Data 1", "Data 2"]]],
+        styles={
+            "Heading1": {
+                "name": "Heading 1",
+                "font_name": "Arial",
+                "font_size": 16.0,
+                "is_bold": True,
+                "is_italic": False,
+                "is_underline": False
+            }
+        },
+        headers=["Document Header"],
+        footers=["Document Footer"]
+    )
+    
+    # Save to database
+    saved_metadata = repository.upsert_file(file_metadata.model_dump(mode="json"))
+    yield saved_metadata
+    
+    # Cleanup after test
+    try:
+        repository.delete_file(user_id=user_id, file_id=str(saved_metadata.id))
+    except Exception as e:
+        print(f"Error cleaning up DOCX test file: {e}")
+
+@pytest.fixture
+def structured_pdf_file_metadata(repository, blob_service):
+    # Create a unique filename
+    filename = f"test_pdf_{uuid4()}.pdf"
+    user_id = "test-user-123"
+    
+    # Create file metadata with structured information
+    file_metadata = FileMetadataDb(
+        filename=filename,
+        type=FileType.CV,
+        user_id=user_id,
+        url=f"https://test.blob.core.windows.net/{filename}",
+        text="Sample CV text",
+        pages=[{
+            "page_number": 1,
+            "content": "Page 1 content",
+            "lines": ["Line 1", "Line 2"],
+            "tables": [[["Header 1", "Header 2"], ["Data 1", "Data 2"]]]
+        }],
+        paragraphs=["Paragraph 1", "Paragraph 2"],
+        tables=[[["Header 1", "Header 2"], ["Data 1", "Data 2"]]],
+        styles={
+            "style_1": {
+                "name": "style_1",
+                "font_name": "Times New Roman",
+                "font_size": 12.0,
+                "is_bold": True,
+                "is_italic": False,
+                "is_underline": False
+            }
+        }
+    )
+    
+    # Save to database
+    saved_metadata = repository.upsert_file(file_metadata.model_dump(mode="json"))
+    yield saved_metadata
+    
+    # Cleanup after test
+    try:
+        repository.delete_file(user_id=user_id, file_id=str(saved_metadata.id))
+    except Exception as e:
+        print(f"Error cleaning up PDF test file: {e}")
+
+def test_get_file_with_docx_structure(repository, structured_docx_file_metadata):
+    """Test getting a DOCX file with structured information from real Cosmos DB"""
+    # Create request with mock claims
+    req = func.HttpRequest(
+        method='GET',
+        url=f'/api/files/{structured_docx_file_metadata.id}',
+        route_params={'file_id': str(structured_docx_file_metadata.id)},
+        headers={'X-MS-CLIENT-PRINCIPAL': create_mock_claims(structured_docx_file_metadata.user_id)},
+        body=None
+    )
+    
+    # Call the function
+    response = _get_file(req, repository)
+    
+    # Assert response
+    assert response.status_code == 200
+    result = json.loads(response.get_body())
+    
+    # Verify all structured information is present
+    assert result['filename'].endswith('.docx')
+    assert result['text'] == 'Sample CV text'
+    assert len(result['pages']) == 1
+    assert result['pages'][0]['page_number'] == 1
+    assert len(result['pages'][0]['lines']) == 2
+    assert len(result['pages'][0]['tables']) == 1
+    assert len(result['paragraphs']) == 2
+    assert len(result['tables']) == 1
+    assert len(result['styles']) == 1
+    assert result['styles']['Heading1']['font_name'] == 'Arial'
+    assert result['headers'] == ['Document Header']
+    assert result['footers'] == ['Document Footer']
+
+def test_get_file_with_pdf_structure(repository, structured_pdf_file_metadata):
+    """Test getting a PDF file with structured information from real Cosmos DB"""
+    # Create request with mock claims
+    req = func.HttpRequest(
+        method='GET',
+        url=f'/api/files/{structured_pdf_file_metadata.id}',
+        route_params={'file_id': str(structured_pdf_file_metadata.id)},
+        headers={'X-MS-CLIENT-PRINCIPAL': create_mock_claims(structured_pdf_file_metadata.user_id)},
+        body=None
+    )
+    
+    # Call the function
+    response = _get_file(req, repository)
+    
+    # Assert response
+    assert response.status_code == 200
+    result = json.loads(response.get_body())
+    
+    # Verify all structured information is present
+    assert result['filename'].endswith('.pdf')
+    assert result['text'] == 'Sample CV text'
+    assert len(result['pages']) == 1
+    assert result['pages'][0]['page_number'] == 1
+    assert len(result['pages'][0]['lines']) == 2
+    assert len(result['pages'][0]['tables']) == 1
+    assert len(result['paragraphs']) == 2
+    assert len(result['tables']) == 1
+    assert len(result['styles']) == 1
+    assert result['styles']['style_1']['font_name'] == 'Times New Roman'
+    # PDF doesn't have headers/footers
+    assert 'headers' not in result
+    assert 'footers' not in result
