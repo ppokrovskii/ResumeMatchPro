@@ -1,24 +1,37 @@
-import json
-from unittest import mock
-import azure.functions as func
-from uuid import uuid4
-import os
-from pathlib import Path
-import pytest
-from azure.cosmos import CosmosClient
-from dotenv import load_dotenv
-import base64
-from user_files.user_files import _get_file, _download_file
-
-# add project root to sys.path
+import logging
 import sys
-sys.path.append(str(Path(__file__).parent.parent))
-
+import base64
+import json
+import os
+import pytest
+from uuid import uuid4
+import azure.functions as func
+from pathlib import Path
+from dotenv import load_dotenv
+from azure.cosmos import CosmosClient
+from user_files.user_files import _get_file, _download_file
+from azure.ai.formrecognizer import DocumentAnalysisClient
 from user_files.user_files import _get_files, _delete_file, user_files_bp
 from user_files.models import UserFilesRequest, UserFilesResponse
-from shared.models import FileMetadataDb, FileType
+from shared.models import FileMetadataDb, FileType, DocumentPage, Line, TableCell, DocumentStyle
 from shared.files_repository import FilesRepository
 from shared.blob_service import FilesBlobService
+from unittest import mock
+
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stdout
+)
+
+# Ensure all loggers propagate to root
+for name in logging.root.manager.loggerDict:
+    logging.getLogger(name).propagate = True
+    logging.getLogger(name).setLevel(logging.DEBUG)
+
+# add project root to sys.path
+sys.path.append(str(Path(__file__).parent.parent))
 
 # Load test environment variables
 load_dotenv(Path(__file__).parent / ".env.test")
@@ -583,23 +596,32 @@ def structured_docx_file_metadata(repository, blob_service):
         user_id=user_id,
         url=f"https://test.blob.core.windows.net/{filename}",
         text="Sample CV text",
-        pages=[{
-            "page_number": 1,
-            "content": "Page 1 content",
-            "lines": ["Line 1", "Line 2"],
-            "tables": [[["Header 1", "Header 2"], ["Data 1", "Data 2"]]]
-        }],
+        pages=[DocumentPage(
+            page_number=1,
+            content="Page 1 content",
+            lines=[
+                Line(content="Line 1"),
+                Line(content="Line 2")
+            ],
+            tables=[[
+                [TableCell(text="Header 1"), TableCell(text="Header 2")],
+                [TableCell(text="Data 1"), TableCell(text="Data 2")]
+            ]]
+        )],
         paragraphs=["Paragraph 1", "Paragraph 2"],
-        tables=[[["Header 1", "Header 2"], ["Data 1", "Data 2"]]],
+        tables=[[
+            [TableCell(text="Header 1"), TableCell(text="Header 2")],
+            [TableCell(text="Data 1"), TableCell(text="Data 2")]
+        ]],
         styles={
-            "Heading1": {
-                "name": "Heading 1",
-                "font_name": "Arial",
-                "font_size": 16.0,
-                "is_bold": True,
-                "is_italic": False,
-                "is_underline": False
-            }
+            "Heading1": DocumentStyle(
+                name="Heading 1",
+                font_name="Arial",
+                font_size=16.0,
+                is_bold=True,
+                is_italic=False,
+                is_underline=False
+            )
         },
         headers=["Document Header"],
         footers=["Document Footer"]
@@ -628,23 +650,32 @@ def structured_pdf_file_metadata(repository, blob_service):
         user_id=user_id,
         url=f"https://test.blob.core.windows.net/{filename}",
         text="Sample CV text",
-        pages=[{
-            "page_number": 1,
-            "content": "Page 1 content",
-            "lines": ["Line 1", "Line 2"],
-            "tables": [[["Header 1", "Header 2"], ["Data 1", "Data 2"]]]
-        }],
+        pages=[DocumentPage(
+            page_number=1,
+            content="Page 1 content",
+            lines=[
+                Line(content="Line 1"),
+                Line(content="Line 2")
+            ],
+            tables=[[
+                [TableCell(text="Header 1"), TableCell(text="Header 2")],
+                [TableCell(text="Data 1"), TableCell(text="Data 2")]
+            ]]
+        )],
         paragraphs=["Paragraph 1", "Paragraph 2"],
-        tables=[[["Header 1", "Header 2"], ["Data 1", "Data 2"]]],
+        tables=[[
+            [TableCell(text="Header 1"), TableCell(text="Header 2")],
+            [TableCell(text="Data 1"), TableCell(text="Data 2")]
+        ]],
         styles={
-            "style_1": {
-                "name": "style_1",
-                "font_name": "Times New Roman",
-                "font_size": 12.0,
-                "is_bold": True,
-                "is_italic": False,
-                "is_underline": False
-            }
+            "style_1": DocumentStyle(
+                name="style_1",
+                font_name="Times New Roman",
+                font_size=12.0,
+                is_bold=True,
+                is_italic=False,
+                is_underline=False
+            )
         }
     )
     
@@ -691,34 +722,57 @@ def test_get_file_with_docx_structure(repository, structured_docx_file_metadata)
     assert result['footers'] == ['Document Footer']
 
 def test_get_file_with_pdf_structure(repository, structured_pdf_file_metadata):
-    """Test getting a PDF file with structured information from real Cosmos DB"""
-    # Create request with mock claims
+    # Create mock B2C claims
+    mock_claims = {
+        "claims": [
+            {"typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "val": structured_pdf_file_metadata.user_id},
+            {"typ": "name", "val": "Test User"},
+            {"typ": "emails", "val": "test@example.com"}
+        ]
+    }
+    encoded_claims = base64.b64encode(json.dumps(mock_claims).encode()).decode()
+    
+    # Create mock request with B2C headers
     req = func.HttpRequest(
         method='GET',
         url=f'/api/files/{structured_pdf_file_metadata.id}',
         route_params={'file_id': str(structured_pdf_file_metadata.id)},
-        headers={'X-MS-CLIENT-PRINCIPAL': create_mock_claims(structured_pdf_file_metadata.user_id)},
+        headers={
+            'X-MS-CLIENT-PRINCIPAL': encoded_claims,
+            'X-MS-CLIENT-PRINCIPAL-ID': structured_pdf_file_metadata.user_id,
+            'X-MS-CLIENT-PRINCIPAL-NAME': 'test@example.com'
+        },
         body=None
     )
     
     # Call the function
     response = _get_file(req, repository)
     
-    # Assert response
+    # Verify response
     assert response.status_code == 200
     result = json.loads(response.get_body())
     
-    # Verify all structured information is present
-    assert result['filename'].endswith('.pdf')
-    assert result['text'] == 'Sample CV text'
+    # Verify basic structure
+    assert result['id'] == str(structured_pdf_file_metadata.id)
+    assert result['filename'] == structured_pdf_file_metadata.filename
+    assert result['type'] == structured_pdf_file_metadata.type
+    assert result['user_id'] == structured_pdf_file_metadata.user_id
+    assert result['url'] == structured_pdf_file_metadata.url
+    
+    # Verify structured information
+    assert 'pages' in result
     assert len(result['pages']) == 1
     assert result['pages'][0]['page_number'] == 1
+    assert result['pages'][0]['content'] == "Page 1 content"
     assert len(result['pages'][0]['lines']) == 2
+    assert result['pages'][0]['lines'][0]['content'] == "Line 1"
+    assert result['pages'][0]['lines'][1]['content'] == "Line 2"
+    
+    # Verify tables
     assert len(result['pages'][0]['tables']) == 1
-    assert len(result['paragraphs']) == 2
-    assert len(result['tables']) == 1
-    assert len(result['styles']) == 1
-    assert result['styles']['style_1']['font_name'] == 'Times New Roman'
-    # PDF doesn't have headers/footers
-    assert 'headers' not in result
-    assert 'footers' not in result
+    assert len(result['pages'][0]['tables'][0]) == 2  # Two rows
+    assert len(result['pages'][0]['tables'][0][0]) == 2  # Two columns
+    assert result['pages'][0]['tables'][0][0][0]['text'] == "Header 1"
+    assert result['pages'][0]['tables'][0][0][1]['text'] == "Header 2"
+    assert result['pages'][0]['tables'][0][1][0]['text'] == "Data 1"
+    assert result['pages'][0]['tables'][0][1][1]['text'] == "Data 2"

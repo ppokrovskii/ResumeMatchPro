@@ -4,7 +4,7 @@ from docx.shared import Pt
 from docx.text.paragraph import Paragraph
 from typing import Dict, List, Optional, Tuple
 
-from shared.models import DocumentPage, DocumentStyle, FileMetadataDb
+from shared.models import DocumentPage, DocumentStyle, FileMetadataDb, Line, TableCell
 
 
 class DocxService:
@@ -44,7 +44,7 @@ class DocxService:
             for row in table.rows:
                 row_data = []
                 for cell in row.cells:
-                    row_data.append(cell.text)
+                    row_data.append(TableCell(text=cell.text))
                     full_text.append(cell.text)
                 table_data.append(row_data)
             tables.append(table_data)
@@ -85,7 +85,7 @@ class DocxService:
         pages.append(DocumentPage(
             page_number=1,
             content='\n'.join(full_text),
-            lines=full_text.copy(),
+            lines=[Line(content=text) for text in full_text],
             tables=tables
         ))
         

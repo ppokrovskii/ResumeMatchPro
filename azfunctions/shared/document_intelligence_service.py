@@ -2,81 +2,101 @@
 import base64
 import os
 from azure.core.credentials import AzureKeyCredential
-# from azure.ai.documentintelligence import DocumentIntelligenceClient
-# from azure.ai.documentintelligence.models import AnalyzeResult
 from azure.ai.formrecognizer import DocumentAnalysisClient
-from azure.core.credentials import AzureKeyCredential
 from typing import Dict, List, Optional
 import logging
 
-from shared.models import DocumentPage, DocumentStyle, FileMetadataDb
+from shared.models import DocumentPage, DocumentStyle, FileMetadataDb, TableCell, Line, Point
 
 class DocumentIntelligenceService:
     def __init__(self, key, endpoint):
-        self.key = key  # "55ea103663564ddab3dc9f920eabf870"
-        self.endpoint = endpoint  # "https://docintpavelpweurope.cognitiveservices.azure.com/"
+        self.key = key
+        self.endpoint = endpoint
         self.credential = AzureKeyCredential(key=key)
         self.client = DocumentAnalysisClient(endpoint=endpoint, credential=self.credential)
         
-    def get_text_from_pdf(self, content) -> dict:
+    def process_analysis_result(self, result) -> dict:
         try:
-            logging.info("Starting PDF analysis with Document Intelligence service")
-            poller = self.client.begin_analyze_document("prebuilt-layout", document=content)
-            try:
-                # Wait for the operation to complete with a timeout of 300 seconds (5 minutes)
-                logging.info("Waiting for Document Intelligence analysis to complete (timeout: 300s)")
-                result = poller.result(timeout=300)
-                logging.info("Document Intelligence analysis completed successfully")
-            except Exception as e:
-                logging.error(f"Error waiting for Document Intelligence result: {str(e)}")
-                logging.error(f"Operation ID (if available): {getattr(poller, 'operation_id', 'N/A')}")
-                logging.error(f"Operation status (if available): {getattr(poller, 'status', 'N/A')}")
-                raise
+            logging.info("Processing Document Intelligence analysis result")
             
             # Initialize structured data containers
             pages = []
-            paragraphs = []
             tables = []
             styles = {}
+            
+            # Debug log the result object structure
+            logging.info(f"Result object has {len(result.pages)} pages")
+            for idx, page in enumerate(result.pages):
+                logging.info(f"Page {idx + 1} attributes:")
+                logging.info(f"  - page_number: {page.page_number}")
+                logging.info(f"  - lines count: {len(page.lines) if hasattr(page, 'lines') else 0}")
+                logging.info(f"  - width: {page.width if hasattr(page, 'width') else 'N/A'}")
+                logging.info(f"  - height: {page.height if hasattr(page, 'height') else 'N/A'}")
+                logging.info(f"  - unit: {page.unit if hasattr(page, 'unit') else 'N/A'}")
+            
+            # Extract paragraphs directly from result
+            paragraphs = []
+            if hasattr(result, 'paragraphs'):
+                for para in result.paragraphs:
+                    if para.content.strip():
+                        paragraphs.append(para.content)
+            else:
+                # Fallback to content splitting if paragraphs not available
+                if result.content.strip():
+                    paragraphs.extend([p for p in result.content.split('\n\n') if p.strip()])
+            
+            logging.info(f"Extracted {len(paragraphs)} paragraphs from document")
             
             # Process each page
             total_pages = len(result.pages)
             logging.info(f"Processing {total_pages} pages from the document")
             
+            # First, process all tables in the document
+            for table in result.tables:
+                try:
+                    table_data = []
+                    for row_idx in range(table.row_count):
+                        row_data = []
+                        for col_idx in range(table.column_count):
+                            cell = table.cells.get((row_idx, col_idx))
+                            if cell:
+                                cell_info = TableCell(
+                                    text=cell.content,
+                                    polygon=[Point(x=p.x, y=p.y) for p in cell.bounding_regions[0].polygon] if hasattr(cell, 'bounding_regions') else None
+                                )
+                                row_data.append(cell_info)
+                            else:
+                                row_data.append(TableCell(text=""))
+                        table_data.append(row_data)
+                    tables.append(table_data)
+                except Exception as e:
+                    logging.error(f"Error processing table: {str(e)}")
+                    continue
+            
+            # Then process each page
             for page in result.pages:
                 try:
-                    page_tables = []
+                    # Debug logging
+                    logging.info(f"Processing page {page.page_number}")
+                    
                     page_lines = []
                     
-                    # Extract tables on this page
-                    table_count = len(page.tables)
-                    logging.debug(f"Processing {table_count} tables on page {page.page_number}")
-                    
-                    for table_id in page.tables:
-                        try:
-                            table = result.tables[table_id]
-                            table_data = []
-                            for row_idx in range(table.row_count):
-                                row_data = []
-                                for col_idx in range(table.column_count):
-                                    cell = table.cells.get((row_idx, col_idx))
-                                    cell_text = cell.content if cell else ""
-                                    row_data.append(cell_text)
-                                table_data.append(row_data)
-                            page_tables.append(table_data)
-                            tables.append(table_data)
-                        except Exception as e:
-                            logging.error(f"Error processing table {table_id} on page {page.page_number}: {str(e)}")
-                            continue
-                    
-                    # Extract lines and their styles
-                    line_count = len(page.lines)
-                    logging.debug(f"Processing {line_count} lines on page {page.page_number}")
-                    
+                    # Extract lines
+                    if not hasattr(page, 'lines'):
+                        logging.warning(f"Page {page.page_number} has no lines attribute")
+                        continue
+                        
                     for line in page.lines:
                         try:
-                            line_text = line.content
-                            page_lines.append(line_text)
+                            if not hasattr(line, 'content'):
+                                logging.warning(f"Line in page {page.page_number} has no content attribute")
+                                continue
+                                
+                            line_info = Line(
+                                content=line.content,
+                                polygon=[Point(x=p.x, y=p.y) for p in line.polygon] if hasattr(line, 'polygon') else None
+                            )
+                            page_lines.append(line_info)
                             
                             # Extract style information if available
                             if hasattr(line, 'appearance'):
@@ -93,21 +113,26 @@ class DocumentIntelligenceService:
                             logging.error(f"Error processing line on page {page.page_number}: {str(e)}")
                             continue
                     
-                    # Create DocumentPage object
-                    pages.append(DocumentPage(
-                        page_number=page.page_number,
-                        content=page.content,
-                        lines=page_lines,
-                        tables=page_tables
-                    ))
+                    # Create page content from lines
+                    page_content = "\n".join(line.content for line in page.lines)
                     
-                    # Add to paragraphs if content exists
-                    if page.content.strip():
-                        paragraphs.extend([p for p in page.content.split('\n') if p.strip()])
-                        
-                    logging.info(f"Successfully processed page {page.page_number} with {len(page_lines)} lines and {len(page_tables)} tables")
+                    # Create DocumentPage object with enhanced information
+                    page_obj = DocumentPage(
+                        page_number=page.page_number,
+                        content=page_content,
+                        lines=page_lines,
+                        tables=tables,  # Pass all tables to each page for now
+                        angle=page.angle if hasattr(page, 'angle') else None,
+                        width=page.width if hasattr(page, 'width') else None,
+                        height=page.height if hasattr(page, 'height') else None,
+                        unit=page.unit if hasattr(page, 'unit') else None
+                    )
+                    pages.append(page_obj)
+                    logging.info(f"Successfully processed page {page.page_number} with {len(page_lines)} lines")
+                    
                 except Exception as e:
                     logging.error(f"Error processing page {page.page_number}: {str(e)}")
+                    logging.exception("Full traceback:")
                     continue
             
             # Create structured document info
@@ -118,12 +143,33 @@ class DocumentIntelligenceService:
                 'tables': tables,
                 'styles': styles,
                 'headers': None,  # PDF doesn't have explicit headers/footers
-                'footers': None
+                'footers': None,
+                'languages': result.languages if hasattr(result, 'languages') else None
             }
             
             logging.info(f"Document processing completed. Extracted {len(pages)} pages, {len(paragraphs)} paragraphs, {len(tables)} tables, and {len(styles)} styles")
             return structured_info
             
+        except Exception as e:
+            logging.error(f"Fatal error in process_analysis_result: {str(e)}")
+            logging.exception("Full traceback:")
+            raise
+        
+    def get_text_from_pdf(self, content) -> dict:
+        try:
+            logging.info("Starting PDF analysis with Document Intelligence service")
+            poller = self.client.begin_analyze_document("prebuilt-layout", document=content)
+            try:
+                # Wait for the operation to complete with a timeout of 300 seconds (5 minutes)
+                logging.info("Waiting for Document Intelligence analysis to complete (timeout: 300s)")
+                result = poller.result(timeout=300)
+                logging.info("Document Intelligence analysis completed successfully")
+                return self.process_analysis_result(result)
+            except Exception as e:
+                logging.error(f"Error waiting for Document Intelligence result: {str(e)}")
+                logging.error(f"Operation ID (if available): {getattr(poller, 'operation_id', 'N/A')}")
+                logging.error(f"Operation status (if available): {getattr(poller, 'status', 'N/A')}")
+                raise
         except Exception as e:
             logging.error(f"Fatal error in get_text_from_pdf: {str(e)}")
             logging.exception("Full traceback:")

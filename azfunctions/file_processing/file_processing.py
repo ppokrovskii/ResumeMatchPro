@@ -55,7 +55,40 @@ def process_file(msg: func.QueueMessage):
                 structured_info = DocxService.get_text_from_docx(content)
             else:
                 logging.info("Processing PDF file...")
-                structured_info = document_intelligence_service.get_text_from_pdf(content)
+                try:
+                    logging.info("Calling Document Intelligence service with PDF content...")
+                    logging.info(f"Document Intelligence Key length: {len(os.getenv('AZURE_DOCUMENT_INTELLIGENCE_KEY', ''))}")
+                    logging.info(f"Document Intelligence Endpoint: {os.getenv('AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT')}")
+                    logging.info(f"PDF content length: {len(content)} bytes")
+                    
+                    try:
+                        # Initialize the client
+                        logging.info("Creating DocumentAnalysisClient...")
+                        client = document_intelligence_service.client
+                        logging.info("DocumentAnalysisClient created successfully")
+                        
+                        # Begin analysis
+                        logging.info("Beginning document analysis...")
+                        poller = client.begin_analyze_document("prebuilt-layout", document=content)
+                        logging.info("Document analysis started, waiting for result...")
+                        
+                        # Wait for the result
+                        result = poller.result(timeout=300)
+                        logging.info("Document analysis completed successfully")
+                        
+                        # Process the result
+                        structured_info = document_intelligence_service.process_analysis_result(result)
+                        logging.info("Successfully processed Document Intelligence result")
+                    except Exception as e:
+                        logging.error(f"Error in document analysis: {str(e)}")
+                        logging.error(f"Error type: {type(e)}")
+                        logging.exception("Full traceback:")
+                        raise
+                except Exception as e:
+                    logging.error(f"Error in document_intelligence_service.get_text_from_pdf: {str(e)}")
+                    logging.error(f"Document Intelligence Key: {os.getenv('AZURE_DOCUMENT_INTELLIGENCE_KEY')}")
+                    logging.error(f"Document Intelligence Endpoint: {os.getenv('AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT')}")
+                    raise
             
             if not structured_info.get('text'):
                 logging.warning("No text was extracted from the document")
@@ -72,35 +105,42 @@ def process_file(msg: func.QueueMessage):
             )
             
             # Save metadata to database
-            logging.info("Saving metadata to Cosmos DB...")
+            logging.info("Getting Cosmos DB client...")
             cosmos_db_client = get_cosmos_db_client()
-            files_repository = FilesRepository(cosmos_db_client)
-            files_repository.upsert_file(file_metadata_db.model_dump(mode="json"))
-            logging.info("Successfully saved metadata to Cosmos DB")
+            logging.info("Creating FilesRepository...")
+            repository = FilesRepository(cosmos_db_client)
             
-            # Send message to matching-queue queue with full text
-            logging.info("Sending message to matching-queue...")
-            file_processing_output_queue_message = FileProcessingOutputQueueMessage(
-                text=structured_info['text'],
-                **file_processing_request.model_dump()
+            logging.info("Saving metadata to Cosmos DB...")
+            try:
+                repository.upsert_file(file_metadata_db.model_dump(mode="json"))
+                logging.info("Successfully saved metadata to Cosmos DB")
+            except Exception as e:
+                logging.error(f"Error saving metadata to Cosmos DB: {str(e)}")
+                raise
+            
+            # Create queue message
+            logging.info("Creating queue message...")
+            queue_message = FileProcessingOutputQueueMessage(
+                file_id=file_processing_request.id,
+                user_id=file_processing_request.user_id,
+                type=file_processing_request.type
             )
-            queue_service = QueueService(connection_string=os.getenv("AZURE_STORAGE_CONNECTION_STRING"))
+            
+            # Send message to queue
+            logging.info("Initializing QueueService...")
+            queue_service = QueueService()
+            logging.info("Creating queue if not exists...")
             queue_service.create_queue_if_not_exists("matching-queue")
-            queue_service.send_message("matching-queue", file_processing_output_queue_message.model_dump_json())
-            logging.info("Successfully sent message to matching-queue")
+            logging.info("Sending message to queue...")
+            queue_service.send_message("matching-queue", queue_message.model_dump_json())
+            logging.info("Successfully sent message to queue")
             
         except Exception as e:
-            logging.error(f"Error processing document {file_processing_request.filename}: {str(e)}")
-            logging.error(f"Document type: {'DOCX' if file_processing_request.filename.endswith('.docx') else 'PDF'}")
-            logging.error(f"File size: {len(content)} bytes")
-            logging.exception("Full traceback:")
-            raise  # Re-raise the exception to trigger Azure Functions retry mechanism
-            
+            logging.error(f"Error processing document: {str(e)}")
+            raise
+        
     except Exception as e:
-        logging.error(f"Fatal error in process_file: {str(e)}")
-        logging.error(f"File: {getattr(file_processing_request, 'filename', 'unknown')}")
-        logging.error(f"User ID: {getattr(file_processing_request, 'user_id', 'unknown')}")
-        logging.exception("Full traceback:")
-        raise  # Re-raise the exception to trigger Azure Functions retry mechanism
+        logging.error(f"Error in process_file: {str(e)}")
+        raise
     
     

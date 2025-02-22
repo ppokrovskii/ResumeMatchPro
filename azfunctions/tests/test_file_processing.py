@@ -1,25 +1,25 @@
 import json
 import os
-import azure.functions as func
 import pytest
 import logging
 import io
 from uuid import uuid4
-from azure.cosmos import CosmosClient
 from pydantic import ValidationError
 from unittest import TestCase
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 import tempfile
 from docx import Document
-from docx.shared import Pt, RGBColor
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load test environment variables
+load_dotenv(Path(__file__).parent / ".env.test")
 
 from file_processing.file_processing import process_file
 from file_processing.schemas import FileProcessingRequest, FileType
-from file_upload.schemas import FileUploadOutputQueueMessage
 from shared.document_intelligence_service import DocumentIntelligenceService
 from shared.docx_service import DocxService
-from shared.models import FileMetadataDb, DocumentPage, DocumentStyle
+from shared.models import DocumentPage, DocumentStyle
 
 class TestFileProcessing(TestCase):
     def setUp(self):
@@ -28,11 +28,6 @@ class TestFileProcessing(TestCase):
         self.log_handler = logging.StreamHandler(self.log_stream)
         logging.getLogger().addHandler(self.log_handler)
         logging.getLogger().setLevel(logging.INFO)
-
-        # Set up environment variables
-        os.environ["AZURE_DOCUMENT_INTELLIGENCE_KEY"] = "test-key"
-        os.environ["AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT"] = "test-endpoint"
-        os.environ["AZURE_STORAGE_CONNECTION_STRING"] = "test-connection-string"
 
         # Create mock instances
         self.mock_blob_service_instance = MagicMock()
@@ -44,7 +39,15 @@ class TestFileProcessing(TestCase):
         # Configure mock instances
         self.mock_blob_service_instance.container_name = "test-container"
         self.mock_blob_service_instance.get_file_content.return_value = b"test content"
-        self.mock_doc_intelligence_instance.get_text_from_pdf.return_value = {
+        
+        # Mock DocumentAnalysisClient
+        self.mock_client = MagicMock()
+        self.mock_poller = MagicMock()
+        self.mock_result = MagicMock()
+        self.mock_poller.result.return_value = self.mock_result
+        self.mock_client.begin_analyze_document.return_value = self.mock_poller
+        self.mock_doc_intelligence_instance.client = self.mock_client
+        self.mock_doc_intelligence_instance.process_analysis_result.return_value = {
             'text': "extracted text",
             'pages': [],
             'paragraphs': [],
@@ -90,11 +93,6 @@ class TestFileProcessing(TestCase):
         }
 
     def tearDown(self):
-        # Clean up environment variables
-        del os.environ["AZURE_DOCUMENT_INTELLIGENCE_KEY"]
-        del os.environ["AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT"]
-        del os.environ["AZURE_STORAGE_CONNECTION_STRING"]
-
         # Stop all patches
         self.blob_service_patcher.stop()
         self.doc_intelligence_patcher.stop()
@@ -151,8 +149,9 @@ class TestFileProcessing(TestCase):
             message.filename
         )
 
-        # Verify that the text was extracted
-        self.mock_doc_intelligence_instance.get_text_from_pdf.assert_called_once_with(b"test content")
+        # Verify that the document was analyzed
+        self.mock_client.begin_analyze_document.assert_called_once_with("prebuilt-layout", document=b"test content")
+        self.mock_doc_intelligence_instance.process_analysis_result.assert_called_once_with(self.mock_result)
 
         # Verify that the file metadata was saved
         self.mock_files_repository_instance.upsert_file.assert_called_once()
@@ -170,7 +169,7 @@ class TestFileProcessing(TestCase):
     def test_process_file_document_intelligence_timeout(self):
         """Test handling of Document Intelligence service timeout"""
         # Configure Document Intelligence service to raise the timeout error
-        self.mock_doc_intelligence_instance.get_text_from_pdf.side_effect = Exception("Operation timed out")
+        self.mock_doc_intelligence_instance.client.begin_analyze_document.side_effect = Exception("Operation timed out")
         
         # Create a test message with a PDF file
         message = FileProcessingRequest(
@@ -208,10 +207,6 @@ class TestFileProcessing(TestCase):
 class TestStructuredDocumentProcessing(TestCase):
     @classmethod
     def setUpClass(cls):
-        # Set up environment variables
-        os.environ["AZURE_DOCUMENT_INTELLIGENCE_KEY"] = os.getenv("AZURE_DOCUMENT_INTELLIGENCE_KEY", "test-key")
-        os.environ["AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT"] = os.getenv("AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT", "test-endpoint")
-        
         # Create a test DOCX file with various formatting
         cls.docx_path = os.path.join(tempfile.gettempdir(), "test_document.docx")
         doc = Document()
@@ -279,7 +274,10 @@ class TestStructuredDocumentProcessing(TestCase):
         # Verify table content
         self.assertEqual(len(structured_info['tables'][0]), 2)  # 2 rows
         self.assertEqual(len(structured_info['tables'][0][0]), 2)  # 2 columns
-        self.assertEqual(structured_info['tables'][0][0][0], 'Header 1')
+        self.assertEqual(structured_info['tables'][0][0][0].text, 'Header 1')
+        self.assertEqual(structured_info['tables'][0][0][1].text, 'Header 2')
+        self.assertEqual(structured_info['tables'][0][1][0].text, 'Data 1')
+        self.assertEqual(structured_info['tables'][0][1][1].text, 'Data 2')
         
         # Verify header and footer
         self.assertIn('Test Document Header', structured_info['headers'][0])

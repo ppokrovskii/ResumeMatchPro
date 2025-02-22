@@ -1,6 +1,7 @@
 from enum import Enum
 from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
+from typing import Optional
 
 class FileType(str, Enum):
     CV = "CV"
@@ -18,5 +19,9 @@ class FileProcessingRequest(FileProcessingBase):
     pass
     
     
-class FileProcessingOutputQueueMessage(FileProcessingRequest):
-    pass
+class FileProcessingOutputQueueMessage(BaseModel):
+    file_id: UUID
+    user_id: str
+    type: FileType
+    filename: Optional[str] = None
+    url: Optional[str] = None
