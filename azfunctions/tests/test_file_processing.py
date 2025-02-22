@@ -167,6 +167,44 @@ class TestFileProcessing(TestCase):
         self.mock_queue_service_instance.create_queue_if_not_exists.assert_called_once_with("matching-queue")
         self.mock_queue_service_instance.send_message.assert_called_once()
 
+    def test_process_file_document_intelligence_timeout(self):
+        """Test handling of Document Intelligence service timeout"""
+        # Configure Document Intelligence service to raise the timeout error
+        self.mock_doc_intelligence_instance.get_text_from_pdf.side_effect = Exception("Operation timed out")
+        
+        # Create a test message with a PDF file
+        message = FileProcessingRequest(
+            filename="test_timeout.pdf",
+            type=FileType.CV,
+            id=uuid4(),
+            url="https://example.com/test_timeout.pdf",
+            user_id="test_user"
+        )
+        
+        # Create queue message
+        msg = MagicMock()
+        msg.get_json.return_value = json.loads(message.model_dump_json())
+        msg.get_body.return_value = message.model_dump_json().encode('utf-8')
+        
+        # Get the actual function from the blueprint
+        func_call = process_file.build().get_user_function()
+        
+        # Call the function - it should raise an exception
+        with pytest.raises(Exception) as exc_info:
+            func_call(msg)
+        
+        assert "Operation timed out" in str(exc_info.value)
+        
+        # Verify that the file was not saved to the database
+        self.mock_files_repository_instance.upsert_file.assert_not_called()
+        
+        # Verify that no message was sent to the matching queue
+        self.mock_queue_service_instance.send_message.assert_not_called()
+        
+        # Print logs for debugging
+        print("\nTest Logs:")
+        print(self.log_stream.getvalue())
+
 class TestStructuredDocumentProcessing(TestCase):
     @classmethod
     def setUpClass(cls):
