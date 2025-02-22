@@ -6,7 +6,7 @@ from azure.ai.formrecognizer import DocumentAnalysisClient
 from typing import Dict, List, Optional
 import logging
 
-from shared.models import DocumentPage, DocumentStyle, FileMetadataDb, TableCell, Line, Point
+from shared.models import DocumentPage, DocumentStyle, FileMetadataDb, TableCell, Line
 
 class DocumentIntelligenceService:
     def __init__(self, key, endpoint):
@@ -30,9 +30,6 @@ class DocumentIntelligenceService:
                 logging.info(f"Page {idx + 1} attributes:")
                 logging.info(f"  - page_number: {page.page_number}")
                 logging.info(f"  - lines count: {len(page.lines) if hasattr(page, 'lines') else 0}")
-                logging.info(f"  - width: {page.width if hasattr(page, 'width') else 'N/A'}")
-                logging.info(f"  - height: {page.height if hasattr(page, 'height') else 'N/A'}")
-                logging.info(f"  - unit: {page.unit if hasattr(page, 'unit') else 'N/A'}")
             
             # Extract paragraphs directly from result
             paragraphs = []
@@ -60,10 +57,7 @@ class DocumentIntelligenceService:
                         for col_idx in range(table.column_count):
                             cell = table.cells.get((row_idx, col_idx))
                             if cell:
-                                cell_info = TableCell(
-                                    text=cell.content,
-                                    polygon=[Point(x=p.x, y=p.y) for p in cell.bounding_regions[0].polygon] if hasattr(cell, 'bounding_regions') else None
-                                )
+                                cell_info = TableCell(text=cell.content)
                                 row_data.append(cell_info)
                             else:
                                 row_data.append(TableCell(text=""))
@@ -92,10 +86,7 @@ class DocumentIntelligenceService:
                                 logging.warning(f"Line in page {page.page_number} has no content attribute")
                                 continue
                                 
-                            line_info = Line(
-                                content=line.content,
-                                polygon=[Point(x=p.x, y=p.y) for p in line.polygon] if hasattr(line, 'polygon') else None
-                            )
+                            line_info = Line(content=line.content)
                             page_lines.append(line_info)
                             
                             # Extract style information if available
@@ -116,16 +107,12 @@ class DocumentIntelligenceService:
                     # Create page content from lines
                     page_content = "\n".join(line.content for line in page.lines)
                     
-                    # Create DocumentPage object with enhanced information
+                    # Create DocumentPage object with content information
                     page_obj = DocumentPage(
                         page_number=page.page_number,
                         content=page_content,
                         lines=page_lines,
-                        tables=tables,  # Pass all tables to each page for now
-                        angle=page.angle if hasattr(page, 'angle') else None,
-                        width=page.width if hasattr(page, 'width') else None,
-                        height=page.height if hasattr(page, 'height') else None,
-                        unit=page.unit if hasattr(page, 'unit') else None
+                        tables=tables  # Pass all tables to each page for now
                     )
                     pages.append(page_obj)
                     logging.info(f"Successfully processed page {page.page_number} with {len(page_lines)} lines")
@@ -148,6 +135,7 @@ class DocumentIntelligenceService:
             }
             
             logging.info(f"Document processing completed. Extracted {len(pages)} pages, {len(paragraphs)} paragraphs, {len(tables)} tables, and {len(styles)} styles")
+            
             return structured_info
             
         except Exception as e:

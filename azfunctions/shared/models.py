@@ -2,33 +2,23 @@ from enum import Enum
 from typing import Optional, List, Dict
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 class FileType(str, Enum):
     CV = "CV"
     JD = "JD"
 
-class Point(BaseModel):
-    x: float
-    y: float
-
 class Line(BaseModel):
     content: str
-    polygon: Optional[List[Point]] = None
 
 class TableCell(BaseModel):
     text: str
-    polygon: Optional[List[Point]] = None
 
 class DocumentPage(BaseModel):
     page_number: int
     content: str
     lines: List[Line]
     tables: Optional[List[List[List[TableCell]]]] = None  # 3D array: tables -> rows -> cells
-    angle: Optional[float] = None
-    width: Optional[float] = None
-    height: Optional[float] = None
-    unit: Optional[str] = None
 
 class DocumentStyle(BaseModel):
     name: str  # e.g., "Heading 1", "Normal", etc.

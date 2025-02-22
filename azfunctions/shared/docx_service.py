@@ -1,10 +1,8 @@
 import io
 from docx import Document
-from docx.shared import Pt
-from docx.text.paragraph import Paragraph
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
-from shared.models import DocumentPage, DocumentStyle, FileMetadataDb, Line, TableCell
+from shared.models import DocumentPage, DocumentStyle, Line, TableCell
 
 
 class DocxService:
