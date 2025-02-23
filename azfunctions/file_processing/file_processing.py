@@ -147,7 +147,7 @@ def process_file(msg: func.QueueMessage):
             
             # Send message to queue
             logging.info("Initializing QueueService...")
-            queue_service = QueueService()
+            queue_service = QueueService(connection_string=os.getenv("AzureWebJobsStorage"))
             logging.info("Creating queue if not exists...")
             queue_service.create_queue_if_not_exists("matching-queue")
             logging.info("Sending message to queue...")
