@@ -20,6 +20,8 @@ from file_processing.schemas import FileProcessingRequest, FileType
 from shared.document_intelligence_service import DocumentIntelligenceService
 from shared.docx_service import DocxService
 from shared.models import DocumentPage, DocumentStyle
+from shared.openai_service.openai_service import OpenAIService
+from shared.openai_service.models import DocumentAnalysis, DocumentStructure
 
 class TestFileProcessing(TestCase):
     def setUp(self):
@@ -35,6 +37,7 @@ class TestFileProcessing(TestCase):
         self.mock_queue_service_instance = MagicMock()
         self.mock_files_repository_instance = MagicMock()
         self.mock_cosmos_db_instance = MagicMock()
+        self.mock_openai_service_instance = MagicMock()
 
         # Configure mock instances
         self.mock_blob_service_instance.container_name = "test-container"
@@ -67,6 +70,7 @@ class TestFileProcessing(TestCase):
         self.get_cosmos_db_client_patcher = patch('file_processing.file_processing.get_cosmos_db_client')
         self.files_repository_patcher = patch('file_processing.file_processing.FilesRepository')
         self.docx_service_patcher = patch('file_processing.file_processing.DocxService')
+        self.openai_service_patcher = patch('file_processing.file_processing.OpenAIService')
 
         # Start the patches and configure returns
         self.mock_blob_service = self.blob_service_patcher.start()
@@ -75,6 +79,7 @@ class TestFileProcessing(TestCase):
         self.mock_get_cosmos_db_client = self.get_cosmos_db_client_patcher.start()
         self.mock_files_repository = self.files_repository_patcher.start()
         self.mock_docx_service = self.docx_service_patcher.start()
+        self.mock_openai_service = self.openai_service_patcher.start()
 
         # Configure the mocks to return our instances
         self.mock_blob_service.return_value = self.mock_blob_service_instance
@@ -91,6 +96,7 @@ class TestFileProcessing(TestCase):
             'headers': [],
             'footers': []
         }
+        self.mock_openai_service.return_value = self.mock_openai_service_instance
 
     def tearDown(self):
         # Stop all patches
@@ -100,6 +106,7 @@ class TestFileProcessing(TestCase):
         self.get_cosmos_db_client_patcher.stop()
         self.files_repository_patcher.stop()
         self.docx_service_patcher.stop()
+        self.openai_service_patcher.stop()
 
         # Clean up logging
         logging.getLogger().removeHandler(self.log_handler)
@@ -203,6 +210,154 @@ class TestFileProcessing(TestCase):
         # Print logs for debugging
         print("\nTest Logs:")
         print(self.log_stream.getvalue())
+
+    def test_process_file_with_cv_analysis(self):
+        """Test processing a CV file with OpenAI analysis"""
+        # Mock OpenAI analysis result
+        mock_cv_analysis = DocumentAnalysis(
+            document_type="CV",
+            structure=DocumentStructure(
+                personal_details=[{"type": "name", "text": "John Doe"}],
+                professional_summary="Experienced software engineer",
+                skills=["Python", "Azure", "Machine Learning"],
+                experience=[{
+                    "title": "Senior Developer",
+                    "start_date": "2020-01",
+                    "end_date": "2023-12",
+                    "lines": ["Led development team", "Implemented CI/CD"]
+                }],
+                education=[{
+                    "title": "Computer Science",
+                    "start_date": "2016-09",
+                    "end_date": "2020-05",
+                    "degree": "Bachelor's",
+                    "details": "First Class Honours",
+                    "city": "London"
+                }]
+            )
+        )
+        self.mock_openai_service_instance.analyze_document.return_value = mock_cv_analysis
+
+        # Create a test message
+        message = FileProcessingRequest(
+            filename="test_cv.pdf",
+            type=FileType.CV,
+            id=uuid4(),
+            url="https://example.com/test_cv.pdf",
+            user_id="test_user"
+        )
+
+        # Create queue message
+        msg = MagicMock()
+        msg.get_json.return_value = json.loads(message.model_dump_json())
+        msg.get_body.return_value = message.model_dump_json().encode('utf-8')
+
+        # Get the function from the blueprint
+        func_call = process_file.build().get_user_function()
+
+        # Call the function
+        func_call(msg)
+
+        # Verify OpenAI service was called
+        self.mock_openai_service_instance.analyze_document.assert_called_once()
+        call_args = self.mock_openai_service_instance.analyze_document.call_args[1]
+        self.assertEqual(call_args['text'], "extracted text")
+
+        # Verify file metadata was saved with analysis results
+        saved_metadata = self.mock_files_repository_instance.upsert_file.call_args[0][0]
+        self.assertEqual(saved_metadata['type'], FileType.CV)
+        self.assertEqual(saved_metadata['filename'], "test_cv.pdf")
+        self.assertEqual(saved_metadata['user_id'], "test_user")
+
+    def test_process_file_with_jd_analysis(self):
+        """Test processing a Job Description file with OpenAI analysis"""
+        # Mock OpenAI analysis result
+        mock_jd_analysis = DocumentAnalysis(
+            document_type="JD",
+            structure=DocumentStructure(
+                personal_details=[{"type": "company", "text": "Tech Corp"}],
+                professional_summary="Looking for a senior developer",
+                skills=["Python", "Azure", "Leadership"],
+                experience=[{
+                    "title": "Requirements",
+                    "start_date": "2024-01",
+                    "lines": ["5+ years experience", "Team leadership"]
+                }],
+                education=[{
+                    "title": "Education Requirements",
+                    "start_date": "2024-01",
+                    "degree": "Bachelor's in Computer Science",
+                    "details": "Or equivalent experience"
+                }]
+            )
+        )
+        self.mock_openai_service_instance.analyze_document.return_value = mock_jd_analysis
+
+        # Create a test message
+        message = FileProcessingRequest(
+            filename="test_jd.pdf",
+            type=FileType.JD,
+            id=uuid4(),
+            url="https://example.com/test_jd.pdf",
+            user_id="test_user"
+        )
+
+        # Create queue message
+        msg = MagicMock()
+        msg.get_json.return_value = json.loads(message.model_dump_json())
+        msg.get_body.return_value = message.model_dump_json().encode('utf-8')
+
+        # Get the function from the blueprint
+        func_call = process_file.build().get_user_function()
+
+        # Call the function
+        func_call(msg)
+
+        # Verify OpenAI service was called
+        self.mock_openai_service_instance.analyze_document.assert_called_once()
+        call_args = self.mock_openai_service_instance.analyze_document.call_args[1]
+        self.assertEqual(call_args['text'], "extracted text")
+
+        # Verify file metadata was saved with analysis results
+        saved_metadata = self.mock_files_repository_instance.upsert_file.call_args[0][0]
+        self.assertEqual(saved_metadata['type'], FileType.JD)
+        self.assertEqual(saved_metadata['filename'], "test_jd.pdf")
+        self.assertEqual(saved_metadata['user_id'], "test_user")
+
+    def test_process_file_openai_error(self):
+        """Test handling of OpenAI service errors"""
+        # Configure OpenAI service to raise an error
+        self.mock_openai_service_instance.analyze_document.side_effect = Exception("OpenAI API error")
+
+        # Create a test message
+        message = FileProcessingRequest(
+            filename="test.pdf",
+            type=FileType.CV,
+            id=uuid4(),
+            url="https://example.com/test.pdf",
+            user_id="test_user"
+        )
+
+        # Create queue message
+        msg = MagicMock()
+        msg.get_json.return_value = json.loads(message.model_dump_json())
+        msg.get_body.return_value = message.model_dump_json().encode('utf-8')
+
+        # Get the function from the blueprint
+        func_call = process_file.build().get_user_function()
+
+        # Call the function - it should raise an exception
+        with self.assertRaises(Exception) as context:
+            func_call(msg)
+
+        self.assertIn("OpenAI API error", str(context.exception))
+
+        # Verify the error was logged
+        log_output = self.log_stream.getvalue()
+        self.assertIn("Error processing document: OpenAI API error", log_output)
+
+        # Verify no message was sent to the matching queue
+        self.mock_queue_service_instance.send_message.assert_not_called()
 
 class TestStructuredDocumentProcessing(TestCase):
     @classmethod

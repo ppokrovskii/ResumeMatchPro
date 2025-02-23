@@ -11,6 +11,7 @@ from shared.document_intelligence_service import DocumentIntelligenceService
 from shared.docx_service import DocxService
 from shared.models import FileMetadataDb
 from shared.queue_service import QueueService
+from shared.openai_service.openai_service import OpenAIService
 
 # create blueprint with Queue trigger
 file_processing_bp = func.Blueprint()
@@ -96,6 +97,16 @@ def process_file(msg: func.QueueMessage):
             logging.info(f"Extracted text length: {len(structured_info['text']) if structured_info.get('text') else 0} characters")
             logging.info(f"Extracted {len(structured_info.get('pages', [])) if structured_info.get('pages') else 0} pages")
             logging.info(f"Extracted {len(structured_info.get('tables', [])) if structured_info.get('tables') else 0} tables")
+            
+            # Analyze document structure using OpenAI
+            logging.info("Analyzing document structure with OpenAI...")
+            openai_service = OpenAIService()
+            document_analysis = openai_service.analyze_document(
+                text=structured_info['text'],
+                pages=structured_info.get('pages', []),
+                paragraphs=structured_info.get('paragraphs', [])
+            )
+            logging.info(f"Document analyzed as {document_analysis.document_type}")
             
             # Create file metadata with structured information
             logging.info("Creating file metadata with structured information...")
