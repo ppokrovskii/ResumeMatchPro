@@ -9,7 +9,7 @@ from file_processing.schemas import FileProcessingOutputQueueMessage, FileProces
 from shared.blob_service import FilesBlobService
 from shared.document_intelligence_service import DocumentIntelligenceService
 from shared.docx_service import DocxService
-from shared.models import FileMetadataDb
+from shared.models import FileMetadataDb, FileType
 from shared.queue_service import QueueService
 from shared.openai_service.openai_service import OpenAIService
 
@@ -108,11 +108,19 @@ def process_file(msg: func.QueueMessage):
             )
             logging.info(f"Document analyzed as {document_analysis.document_type}")
             
-            # Create file metadata with structured information
+            # Update file type based on document analysis
+            file_type = FileType.CV if document_analysis.document_type == "CV" else FileType.JD
+            logging.info(f"Updating file type to {file_type} based on document analysis")
+            
+            # Create file metadata with structured information and document analysis
             logging.info("Creating file metadata with structured information...")
+            request_data = file_processing_request.model_dump()
+            request_data.pop('type')  # Remove type from request data
             file_metadata_db = FileMetadataDb(
-                **file_processing_request.model_dump(),
-                **structured_info
+                **request_data,
+                **structured_info,
+                type=file_type,  # Use the type from document analysis
+                document_analysis=document_analysis  # Store the document analysis
             )
             
             # Save metadata to database
@@ -134,7 +142,7 @@ def process_file(msg: func.QueueMessage):
             queue_message = FileProcessingOutputQueueMessage(
                 file_id=file_processing_request.id,
                 user_id=file_processing_request.user_id,
-                type=file_processing_request.type
+                type=file_type  # Use the updated file type
             )
             
             # Send message to queue

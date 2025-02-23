@@ -135,6 +135,31 @@ class TestFileProcessing(TestCase):
             user_id="test_user"
         )
 
+        # Mock OpenAI analysis result
+        mock_cv_analysis = DocumentAnalysis(
+            document_type="CV",
+            structure=DocumentStructure(
+                personal_details=[{"type": "name", "text": "John Doe"}],
+                professional_summary="Experienced software engineer",
+                skills=["Python", "Azure", "Machine Learning"],
+                experience=[{
+                    "title": "Senior Developer",
+                    "start_date": "2020-01",
+                    "end_date": "2023-12",
+                    "lines": ["Led development team", "Implemented CI/CD"]
+                }],
+                education=[{
+                    "title": "Computer Science",
+                    "start_date": "2016-09",
+                    "end_date": "2020-05",
+                    "degree": "Bachelor's",
+                    "details": "First Class Honours",
+                    "city": "London"
+                }]
+            )
+        )
+        self.mock_openai_service_instance.analyze_document.return_value = mock_cv_analysis
+
         # Create queue message
         msg = MagicMock()
         msg.get_json.return_value = json.loads(message.model_dump_json())
@@ -168,6 +193,10 @@ class TestFileProcessing(TestCase):
         assert file_metadata_call["type"] == message.type
         assert file_metadata_call["user_id"] == message.user_id
         assert file_metadata_call["url"] == message.url
+        assert file_metadata_call["document_analysis"]["document_type"] == mock_cv_analysis.document_type
+        assert file_metadata_call["document_analysis"]["structure"]["personal_details"] == [{"type": "name", "text": "John Doe"}]
+        assert file_metadata_call["document_analysis"]["structure"]["professional_summary"] == "Experienced software engineer"
+        assert file_metadata_call["document_analysis"]["structure"]["skills"] == ["Python", "Azure", "Machine Learning"]
 
         # Verify that the queue message was sent
         self.mock_queue_service_instance.create_queue_if_not_exists.assert_called_once_with("matching-queue")

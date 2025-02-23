@@ -3,6 +3,8 @@ from typing import Optional, List, Dict
 from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
+from shared.openai_service.models import DocumentAnalysis
+
 class FileType(str, Enum):
     CV = "CV"
     JD = "JD"
@@ -54,8 +56,7 @@ class FileMetadataDb(BaseModel):
     languages: Optional[List[str]] = None
     
     # Document analysis results
-    candidate_capabilities: Optional[DocumentStructure] = None
-    jd_requirements: Optional[DocumentStructure] = None
+    document_analysis: Optional[DocumentAnalysis] = None
     
     class Config:
         json_encoders = {UUID: str}
