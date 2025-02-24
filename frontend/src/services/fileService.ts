@@ -215,7 +215,9 @@ export const getFile = async (fileId: string, account: AccountInfo, instance: IP
             throw new Error('Failed to get file');
         }
 
-        return await response.json();
+        const data = await response.json();
+        console.log('API Response:', data);  // Add debug logging
+        return data;
     } catch (error) {
         console.error('Error getting file:', error);
         throw error;
