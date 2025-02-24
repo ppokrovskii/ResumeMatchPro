@@ -249,6 +249,8 @@ def _get_file(req: func.HttpRequest, files_repository: FilesRepository) -> func.
                     status_code=404
                 )
             
+            logging.info(f"Retrieved file metadata: {file_metadata.model_dump_json()}")
+            
             # Convert to our response model
             file_response = File(
                 id=file_metadata.id,
@@ -260,11 +262,18 @@ def _get_file(req: func.HttpRequest, files_repository: FilesRepository) -> func.
 
             # If document analysis exists, map it to our structure
             if hasattr(file_metadata, 'document_analysis') and file_metadata.document_analysis:
-                if 'structure' in file_metadata.document_analysis:
-                    file_response.structure = ResumeStructure(**file_metadata.document_analysis['structure'])
+                logging.info(f"Document analysis found: {file_metadata.document_analysis}")
+                if hasattr(file_metadata.document_analysis, 'structure'):
+                    logging.info(f"Structure found in document analysis: {file_metadata.document_analysis.structure}")
+                    file_response.structure = ResumeStructure(**file_metadata.document_analysis.structure.model_dump())
+                else:
+                    logging.warning("No structure found in document analysis")
+            else:
+                logging.info("No document analysis found in file metadata")
             
             # Create response with all structured information
             response_data = file_response.model_dump(mode="json", exclude_none=True)
+            logging.info(f"Final response data: {response_data}")
             
             return func.HttpResponse(
                 body=json.dumps(response_data),

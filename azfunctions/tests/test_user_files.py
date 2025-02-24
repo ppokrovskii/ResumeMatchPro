@@ -17,6 +17,7 @@ from shared.models import FileMetadataDb, FileType, DocumentPage, Line, TableCel
 from shared.files_repository import FilesRepository
 from shared.blob_service import FilesBlobService
 from unittest import mock
+from shared.openai_service.models import DocumentAnalysis, DocumentStructure
 
 # Configure logging
 logging.basicConfig(
@@ -975,3 +976,83 @@ def test_get_file_with_partial_structure(repository, blob_service, sample_file_c
     assert len(structure['experience']) == 0
     assert len(structure['education']) == 0
     assert len(structure['additional_information']) == 0
+
+def test_get_file_with_model_structure(repository, blob_service, sample_file_content):
+    """Test getting a file where document_analysis is a model instance instead of a dictionary"""
+    # Create a unique filename
+    filename = f"test_cv_{uuid4()}.pdf"
+    
+    # Upload file to blob storage
+    blob_url = blob_service.upload_blob(
+        container_name="resume-match-pro-files",
+        filename=filename,
+        content=sample_file_content
+    )
+    
+    # Create document analysis as a model instance
+    structure = DocumentStructure(
+        personal_details=[{"type": "name", "text": "John Doe"}],
+        professional_summary="Software Engineer",
+        skills=["Python", "Azure"],
+        experience=[{
+            "title": "Developer",
+            "start_date": "2020",
+            "end_date": "Present",
+            "lines": ["Developed stuff"]
+        }],
+        education=[],
+        additional_information=[]
+    )
+    
+    document_analysis = DocumentAnalysis(
+        document_type="CV",
+        structure=structure
+    )
+    
+    # Create file metadata with document analysis as a model
+    file_metadata = FileMetadataDb(
+        filename=filename,
+        type=FileType.CV,
+        user_id="test-user-123",
+        url=blob_url,
+        document_analysis=document_analysis
+    )
+    
+    # Save to database
+    file_metadata = repository.upsert_file(file_metadata.model_dump(mode="json"))
+    
+    # Create mock B2C claims
+    mock_claims = {
+        "claims": [
+            {"typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "val": "test-user-123"}
+        ]
+    }
+    encoded_claims = base64.b64encode(json.dumps(mock_claims).encode()).decode()
+    
+    # Create mock request
+    req = func.HttpRequest(
+        method='GET',
+        url=f'/api/files/{file_metadata.id}',
+        route_params={'file_id': str(file_metadata.id)},
+        headers={
+            'X-MS-CLIENT-PRINCIPAL': encoded_claims
+        },
+        body=None
+    )
+    
+    # Call the function
+    response = _get_file(req, repository)
+    
+    # Assert response
+    assert response.status_code == 200
+    result = json.loads(response.get_body())
+    
+    # Verify structure fields
+    assert 'structure' in result
+    structure = result['structure']
+    assert len(structure['personal_details']) == 1
+    assert structure['personal_details'][0]['text'] == "John Doe"
+    assert structure['professional_summary'] == "Software Engineer"
+    assert len(structure['skills']) == 2
+    assert len(structure['experience']) == 1
+    assert structure['experience'][0]['title'] == "Developer"
