@@ -2,13 +2,43 @@
 import { AccountInfo, IPublicClientApplication } from '@azure/msal-browser';
 import { tokenService } from './tokenService';
 
+export interface PersonalDetail {
+    type: string;
+    text: string;
+}
+
+export interface ExperienceEntry {
+    title: string;
+    start_date: string;
+    end_date: string;
+    lines: string[];
+}
+
+export interface EducationEntry {
+    institution?: string;
+    degree?: string;
+    field?: string;
+    start_date?: string;
+    end_date?: string;
+    description?: string;
+}
+
+export interface ResumeStructure {
+    personal_details: PersonalDetail[];
+    professional_summary: string;
+    skills: string[];
+    experience: ExperienceEntry[];
+    education: EducationEntry[];
+    additional_information: string[];
+}
+
 export interface RmpFile {
     id: string;
     filename: string;
     type: string;
     user_id: string;
     url: string;
-    text: string;
+    structure?: ResumeStructure;
 }
 
 export interface FilesResponse {

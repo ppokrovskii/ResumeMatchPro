@@ -776,3 +776,202 @@ def test_get_file_with_pdf_structure(repository, structured_pdf_file_metadata):
     assert result['pages'][0]['tables'][0][0][1]['text'] == "Header 2"
     assert result['pages'][0]['tables'][0][1][0]['text'] == "Data 1"
     assert result['pages'][0]['tables'][0][1][1]['text'] == "Data 2"
+
+@pytest.fixture
+def sample_resume_structure():
+    return {
+        "personal_details": [
+            {"type": "name", "text": "John Doe"},
+            {"type": "email", "text": "john@example.com"},
+            {"type": "phone", "text": "+1234567890"},
+            {"type": "location", "text": "New York, USA"}
+        ],
+        "professional_summary": "Experienced software engineer with 10 years of experience",
+        "skills": ["Python", "TypeScript", "React", "Azure"],
+        "experience": [
+            {
+                "title": "Senior Software Engineer",
+                "start_date": "2020",
+                "end_date": "Present",
+                "lines": [
+                    "Led development of cloud-native applications",
+                    "Managed team of 5 developers"
+                ]
+            }
+        ],
+        "education": [],
+        "additional_information": ["Languages: English, Spanish"]
+    }
+
+@pytest.fixture
+def structured_file_metadata(repository, blob_service, sample_file_content, sample_resume_structure):
+    # Create a unique filename
+    filename = f"test_cv_{uuid4()}.pdf"
+    
+    # Upload file to blob storage
+    blob_url = blob_service.upload_blob(
+        container_name="resume-match-pro-files",
+        filename=filename,
+        content=sample_file_content
+    )
+    
+    # Create file metadata with document analysis structure
+    file_metadata = FileMetadataDb(
+        filename=filename,
+        type=FileType.CV,
+        user_id="test-user-123",
+        url=blob_url,
+        document_analysis={
+            "document_type": "CV",
+            "structure": sample_resume_structure
+        }
+    )
+    
+    # Save to database
+    return repository.upsert_file(file_metadata.model_dump(mode="json"))
+
+def test_get_file_with_structure(repository, structured_file_metadata):
+    # Create mock B2C claims
+    mock_claims = {
+        "claims": [
+            {"typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "val": "test-user-123"},
+            {"typ": "name", "val": "Test User"},
+            {"typ": "emails", "val": "test@example.com"}
+        ]
+    }
+    encoded_claims = base64.b64encode(json.dumps(mock_claims).encode()).decode()
+    
+    # Create mock request
+    req = func.HttpRequest(
+        method='GET',
+        url=f'/api/files/{structured_file_metadata.id}',
+        route_params={'file_id': str(structured_file_metadata.id)},
+        headers={
+            'X-MS-CLIENT-PRINCIPAL': encoded_claims
+        },
+        body=None
+    )
+    
+    # Call the function
+    response = _get_file(req, repository)
+    
+    # Assert response
+    assert response.status_code == 200
+    result = json.loads(response.get_body())
+    
+    # Verify structure fields
+    assert 'structure' in result
+    structure = result['structure']
+    assert len(structure['personal_details']) == 4
+    assert structure['professional_summary'] == "Experienced software engineer with 10 years of experience"
+    assert len(structure['skills']) == 4
+    assert len(structure['experience']) == 1
+    assert structure['experience'][0]['title'] == "Senior Software Engineer"
+    assert len(structure['experience'][0]['lines']) == 2
+
+def test_get_file_without_structure(repository, sample_file_metadata):
+    # Create mock B2C claims
+    mock_claims = {
+        "claims": [
+            {"typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "val": "test-user-123"},
+            {"typ": "name", "val": "Test User"},
+            {"typ": "emails", "val": "test@example.com"}
+        ]
+    }
+    encoded_claims = base64.b64encode(json.dumps(mock_claims).encode()).decode()
+    
+    # Create mock request
+    req = func.HttpRequest(
+        method='GET',
+        url=f'/api/files/{sample_file_metadata.id}',
+        route_params={'file_id': str(sample_file_metadata.id)},
+        headers={
+            'X-MS-CLIENT-PRINCIPAL': encoded_claims
+        },
+        body=None
+    )
+    
+    # Call the function
+    response = _get_file(req, repository)
+    
+    # Assert response
+    assert response.status_code == 200
+    result = json.loads(response.get_body())
+    
+    # Verify structure is not present
+    assert 'structure' not in result
+
+def test_get_file_with_partial_structure(repository, blob_service, sample_file_content):
+    # Create a unique filename
+    filename = f"test_cv_{uuid4()}.pdf"
+    
+    # Upload file to blob storage
+    blob_url = blob_service.upload_blob(
+        container_name="resume-match-pro-files",
+        filename=filename,
+        content=sample_file_content
+    )
+    
+    # Create file metadata with partial document analysis structure
+    partial_structure = {
+        "personal_details": [
+            {"type": "name", "text": "John Doe"}
+        ],
+        "professional_summary": "Experienced software engineer",
+        "skills": ["Python"],
+        "experience": [],
+        "education": [],
+        "additional_information": []
+    }
+    
+    file_metadata = FileMetadataDb(
+        filename=filename,
+        type=FileType.CV,
+        user_id="test-user-123",
+        url=blob_url,
+        document_analysis={
+            "document_type": "CV",
+            "structure": partial_structure
+        }
+    )
+    
+    # Save to database
+    file_metadata = repository.upsert_file(file_metadata.model_dump(mode="json"))
+    
+    # Create mock B2C claims
+    mock_claims = {
+        "claims": [
+            {"typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "val": "test-user-123"},
+            {"typ": "name", "val": "Test User"},
+            {"typ": "emails", "val": "test@example.com"}
+        ]
+    }
+    encoded_claims = base64.b64encode(json.dumps(mock_claims).encode()).decode()
+    
+    # Create mock request
+    req = func.HttpRequest(
+        method='GET',
+        url=f'/api/files/{file_metadata.id}',
+        route_params={'file_id': str(file_metadata.id)},
+        headers={
+            'X-MS-CLIENT-PRINCIPAL': encoded_claims
+        },
+        body=None
+    )
+    
+    # Call the function
+    response = _get_file(req, repository)
+    
+    # Assert response
+    assert response.status_code == 200
+    result = json.loads(response.get_body())
+    
+    # Verify partial structure
+    assert 'structure' in result
+    structure = result['structure']
+    assert len(structure['personal_details']) == 1
+    assert structure['professional_summary'] == "Experienced software engineer"
+    assert len(structure['skills']) == 1
+    assert len(structure['experience']) == 0
+    assert len(structure['education']) == 0
+    assert len(structure['additional_information']) == 0

@@ -1,13 +1,5 @@
-#!/usr/bin/env sh
+#!/bin/sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-cd frontend
-echo "Running lint-staged..."
-npx lint-staged || exit 1
-
-echo "Running frontend tests..."
-npm run test:ci || exit 1
-
-cd ../azfunctions
-echo "Running Azure Functions tests..."
-.venv/Scripts/python -m pytest tests/ -v || exit 1
+# Run the PowerShell script
+cmd.exe /C "pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .husky/pre-commit.ps1"

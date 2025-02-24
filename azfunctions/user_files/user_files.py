@@ -8,7 +8,7 @@ import base64
 from shared.db_service import get_cosmos_db_client
 from shared.files_repository import FilesRepository
 from shared.blob_service import FilesBlobService
-from user_files.models import UserFilesRequest, UserFilesResponse
+from user_files.models import UserFilesRequest, UserFilesResponse, File, ResumeStructure
 
 # create blueprint
 user_files_bp = func.Blueprint()
@@ -249,8 +249,22 @@ def _get_file(req: func.HttpRequest, files_repository: FilesRepository) -> func.
                     status_code=404
                 )
             
+            # Convert to our response model
+            file_response = File(
+                id=file_metadata.id,
+                filename=file_metadata.filename,
+                type=file_metadata.type,
+                user_id=file_metadata.user_id,
+                url=file_metadata.url
+            )
+
+            # If document analysis exists, map it to our structure
+            if hasattr(file_metadata, 'document_analysis') and file_metadata.document_analysis:
+                if 'structure' in file_metadata.document_analysis:
+                    file_response.structure = ResumeStructure(**file_metadata.document_analysis['structure'])
+            
             # Create response with all structured information
-            response_data = file_metadata.model_dump(mode="json", exclude_none=True)
+            response_data = file_response.model_dump(mode="json", exclude_none=True)
             
             return func.HttpResponse(
                 body=json.dumps(response_data),
