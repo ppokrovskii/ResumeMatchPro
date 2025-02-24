@@ -15,10 +15,6 @@ interface FileDetailsProps {
 const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack }) => {
     const { instance, accounts } = useMsal();
 
-    // Add debug logging
-    console.log('File details:', file);
-    console.log('Structure:', file.structure);
-
     const handleDownload = async () => {
         try {
             const account = accounts[0];
