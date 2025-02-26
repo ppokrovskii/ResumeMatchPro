@@ -8,7 +8,24 @@ import base64
 from shared.db_service import get_cosmos_db_client
 from shared.files_repository import FilesRepository
 from shared.blob_service import FilesBlobService
-from user_files.models import UserFilesRequest, UserFilesResponse, File, ResumeStructure
+from user_files.models import UserFilesRequest, UserFilesResponse, File, ResumeStructure, PersonalDetail, ExperienceEntry, Page, Line, TableCell
+from shared.openai_service.models import DocumentAnalysis
+
+def get_user_id_from_claims(req: func.HttpRequest) -> str:
+    """Extract user ID from B2C claims in the request headers."""
+    try:
+        client_principal = req.headers.get('X-MS-CLIENT-PRINCIPAL')
+        if not client_principal:
+            return None
+
+        claims_json = base64.b64decode(client_principal).decode('utf-8')
+        claims = json.loads(claims_json)
+        user_id = next((claim['val'] for claim in claims['claims'] 
+                      if claim['typ'] == 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'), None)
+        return user_id
+    except Exception as e:
+        logging.error(f"Error getting user ID from claims: {str(e)}")
+        return None
 
 # create blueprint
 user_files_bp = func.Blueprint()
@@ -200,92 +217,49 @@ def get_file(req: func.HttpRequest) -> func.HttpResponse:
 
 
 def _get_file(req: func.HttpRequest, files_repository: FilesRepository) -> func.HttpResponse:
-    # Get file_id from route parameters
-    file_id = req.route_params.get('file_id')
-    if not file_id:
-        return func.HttpResponse(
-            body=json.dumps({"error": "file_id is required"}),
-            mimetype="application/json",
-            status_code=400
-        )
-    
     try:
-        # Get user_id from B2C claims
-        client_principal = req.headers.get('X-MS-CLIENT-PRINCIPAL')
-        if not client_principal:
+        # Get user ID from claims
+        user_id = get_user_id_from_claims(req)
+        if not user_id:
             return func.HttpResponse(
                 body=json.dumps({"error": "Unauthorized - Missing user claims"}),
                 mimetype="application/json",
                 status_code=401
             )
 
-        try:
-            claims_json = base64.b64decode(client_principal).decode('utf-8')
-            claims = json.loads(claims_json)
-            user_id = next((claim['val'] for claim in claims['claims'] 
-                          if claim['typ'] == 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'), None)
-            
-            if not user_id:
-                return func.HttpResponse(
-                    body=json.dumps({"error": "Unauthorized - Missing user ID in claims"}),
-                    mimetype="application/json",
-                    status_code=401
-                )
-        except Exception as e:
-            logging.error(f"Error decoding claims: {str(e)}")
+        # Get file ID from route params
+        file_id = req.route_params.get('file_id')
+        if not file_id:
             return func.HttpResponse(
-                body=json.dumps({"error": "Unauthorized - Invalid claims format"}),
+                body=json.dumps({"error": "File ID is required"}),
                 mimetype="application/json",
-                status_code=401
+                status_code=400
             )
-        
+
+        # Get file from repository
         try:
-            # Get file using partition key
-            file_metadata = files_repository.get_file_by_id(user_id, file_id)
-            if not file_metadata:
+            file = files_repository.get_file_by_id(user_id, file_id)
+            if not file:
                 return func.HttpResponse(
                     body=json.dumps({"error": "File not found"}),
                     mimetype="application/json",
                     status_code=404
                 )
-            
-            logging.info(f"Retrieved file metadata: {file_metadata.model_dump_json()}")
-            
-            # Convert to our response model
-            file_response = File(
-                id=file_metadata.id,
-                filename=file_metadata.filename,
-                type=file_metadata.type,
-                user_id=file_metadata.user_id,
-                url=file_metadata.url
-            )
 
-            # If document analysis exists, map it to our structure
-            if hasattr(file_metadata, 'document_analysis') and file_metadata.document_analysis:
-                logging.info(f"Document analysis found: {file_metadata.document_analysis}")
-                if hasattr(file_metadata.document_analysis, 'structure'):
-                    logging.info(f"Structure found in document analysis: {file_metadata.document_analysis.structure}")
-                    file_response.structure = ResumeStructure(**file_metadata.document_analysis.structure.model_dump())
-                else:
-                    logging.warning("No structure found in document analysis")
-            else:
-                logging.info("No document analysis found in file metadata")
-            
-            # Create response with all structured information
-            response_data = file_response.model_dump(mode="json", exclude_none=True)
-            logging.info(f"Final response data: {response_data}")
-            
+            # Return file metadata
             return func.HttpResponse(
-                body=json.dumps(response_data),
+                body=json.dumps(file.model_dump()),
                 mimetype="application/json",
                 status_code=200
             )
-        except PermissionError as e:
+
+        except PermissionError:
             return func.HttpResponse(
-                body=json.dumps({"error": str(e)}),
+                body=json.dumps({"error": "You don't have permission to access this file"}),
                 mimetype="application/json",
                 status_code=403
             )
+
     except Exception as e:
         logging.error(f"Error getting file: {str(e)}")
         return func.HttpResponse(
@@ -299,10 +273,10 @@ def _get_file(req: func.HttpRequest, files_repository: FilesRepository) -> func.
 def download_file(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Download file function processed a request.')
     try:
+        files_blob_service = FilesBlobService()
         cosmos_db_client = get_cosmos_db_client()
         files_repository = FilesRepository(cosmos_db_client)
-        files_blob_service = FilesBlobService()
-        response = _download_file(req, files_repository, files_blob_service)
+        response = _download_file(req, files_blob_service, files_repository)
         return response
     except Exception as e:
         logging.error(f"Error in download_file wrapper: {str(e)}")
@@ -313,86 +287,66 @@ def download_file(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 
-def _download_file(req: func.HttpRequest, files_repository: FilesRepository, files_blob_service: FilesBlobService) -> func.HttpResponse:
-    # Get file_id from route parameters
-    file_id = req.route_params.get('file_id')
-    if not file_id:
-        return func.HttpResponse(
-            body=json.dumps({"error": "file_id is required"}),
-            mimetype="application/json",
-            status_code=400
-        )
-    
+def _download_file(req: func.HttpRequest, files_blob_service: FilesBlobService, files_repository: FilesRepository) -> func.HttpResponse:
     try:
-        # Get user_id from B2C claims
-        client_principal = req.headers.get('X-MS-CLIENT-PRINCIPAL')
-        if not client_principal:
+        # Get user ID from claims
+        user_id = get_user_id_from_claims(req)
+        if not user_id:
             return func.HttpResponse(
                 body=json.dumps({"error": "Unauthorized - Missing user claims"}),
                 mimetype="application/json",
                 status_code=401
             )
 
-        try:
-            claims_json = base64.b64decode(client_principal).decode('utf-8')
-            claims = json.loads(claims_json)
-            user_id = next((claim['val'] for claim in claims['claims'] 
-                          if claim['typ'] == 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'), None)
-            
-            if not user_id:
-                return func.HttpResponse(
-                    body=json.dumps({"error": "Unauthorized - Missing user ID in claims"}),
-                    mimetype="application/json",
-                    status_code=401
-                )
-        except Exception as e:
-            logging.error(f"Error decoding claims: {str(e)}")
+        # Get file ID from route params
+        file_id = req.route_params.get('file_id')
+        if not file_id:
             return func.HttpResponse(
-                body=json.dumps({"error": "Unauthorized - Invalid claims format"}),
+                body=json.dumps({"error": "File ID is required"}),
                 mimetype="application/json",
-                status_code=401
+                status_code=400
             )
-        
+
+        # Get file metadata from repository
         try:
-            # Get file metadata using partition key
-            file_metadata = files_repository.get_file_by_id(user_id, file_id)
-            if not file_metadata:
+            file = files_repository.get_file_by_id(user_id, file_id)
+            if not file:
                 return func.HttpResponse(
                     body=json.dumps({"error": "File not found"}),
                     mimetype="application/json",
                     status_code=404
                 )
             
-            # Get file from blob storage
-            blob_data = files_blob_service.get_file_content(
-                container_name="resume-match-pro-files",
-                filename=file_metadata.filename
-            )
-            
-            if not blob_data:
-                return func.HttpResponse(
-                    body=json.dumps({"error": "File content not found"}),
-                    mimetype="application/json",
-                    status_code=404
+            # Get file content from blob storage
+            try:
+                file_content = files_blob_service.get_file_content(
+                    container_name=files_blob_service.container_name,
+                    filename=file.filename
                 )
-            
-            # Return file with proper headers
-            headers = {
-                'Content-Disposition': f'attachment; filename="{file_metadata.filename}"',
-                'Content-Type': 'application/octet-stream'
-            }
+
+                return func.HttpResponse(
+                    body=file_content,
+                    mimetype=file.content_type or "application/octet-stream",
+                    status_code=200,
+                    headers={
+                        'Content-Disposition': f'attachment; filename="{file.filename}"'
+                    }
+                )
+            except Exception as e:
+                logging.error(f"Error getting file content from blob storage: {str(e)}")
+                return func.HttpResponse(
+                    body=json.dumps({"error": "Error retrieving file content"}),
+                    mimetype="application/json",
+                    status_code=500
+                )
+
+        except PermissionError:
             return func.HttpResponse(
-                body=blob_data,
-                headers=headers,
-                status_code=200
-            )
-            
-        except PermissionError as e:
-            return func.HttpResponse(
-                body=json.dumps({"error": str(e)}),
+                body=json.dumps({"error": "You don't have permission to access this file"}),
                 mimetype="application/json",
                 status_code=403
             )
+
     except Exception as e:
         logging.error(f"Error downloading file: {str(e)}")
         return func.HttpResponse(

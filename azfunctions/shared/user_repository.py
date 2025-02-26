@@ -70,7 +70,7 @@ class UserRepository:
         if datetime.now(UTC) - user.lastMatchingReset > timedelta(days=30):
             user.matchingUsedCount = 0
             user.lastMatchingReset = datetime.now(UTC)
-            self.update_user(user)
+            user = self.update_user(user)
             
         return user.filesCount < user.filesLimit and user.matchingUsedCount < user.matchingLimit
     

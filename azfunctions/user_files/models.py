@@ -15,6 +15,25 @@ class UserFilesRequest(BaseModel):
     type: Optional[FileType] = None
     
 
+class TableCell(BaseModel):
+    text: str
+
+
+class Line(BaseModel):
+    content: str
+
+
+class Table(BaseModel):
+    cells: List[List[TableCell]]
+
+
+class Page(BaseModel):
+    page_number: int
+    content: str
+    lines: List[Line]
+    tables: List[List[List[TableCell]]]
+
+
 class PersonalDetail(BaseModel):
     type: str
     text: str
@@ -37,9 +56,9 @@ class ResumeStructure(BaseModel):
 
 
 class File(BaseModel):
-    id: UUID = Field(default_factory=uuid4)
+    id: str
     filename: str
-    type: FileType
+    type: str
     user_id: str
     url: str
     structure: Optional[ResumeStructure] = None

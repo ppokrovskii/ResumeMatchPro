@@ -23,6 +23,7 @@ const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack }) => {
             }
             await downloadFile(file.id, account, instance, file.filename);
         } catch (error) {
+            // eslint-disable-next-line no-console
             console.error('Error downloading file:', error);
             message.error('Failed to download file');
         }

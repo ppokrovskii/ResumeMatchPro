@@ -108,19 +108,26 @@ def test_increment_files_count(repository, sample_user):
 def test_decrement_files_count(repository, sample_user):
     # Create a user with files
     sample_user.filesCount = 2
-    repository.create_user(sample_user.model_dump())
+    created_user = repository.create_user(sample_user.model_dump())
     
-    # Decrement files count
-    updated_user = repository.decrement_files_count(sample_user.userId)
-    assert updated_user.filesCount == 1
-    
-    # Decrement again
-    updated_user = repository.decrement_files_count(sample_user.userId)
-    assert updated_user.filesCount == 0
-    
-    # Decrement below zero should stay at zero
-    updated_user = repository.decrement_files_count(sample_user.userId)
-    assert updated_user.filesCount == 0
+    try:
+        # Decrement files count
+        updated_user = repository.decrement_files_count(created_user.userId)
+        assert updated_user.filesCount == 1
+        
+        # Decrement again
+        updated_user = repository.decrement_files_count(created_user.userId)
+        assert updated_user.filesCount == 0
+        
+        # Decrement below zero should stay at zero
+        updated_user = repository.decrement_files_count(created_user.userId)
+        assert updated_user.filesCount == 0
+    finally:
+        # Clean up
+        try:
+            repository.container.delete_item(item=created_user.userId, partition_key=created_user.userId)
+        except:
+            pass
 
 def test_increment_matching_count(repository, sample_user):
     # Create a user

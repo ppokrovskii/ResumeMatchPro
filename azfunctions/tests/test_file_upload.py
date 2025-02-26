@@ -11,6 +11,10 @@ import base64
 import azure.core.exceptions
 import re
 from unittest.mock import MagicMock
+from shared.queue_service import QueueService
+from shared.mock_queue_service import MockQueueService
+from shared.blob_service import FilesBlobService
+from shared.files_repository import FilesRepository
 
 # add project root to sys.path
 import sys
@@ -18,8 +22,6 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from file_upload.file_upload import _files_upload
 from shared.models import FileMetadataDb, FileType
-from shared.files_repository import FilesRepository
-from shared.blob_service import FilesBlobService
 from shared.user_repository import UserRepository
 from users.models import UserDb
 
@@ -96,10 +98,23 @@ class MockBytesFile(bytes):
     def __new__(cls, content, headers):
         obj = super().__new__(cls, content)
         obj._headers = headers
+        obj._content = content
         return obj
+    
     @property
     def headers(self):
         return self._headers
+    
+    @property
+    def filename(self):
+        content_disp = self._headers.get('Content-Disposition', '')
+        m = re.search('filename="([^"]+)"', content_disp)
+        if m:
+            return m.group(1)
+        return None
+    
+    def read(self, *args):
+        return self._content
 
 class MockFiles:
     def __init__(self, files):
@@ -236,13 +251,13 @@ def test_file_upload_success(repository, user_repository, blob_service, test_use
         # Call the function
         response = _files_upload(req, blob_service, repository, user_repository)
         
-        # Print error details if status code is 500
-        if response.status_code == 500:
+        # Print error details if status code is not 200
+        if response.status_code != 200:
             error_body = json.loads(response.get_body())
             print(f"Error response: {error_body}")
         
         # Assert response
-        assert response.status_code == 200
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.get_body()}"
         result = json.loads(response.get_body())
         assert len(result['files']) == 1
         assert result['files'][0]['filename'] == filename
@@ -342,7 +357,7 @@ def test_file_upload_limit_reached(repository, user_repository, blob_service, te
             req.form = {'type': 'CV'}
             req.headers = {'X-MS-CLIENT-PRINCIPAL': create_mock_b2c_token(test_user.userId)}
             response = _files_upload(req, blob_service, repository, user_repository)
-            assert response.status_code == 200
+            assert response.status_code == 200, f"Failed to upload file {i}: {response.get_body()}"
         
         # Try to upload one more file
         mock_file = MockFile(f'test_extra_{uuid4()}.pdf')
@@ -360,7 +375,7 @@ def test_file_upload_limit_reached(repository, user_repository, blob_service, te
         response = _files_upload(req, blob_service, repository, user_repository)
         
         # Assert response
-        assert response.status_code == 403
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}: {response.get_body()}"
         error_response = json.loads(response.get_body())
         assert error_response == "File upload limit reached"
         
@@ -478,12 +493,11 @@ def test_file_upload_no_files(repository, user_repository, blob_service, test_us
 
 def test_file_upload_with_content_disposition(repository, user_repository, blob_service, test_user, monkeypatch):
     # Mock QueueService
-    monkeypatch.setattr('file_upload.file_upload.QueueService', DummyQueueService)
+    monkeypatch.setattr('file_upload.file_upload.QueueService', MockQueueService)
     
-    # Create mock file with filename in content disposition
-    filename = f'test_{uuid4()}.pdf'
-    content = b'test content'
-    mock_file = MockFile(filename, content)
+    # Create mock file
+    filename = "CV_Gleb F.-Fullstack_Developer.pdf"
+    mock_file = MockBytesFile(b'test content', {'Content-Disposition': f'form-data; name="content"; filename="{filename}"'})
     
     # Create request
     req = MockHttpRequest(
@@ -496,49 +510,28 @@ def test_file_upload_with_content_disposition(repository, user_repository, blob_
     req.form = {'type': 'CV'}
     req.headers = {'X-MS-CLIENT-PRINCIPAL': create_mock_b2c_token(test_user.userId)}
     
-    # Override container name for test
-    original_container = blob_service.container_name
-    blob_service.container_name = TEST_CONTAINER_NAME
+    # Call the function
+    response = _files_upload(req, blob_service, repository, user_repository)
     
-    try:
-        # Call the function
-        response = _files_upload(req, blob_service, repository, user_repository)
-        
-        # Assert response
-        assert response.status_code == 200
-        result = json.loads(response.get_body())
-        assert len(result['files']) == 1
-        assert result['files'][0]['filename'] == filename
-        
-        # Verify file was saved
-        files = repository.get_files_from_db(test_user.userId)
-        assert len(files) == 1
-        assert files[0].filename == filename
-        
-        # Verify file exists in blob storage
-        assert blob_service.blob_exists(TEST_CONTAINER_NAME, filename)
-        
-        # Verify user's file count was incremented
-        updated_user = user_repository.get_user(test_user.userId)
-        assert updated_user.filesCount == 1
-    finally:
-        # Restore original container name
-        blob_service.container_name = original_container 
-
-class DummyQueueService:
-    def __init__(self, connection_string=None):
-        pass
-
-    def create_queue_if_not_exists(self, queue_name):
-        pass
-
-    def send_message(self, queue_name, message):
-        pass
-
-def test_file_upload_with_form_data_boundary(repository, user_repository, blob_service, test_user, monkeypatch):
-    # Mock QueueService
-    monkeypatch.setattr('file_upload.file_upload.QueueService', DummyQueueService)
+    # Assert response
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.get_body()}"
+    result = json.loads(response.get_body())
+    assert len(result['files']) == 1
+    assert result['files'][0]['filename'] == filename
     
+    # Verify file was saved in repository
+    files = repository.get_files_from_db(test_user.userId)
+    assert len(files) == 1
+    assert files[0].filename == filename
+    
+    # Verify file exists in blob storage
+    assert blob_service.blob_exists(TEST_CONTAINER_NAME, filename)
+    
+    # Verify user's file count was incremented
+    updated_user = user_repository.get_user(test_user.userId)
+    assert updated_user.filesCount == 1
+
+def test_file_upload_with_form_data_boundary(repository, user_repository, blob_service, test_user):
     # Create request with exact same format as the cURL request
     filename = "CV_Gleb F.-Fullstack_Developer.pdf"
     content = b'test content'  # In real request this would be PDF content
@@ -555,25 +548,16 @@ def test_file_upload_with_form_data_boundary(repository, user_repository, blob_s
     req.headers = {
         'Accept': 'application/json',
         'Accept-Language': 'en-US,en;q=0.9,ru-RU;q=0.8,ru;q=0.7,ar;q=0.6',
-        'Authorization': 'Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6Ilg1ZVhrNHh5b2pORnVtMWtsMll0djhkbE5QNC1jNTdkTzZRR1RWQndhTmsiLCJ0eXAiOiJKV1QifQ...',
-        'Connection': 'keep-alive',
         'Content-Type': 'multipart/form-data; boundary=----WebKitFormBoundaryPWWfyszh0L8W2KB1',
         'Origin': 'https://app.dev.resumematch.pro',
         'Referer': 'https://app.dev.resumematch.pro/',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'cross-site',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
         'X-MS-CLIENT-PRINCIPAL': create_mock_b2c_token(test_user.userId)
     }
     
     # Set up form data exactly as in cURL request
     mock_file = MockFile(filename, content)
     req.files = MockFiles({'content': [mock_file]})
-    req.form = {
-        'user_id': '20561245-a60c-4c4e-b5f8-65b31a11e866',
-        'type': 'CV'
-    }
+    req.form = {'type': 'CV'}
     
     # Override container name for test
     original_container = blob_service.container_name
@@ -584,7 +568,7 @@ def test_file_upload_with_form_data_boundary(repository, user_repository, blob_s
         response = _files_upload(req, blob_service, repository, user_repository)
         
         # Assert response
-        assert response.status_code == 200
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.get_body()}"
         result = json.loads(response.get_body())
         assert len(result['files']) == 1
         assert result['files'][0]['filename'] == filename
@@ -603,7 +587,17 @@ def test_file_upload_with_form_data_boundary(repository, user_repository, blob_s
         assert updated_user.filesCount == 1
     finally:
         # Restore original container name
-        blob_service.container_name = original_container 
+        blob_service.container_name = original_container
+
+class DummyQueueService:
+    def __init__(self, connection_string=None):
+        pass
+
+    def create_queue_if_not_exists(self, queue_name):
+        pass
+
+    def send_message(self, queue_name, message):
+        pass
 
 def test_file_upload_bytes_with_content_disposition():
     # Setup dummy dependencies

@@ -206,6 +206,7 @@ export const getFile = async (fileId: string, account: AccountInfo, instance: IP
         });
 
         if (!response.ok) {
+            // eslint-disable-next-line no-console
             console.error('Failed to get file:', {
                 status: response.status,
                 statusText: response.statusText,
@@ -218,6 +219,7 @@ export const getFile = async (fileId: string, account: AccountInfo, instance: IP
         const data = await response.json();
         return data;
     } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('Error getting file:', error);
         throw error;
     }
@@ -233,6 +235,7 @@ export const downloadFile = async (fileId: string, account: AccountInfo, instanc
         });
 
         if (!response.ok) {
+            // eslint-disable-next-line no-console
             console.error('Failed to download file:', {
                 status: response.status,
                 statusText: response.statusText,

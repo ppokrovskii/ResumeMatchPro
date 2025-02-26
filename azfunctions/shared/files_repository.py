@@ -2,6 +2,8 @@ from uuid import UUID, uuid4
 from azure.cosmos import DatabaseProxy, PartitionKey
 from shared.models import FileMetadataDb
 import shared.db_service as db_service
+import logging
+from typing import Optional
 
 
 class FilesRepository:
@@ -82,15 +84,52 @@ class FilesRepository:
         """Get a file by user_id and file_id."""
         if isinstance(file_id, UUID):
             file_id = str(file_id)
-        # First check if file exists for any user
-        query = "SELECT * FROM c WHERE c.id = @file_id"
-        parameters = [{"name": "@file_id", "value": file_id}]
-        items = list(self.container.query_items(query, parameters=parameters, enable_cross_partition_query=True))
-        if not items:
+        try:
+            # First check if file exists for any user
+            query = "SELECT * FROM c WHERE c.id = @file_id"
+            parameters = [{"name": "@file_id", "value": file_id}]
+            items = list(self.container.query_items(query, parameters=parameters, enable_cross_partition_query=True))
+            if not items:
+                return None
+            
+            file = FileMetadataDb(**items[0])
+            if file.user_id != user_id:
+                raise PermissionError("You don't have permission to access this file")
+            
+            return file
+        except PermissionError:
+            raise
+        except Exception as e:
+            logging.error(f"Error getting file by ID: {str(e)}")
             return None
+
+    def get_file(self, file_id: str, user_id: str) -> Optional[FileMetadataDb]:
+        """Get a file by ID and verify the user has access to it."""
+        try:
+            # Query for the file with the given ID
+            query = "SELECT * FROM c WHERE c.id = @file_id"
+            parameters = [{"name": "@file_id", "value": file_id}]
+            items = list(self.container.query_items(
+                query=query,
+                parameters=parameters,
+                enable_cross_partition_query=True
+            ))
             
-        file = FileMetadataDb(**items[0])
-        if file.user_id != user_id:
-            raise PermissionError("You don't have permission to access this file")
+            # If no file found, return None
+            if not items:
+                return None
             
-        return file
+            file = FileMetadataDb(**items[0])
+            
+            # Check if the user has access to this file
+            if file.user_id != user_id:
+                logging.error("Error getting file by ID: You don't have permission to access this file")
+                raise PermissionError("You don't have permission to access this file")
+            
+            return file
+            
+        except PermissionError as e:
+            raise
+        except Exception as e:
+            logging.error(f"Error getting file by ID: {str(e)}")
+            return None
