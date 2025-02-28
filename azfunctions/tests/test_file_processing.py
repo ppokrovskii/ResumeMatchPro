@@ -383,7 +383,7 @@ class TestFileProcessing(TestCase):
 
         # Verify the error was logged
         log_output = self.log_stream.getvalue()
-        self.assertIn("Error processing document: OpenAI API error", log_output)
+        self.assertIn("Error processing file: OpenAI API error", log_output)
 
         # Verify no message was sent to the matching queue
         self.mock_queue_service_instance.send_message.assert_not_called()

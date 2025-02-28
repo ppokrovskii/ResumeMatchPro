@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
@@ -29,14 +29,6 @@ class DocumentStyle(BaseModel):
     is_italic: Optional[bool] = None
     is_underline: Optional[bool] = None
 
-class DocumentStructure(BaseModel):
-    personal_details: List[dict]  # type and text
-    professional_summary: str
-    skills: List[str]
-    experience: List[dict]  # title, start_date, end_date, lines
-    education: List[dict]  # title, start_date, end_date, degree, details, city
-    additional_information: Optional[List[str]] = None
-
 class FileMetadataDb(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     filename: str
@@ -44,6 +36,7 @@ class FileMetadataDb(BaseModel):
     user_id: str
     url: str
     text: Optional[str] = None
+    content_type: Optional[str] = None
     
     # Structured document information
     pages: Optional[List[DocumentPage]] = None

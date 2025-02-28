@@ -18,148 +18,134 @@ file_processing_bp = func.Blueprint()
 
 @file_processing_bp.queue_trigger(arg_name="msg", queue_name="processing-queue", connection="AzureWebJobsStorage")
 def process_file(msg: func.QueueMessage):
-    logging.info(f"file_processing function called with a message: {msg.get_body().decode('utf-8')}")
+    """
+    Process a file uploaded by a user.
+    1. Extract text and structure from the file.
+    2. Analyze the document to determine its type (CV/Resume or Job Description).
+    3. Store the structured data in the database.
+    4. Queue the file for matching.
+    """
+    logging.info("Processing new file from queue")
+    
     try:
-        file_processing_request = FileProcessingRequest(**msg.get_json())
-        logging.info(f"Created FileProcessingRequest: {file_processing_request.model_dump_json()}")
+        # Parse queue message
+        file_processing_request = _parse_queue_message(msg)
+        
+        # Get necessary services
+        blob_service = FilesBlobService()
+        document_intelligence_service = _get_document_intelligence_service()
+        openai_service = OpenAIService()
+        
+        # Get file content
+        content = blob_service.get_file_content(blob_service.container_name, file_processing_request.filename)
+        if not content:
+            raise ValueError(f"File content is empty or file not found: {file_processing_request.filename}")
+        
+        # Process document based on file type
+        structured_info = _extract_document_content(
+            content, 
+            file_processing_request.filename, 
+            document_intelligence_service
+        )
+        
+        # Analyze document structure with OpenAI
+        document_analysis = openai_service.analyze_document(
+            text=structured_info['text'],
+            pages=structured_info.get('pages', []),
+            paragraphs=structured_info.get('paragraphs', [])
+        )
+        
+        # Determine file type based on document analysis
+        file_type = FileType.CV if document_analysis.document_type == "CV" else FileType.JD
+        
+        # Save metadata to database
+        file_metadata_db = _create_file_metadata(file_processing_request, structured_info, file_type, document_analysis)
+        repository = _get_repository()
+        repository.upsert_file(file_metadata_db.model_dump(mode="json"))
+        
+        # Queue file for matching
+        _queue_for_matching(file_processing_request.id, file_processing_request.user_id, file_type)
+        
+        logging.info(f"Successfully processed file {file_processing_request.filename}")
+        
+    except Exception as e:
+        logging.error(f"Error processing file: {str(e)}", exc_info=True)
+        raise
+
+
+def _parse_queue_message(msg: func.QueueMessage) -> FileProcessingRequest:
+    """Parse the queue message into a FileProcessingRequest object."""
+    try:
+        message_body = msg.get_json()
+        return FileProcessingRequest(**message_body)
     except ValidationError as e:
         logging.error(f"Validation error creating FileProcessingRequest: {e}")
-        logging.error("Invalid fields: " + ", ".join(err["loc"] for err in e.errors()))
+        logging.error("Invalid fields: " + ", ".join(str(err["loc"]) for err in e.errors()))
         raise ValueError(f"Invalid message: {e}")
     except Exception as e:
         logging.error(f"Error parsing message: {str(e)}")
         logging.error(f"Raw message content: {msg.get_body().decode('utf-8')}")
         raise
-    
-    try:
-        logging.info("Creating FilesBlobService...")
-        blob_service = FilesBlobService()
-        logging.info(f"Blob service container name: {blob_service.container_name}")
-        
-        logging.info(f"Getting file content for {file_processing_request.filename}...")
-        content = blob_service.get_file_content(blob_service.container_name, file_processing_request.filename)
-        if not content:
-            logging.error(f"Failed to get content for file {file_processing_request.filename}")
-            raise ValueError(f"File content is empty or file not found: {file_processing_request.filename}")
-        logging.info(f"Got file content, length: {len(content)} bytes")
-        
-        logging.info("Initializing Document Intelligence service...")
-        document_intelligence_service = DocumentIntelligenceService(
-            key=os.getenv("AZURE_DOCUMENT_INTELLIGENCE_KEY"),
-            endpoint=os.getenv("AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT")
-        )
-        
-        # Process document based on type
+
+
+def _get_document_intelligence_service() -> DocumentIntelligenceService:
+    """Initialize and return Document Intelligence service."""
+    return DocumentIntelligenceService(
+        key=os.getenv("AZURE_DOCUMENT_INTELLIGENCE_KEY"),
+        endpoint=os.getenv("AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT")
+    )
+
+
+def _get_repository() -> FilesRepository:
+    """Initialize and return Files Repository."""
+    cosmos_db_client = get_cosmos_db_client()
+    return FilesRepository(cosmos_db_client)
+
+
+def _extract_document_content(content: bytes, filename: str, document_intelligence_service: DocumentIntelligenceService) -> dict:
+    """Extract text and structure from the document based on its file type."""
+    if filename.endswith(".docx"):
+        return DocxService.get_text_from_docx(content)
+    else:
+        # Process PDF file using Document Intelligence
         try:
-            if file_processing_request.filename.endswith(".docx"):
-                logging.info("Processing DOCX file...")
-                structured_info = DocxService.get_text_from_docx(content)
-            else:
-                logging.info("Processing PDF file...")
-                try:
-                    logging.info("Calling Document Intelligence service with PDF content...")
-                    logging.info(f"Document Intelligence Key length: {len(os.getenv('AZURE_DOCUMENT_INTELLIGENCE_KEY', ''))}")
-                    logging.info(f"Document Intelligence Endpoint: {os.getenv('AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT')}")
-                    logging.info(f"PDF content length: {len(content)} bytes")
-                    
-                    try:
-                        # Initialize the client
-                        logging.info("Creating DocumentAnalysisClient...")
-                        client = document_intelligence_service.client
-                        logging.info("DocumentAnalysisClient created successfully")
-                        
-                        # Begin analysis
-                        logging.info("Beginning document analysis...")
-                        poller = client.begin_analyze_document("prebuilt-layout", document=content)
-                        logging.info("Document analysis started, waiting for result...")
-                        
-                        # Wait for the result
-                        result = poller.result(timeout=300)
-                        logging.info("Document analysis completed successfully")
-                        
-                        # Process the result
-                        structured_info = document_intelligence_service.process_analysis_result(result)
-                        logging.info("Successfully processed Document Intelligence result")
-                    except Exception as e:
-                        logging.error(f"Error in document analysis: {str(e)}")
-                        logging.error(f"Error type: {type(e)}")
-                        logging.exception("Full traceback:")
-                        raise
-                except Exception as e:
-                    logging.error(f"Error in document_intelligence_service.get_text_from_pdf: {str(e)}")
-                    logging.error(f"Document Intelligence Key: {os.getenv('AZURE_DOCUMENT_INTELLIGENCE_KEY')}")
-                    logging.error(f"Document Intelligence Endpoint: {os.getenv('AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT')}")
-                    raise
-            
-            if not structured_info.get('text'):
-                logging.warning("No text was extracted from the document")
-            
-            logging.info(f"Extracted text length: {len(structured_info['text']) if structured_info.get('text') else 0} characters")
-            logging.info(f"Extracted {len(structured_info.get('pages', [])) if structured_info.get('pages') else 0} pages")
-            logging.info(f"Extracted {len(structured_info.get('tables', [])) if structured_info.get('tables') else 0} tables")
-            
-            # Analyze document structure using OpenAI
-            logging.info("Analyzing document structure with OpenAI...")
-            openai_service = OpenAIService()
-            document_analysis = openai_service.analyze_document(
-                text=structured_info['text'],
-                pages=structured_info.get('pages', []),
-                paragraphs=structured_info.get('paragraphs', [])
-            )
-            logging.info(f"Document analyzed as {document_analysis.document_type}")
-            
-            # Update file type based on document analysis
-            file_type = FileType.CV if document_analysis.document_type == "CV" else FileType.JD
-            logging.info(f"Updating file type to {file_type} based on document analysis")
-            
-            # Create file metadata with structured information and document analysis
-            logging.info("Creating file metadata with structured information...")
-            request_data = file_processing_request.model_dump()
-            request_data.pop('type')  # Remove type from request data
-            file_metadata_db = FileMetadataDb(
-                **request_data,
-                **structured_info,
-                type=file_type,  # Use the type from document analysis
-                document_analysis=document_analysis  # Store the document analysis
-            )
-            
-            # Save metadata to database
-            logging.info("Getting Cosmos DB client...")
-            cosmos_db_client = get_cosmos_db_client()
-            logging.info("Creating FilesRepository...")
-            repository = FilesRepository(cosmos_db_client)
-            
-            logging.info("Saving metadata to Cosmos DB...")
-            try:
-                repository.upsert_file(file_metadata_db.model_dump(mode="json"))
-                logging.info("Successfully saved metadata to Cosmos DB")
-            except Exception as e:
-                logging.error(f"Error saving metadata to Cosmos DB: {str(e)}")
-                raise
-            
-            # Create queue message
-            logging.info("Creating queue message...")
-            queue_message = FileProcessingOutputQueueMessage(
-                file_id=file_processing_request.id,
-                user_id=file_processing_request.user_id,
-                type=file_type  # Use the updated file type
-            )
-            
-            # Send message to queue
-            logging.info("Initializing QueueService...")
-            queue_service = QueueService(connection_string=os.getenv("AzureWebJobsStorage"))
-            logging.info("Creating queue if not exists...")
-            queue_service.create_queue_if_not_exists("matching-queue")
-            logging.info("Sending message to queue...")
-            queue_service.send_message("matching-queue", queue_message.model_dump_json())
-            logging.info("Successfully sent message to queue")
-            
+            client = document_intelligence_service.client
+            poller = client.begin_analyze_document("prebuilt-layout", document=content)
+            result = poller.result(timeout=300)
+            return document_intelligence_service.process_analysis_result(result)
         except Exception as e:
-            logging.error(f"Error processing document: {str(e)}")
+            logging.error(f"Error processing PDF document: {str(e)}", exc_info=True)
             raise
-        
-    except Exception as e:
-        logging.error(f"Error in process_file: {str(e)}")
-        raise
+
+
+def _create_file_metadata(
+    request: FileProcessingRequest, 
+    structured_info: dict, 
+    file_type: FileType, 
+    document_analysis
+) -> FileMetadataDb:
+    """Create file metadata object with structured information."""
+    request_data = request.model_dump()
+    request_data.pop('type')  # Remove type from request data
+    return FileMetadataDb(
+        **request_data,
+        **structured_info,
+        type=file_type,
+        document_analysis=document_analysis
+    )
+
+
+def _queue_for_matching(file_id: str, user_id: str, file_type: FileType):
+    """Send file to matching queue for further processing."""
+    queue_message = FileProcessingOutputQueueMessage(
+        file_id=file_id,
+        user_id=user_id,
+        type=file_type
+    )
+    
+    queue_service = QueueService(connection_string=os.getenv("AzureWebJobsStorage"))
+    queue_service.create_queue_if_not_exists("matching-queue")
+    queue_service.send_message("matching-queue", queue_message.model_dump_json())
+    logging.info(f"File {file_id} queued for matching")
     
     

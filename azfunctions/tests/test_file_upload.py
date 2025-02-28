@@ -531,7 +531,10 @@ def test_file_upload_with_content_disposition(repository, user_repository, blob_
     updated_user = user_repository.get_user(test_user.userId)
     assert updated_user.filesCount == 1
 
-def test_file_upload_with_form_data_boundary(repository, user_repository, blob_service, test_user):
+def test_file_upload_with_form_data_boundary(repository, user_repository, blob_service, test_user, monkeypatch):
+    # Mock QueueService
+    monkeypatch.setattr('file_upload.file_upload.QueueService', MockQueueService)
+    
     # Create request with exact same format as the cURL request
     filename = "CV_Gleb F.-Fullstack_Developer.pdf"
     content = b'test content'  # In real request this would be PDF content
@@ -599,7 +602,10 @@ class DummyQueueService:
     def send_message(self, queue_name, message):
         pass
 
-def test_file_upload_bytes_with_content_disposition():
+def test_file_upload_bytes_with_content_disposition(monkeypatch):
+    # Mock QueueService
+    monkeypatch.setattr('file_upload.file_upload.QueueService', MockQueueService)
+    
     # Setup dummy dependencies
     repository = DummyFilesRepository()
     user_repository = DummyUserRepository()

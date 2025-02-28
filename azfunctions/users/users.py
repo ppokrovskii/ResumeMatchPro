@@ -180,7 +180,7 @@ def update_user_limits(req: HttpRequest) -> HttpResponse:
         )
 
         return HttpResponse(
-            body=json.dumps(response_data.model_dump(), default=str),
+            body=json.dumps(response_data.model_dump(mode="json"), default=str),
             mimetype="application/json",
             status_code=200
         )
@@ -233,7 +233,7 @@ def search_users(req: func.HttpRequest) -> func.HttpResponse:
         response_data = [CreateUserResponse(**user.model_dump()) for user in users]
         
         return func.HttpResponse(
-            body=json.dumps([r.model_dump() for r in response_data], default=str),
+            body=json.dumps([r.model_dump(mode="json") for r in response_data], default=str),
             mimetype="application/json",
             status_code=200
         )
@@ -308,7 +308,7 @@ def get_current_user(req: func.HttpRequest) -> func.HttpResponse:
         )
 
         return func.HttpResponse(
-            json.dumps(response_data.model_dump(), default=str),
+            json.dumps(response_data.model_dump(mode="json"), default=str),
             mimetype="application/json",
             status_code=200
         )

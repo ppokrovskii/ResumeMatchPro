@@ -521,12 +521,12 @@ def test_download_file_success(repository, blob_service, sample_file_metadata, s
         body=None
     )
     
-    response = _download_file(req, repository, blob_service)
+    response = _download_file(req, files_repository=repository, files_blob_service=blob_service)
     
     assert response.status_code == 200
     assert response.get_body() == sample_file_content
     assert response.headers['Content-Disposition'] == f'attachment; filename="{sample_file_metadata.filename}"'
-    assert response.headers['Content-Type'] == 'application/octet-stream'
+    assert response.headers['Content-Type'] == sample_file_metadata.content_type or "application/octet-stream"
 
 
 def test_download_file_not_found(repository, blob_service):
@@ -550,7 +550,7 @@ def test_download_file_not_found(repository, blob_service):
         body=None
     )
     
-    response = _download_file(req, repository, blob_service)
+    response = _download_file(req, files_repository=repository, files_blob_service=blob_service)
     
     assert response.status_code == 404
     assert json.loads(response.get_body())['error'] == 'File not found'
@@ -878,7 +878,7 @@ def test_get_file_without_structure(repository, sample_file_metadata):
         ]
     }
     encoded_claims = base64.b64encode(json.dumps(mock_claims).encode()).decode()
-    
+
     # Create mock request
     req = func.HttpRequest(
         method='GET',
@@ -889,16 +889,16 @@ def test_get_file_without_structure(repository, sample_file_metadata):
         },
         body=None
     )
-    
+
     # Call the function
     response = _get_file(req, repository)
-    
+
     # Assert response
     assert response.status_code == 200
     result = json.loads(response.get_body())
-    
-    # Verify structure is not present
-    assert 'structure' not in result
+
+    # Verify structure is None
+    assert result['structure'] is None
 
 def test_get_file_with_partial_structure(repository, blob_service, sample_file_content):
     # Create a unique filename

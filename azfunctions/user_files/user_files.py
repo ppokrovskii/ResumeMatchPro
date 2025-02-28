@@ -231,24 +231,37 @@ def _get_file(req: func.HttpRequest, files_repository: FilesRepository) -> func.
         file_id = req.route_params.get('file_id')
         if not file_id:
             return func.HttpResponse(
-                body=json.dumps({"error": "File ID is required"}),
+                body=json.dumps({"error": "file_id is required"}),
                 mimetype="application/json",
                 status_code=400
             )
 
         # Get file from repository
         try:
-            file = files_repository.get_file_by_id(user_id, file_id)
-            if not file:
+            file_db = files_repository.get_file_by_id(user_id, file_id)
+            if not file_db:
                 return func.HttpResponse(
                     body=json.dumps({"error": "File not found"}),
                     mimetype="application/json",
                     status_code=404
                 )
 
+            # Create response model
+            file_response = File(
+                id=str(file_db.id),
+                filename=file_db.filename,
+                type=file_db.type,
+                user_id=file_db.user_id,
+                url=file_db.url
+            )
+            
+            # Extract structure from document_analysis if available
+            if file_db.document_analysis and hasattr(file_db.document_analysis, 'structure'):
+                file_response.structure = file_db.document_analysis.structure
+
             # Return file metadata
             return func.HttpResponse(
-                body=json.dumps(file.model_dump()),
+                body=file_response.model_dump_json(),
                 mimetype="application/json",
                 status_code=200
             )
@@ -329,7 +342,8 @@ def _download_file(req: func.HttpRequest, files_blob_service: FilesBlobService, 
                     mimetype=file.content_type or "application/octet-stream",
                     status_code=200,
                     headers={
-                        'Content-Disposition': f'attachment; filename="{file.filename}"'
+                        'Content-Disposition': f'attachment; filename="{file.filename}"',
+                        'Content-Type': file.content_type or "application/octet-stream"
                     }
                 )
             except Exception as e:

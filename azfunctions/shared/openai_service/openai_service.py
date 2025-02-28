@@ -24,7 +24,7 @@ class OpenAIService:
 
     def analyze_document(self, text: str, pages: list, paragraphs: list) -> DocumentAnalysis:
         """
-        Analyze a document to determine its type (CV or JD) and extract structured information.
+        Analyze a document to determine its type (CV or Resume) and extract structured information.
         """
         prompt = f"""Analyze the provided document to determine if it's a CV (resume) or a Job Description (JD), and extract structured information.
         The document content is provided as text, pages, and paragraphs.
@@ -59,16 +59,11 @@ class OpenAIService:
             {
                 "type": "function",
                 "function": {
-                    "name": "store_document_analysis",
-                    "description": "Store the analysis of the document structure",
+                    "name": "store_cv_analysis",
+                    "description": "Store the analysis of a CV/Resume document structure",
                     "parameters": {
                         "type": "object",
                         "properties": {
-                            "document_type": {
-                                "type": "string",
-                                "enum": ["CV", "JD"],
-                                "description": "The type of document"
-                            },
                             "structure": {
                                 "type": "object",
                                 "properties": {
@@ -127,7 +122,54 @@ class OpenAIService:
                                 "required": ["personal_details", "professional_summary", "skills", "experience", "education"]
                             }
                         },
-                        "required": ["document_type", "structure"]
+                        "required": ["structure"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "store_jd_analysis",
+                    "description": "Store the analysis of a Job Description document structure",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "structure": {
+                                "type": "object",
+                                "properties": {
+                                    "company_details": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "type": {"type": "string"},
+                                                "text": {"type": "string"}
+                                            },
+                                            "required": ["type", "text"]
+                                        }
+                                    },
+                                    "role_summary": {"type": "string"},
+                                    "required_skills": {
+                                        "type": "array",
+                                        "items": {"type": "string"}
+                                    },
+                                    "experience_requirements": {
+                                        "type": "array",
+                                        "items": {"type": "string"}
+                                    },
+                                    "education_requirements": {
+                                        "type": "array",
+                                        "items": {"type": "string"}
+                                    },
+                                    "additional_information": {
+                                        "type": "array",
+                                        "items": {"type": "string"}
+                                    }
+                                },
+                                "required": ["company_details", "role_summary", "required_skills", "experience_requirements"]
+                            }
+                        },
+                        "required": ["structure"]
                     }
                 }
             }
@@ -149,9 +191,17 @@ class OpenAIService:
                 raise ValueError("No tool calls received in the response")
 
             tool_call = tool_calls[0]
+            function_name = tool_call.function.name
             function_args = json.loads(tool_call.function.arguments)
             
-            return DocumentAnalysis(**function_args)
+            # Determine document type based on which tool was called
+            document_type = "CV" if function_name == "store_cv_analysis" else "JD"
+            
+            # Create DocumentAnalysis with appropriate structure
+            return DocumentAnalysis(
+                document_type=document_type,
+                structure=function_args["structure"]
+            )
 
         except Exception as e:
             logging.error(f"Error analyzing document: {str(e)}")
