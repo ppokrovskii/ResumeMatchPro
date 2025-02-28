@@ -279,6 +279,14 @@ def test_can_upload_file_with_naive_datetime(repository, sample_user):
     user_data = sample_user.model_dump()
     user_data['lastMatchingReset'] = naive_datetime_str
     
+    # Delete existing user if it exists
+    try:
+        existing_user = repository.get_user(sample_user.userId)
+        if existing_user:
+            repository.container.delete_item(item=sample_user.userId, partition_key=sample_user.userId)
+    except:
+        pass
+    
     # Create user with the naive datetime string
     repository.container.create_item(user_data)
     

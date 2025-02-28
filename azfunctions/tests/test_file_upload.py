@@ -497,7 +497,8 @@ def test_file_upload_with_content_disposition(repository, user_repository, blob_
     
     # Create mock file
     filename = "CV_Gleb F.-Fullstack_Developer.pdf"
-    mock_file = MockBytesFile(b'test content', {'Content-Disposition': f'form-data; name="content"; filename="{filename}"'})
+    headers = {'Content-Disposition': f'form-data; name="content"; filename="{filename}"'}
+    mock_file = MockBytesFile(b'test content', headers)
     
     # Create request
     req = MockHttpRequest(
@@ -510,26 +511,34 @@ def test_file_upload_with_content_disposition(repository, user_repository, blob_
     req.form = {'type': 'CV'}
     req.headers = {'X-MS-CLIENT-PRINCIPAL': create_mock_b2c_token(test_user.userId)}
     
-    # Call the function
-    response = _files_upload(req, blob_service, repository, user_repository)
+    # Override container name for test
+    original_container = blob_service.container_name
+    blob_service.container_name = TEST_CONTAINER_NAME
     
-    # Assert response
-    assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.get_body()}"
-    result = json.loads(response.get_body())
-    assert len(result['files']) == 1
-    assert result['files'][0]['filename'] == filename
-    
-    # Verify file was saved in repository
-    files = repository.get_files_from_db(test_user.userId)
-    assert len(files) == 1
-    assert files[0].filename == filename
-    
-    # Verify file exists in blob storage
-    assert blob_service.blob_exists(TEST_CONTAINER_NAME, filename)
-    
-    # Verify user's file count was incremented
-    updated_user = user_repository.get_user(test_user.userId)
-    assert updated_user.filesCount == 1
+    try:
+        # Call the function
+        response = _files_upload(req, blob_service, repository, user_repository)
+        
+        # Assert response
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.get_body()}"
+        result = json.loads(response.get_body())
+        assert len(result['files']) == 1
+        assert result['files'][0]['filename'] == filename
+        
+        # Verify file was saved in repository
+        files = repository.get_files_from_db(test_user.userId)
+        assert len(files) == 1
+        assert files[0].filename == filename
+        
+        # Verify file exists in blob storage
+        assert blob_service.blob_exists(TEST_CONTAINER_NAME, filename)
+        
+        # Verify user's file count was incremented
+        updated_user = user_repository.get_user(test_user.userId)
+        assert updated_user.filesCount == 1
+    finally:
+        # Restore original container name
+        blob_service.container_name = original_container
 
 def test_file_upload_with_form_data_boundary(repository, user_repository, blob_service, test_user, monkeypatch):
     # Mock QueueService
@@ -625,38 +634,52 @@ def test_file_upload_bytes_with_content_disposition(monkeypatch):
         body=None
     )
     # Set req.files to contain our mock_bytes object as a list under the key 'content'
-    req.files = {"content": [mock_bytes]}
-    # Provide form data without an explicit 'filename'
-    req.form = {"user_id": test_user.userId, "type": "CV"}
+    req.files = MockFiles({"content": [mock_bytes]})
+    # Provide form data with the type
+    req.form = {"type": "CV"}
     req.headers = {"X-MS-CLIENT-PRINCIPAL": create_mock_b2c_token(test_user.userId)}
 
     # Call the file upload function
     response = _files_upload(req, blob_service, repository, user_repository)
 
-    # We expect a 400 error response because the filename extraction from raw bytes fails
-    assert response.status_code == 400, f"Expected 400, got {response.status_code}"
+    # We expect a successful response since the filename is extracted from Content-Disposition
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.get_body()}"
     # The response body is a JSON string; load it
     body = response.get_body().decode('utf-8') if hasattr(response, 'get_body') else response._body
-    error_response = json.loads(body)
-    assert error_response == "Invalid request: Filename not provided", f"Unexpected error response: {error_response}"
+    result = json.loads(body)
+    assert len(result['files']) == 1
+    assert result['files'][0]['filename'] == filename
 
 # Dummy implementations for dependencies
 class DummyFilesRepository:
     def upsert_file(self, file_metadata):
         # Return a dummy file metadata object with required attributes
         return DummyFileMetadata(file_metadata)
+        
+    def get_files_from_db(self, user_id):
+        return [DummyFileMetadata({'filename': 'test.pdf', 'type': 'CV', 'user_id': user_id, 'url': 'http://dummyurl'})]
 
 class DummyFileMetadata:
     def __init__(self, file_metadata):
+        self.id = file_metadata.get('id', str(uuid4()))
         self.filename = file_metadata.get('filename')
         self.type = file_metadata.get('type')
         self.user_id = file_metadata.get('user_id')
-        self.url = 'http://dummyurl'
+        self.url = file_metadata.get('url', 'http://dummyurl')
 
     def model_dump(self, mode=None):
-        return {'filename': self.filename, 'type': self.type, 'user_id': self.user_id, 'url': self.url}
+        return {
+            'id': self.id,
+            'filename': self.filename, 
+            'type': self.type, 
+            'user_id': self.user_id, 
+            'url': self.url
+        }
 
 class DummyUserRepository:
+    def get_user(self, user_id):
+        return DummyTestUser(user_id)
+        
     def can_upload_file(self, user_id):
         return True
 
@@ -668,10 +691,15 @@ class DummyBlobService:
 
     def upload_blob(self, container_name, filename, content):
         return 'http://dummyurl'
+        
+    def blob_exists(self, container_name, filename):
+        return True
 
 class DummyTestUser:
     def __init__(self, user_id):
         self.userId = user_id
+        self.filesCount = 0
+        self.filesLimit = 10
 
 # Simple main to run the test if executed directly
 if __name__ == '__main__':
