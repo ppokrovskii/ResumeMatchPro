@@ -1,5 +1,6 @@
 import sys
 import os
+import socket
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -11,6 +12,41 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 import pytest
 from azure.cosmos import CosmosClient
 from shared.matching_results_repository import MatchingResultsRepository
+
+# Define markers for tests requiring external services
+def pytest_configure(config):
+    config.addinivalue_line("markers", "requires_cosmos: mark test as requiring Azure Cosmos DB")
+    config.addinivalue_line("markers", "requires_blob_storage: mark test as requiring Azure Blob Storage")
+    config.addinivalue_line("markers", "requires_queue: mark test as requiring Azure Queue Storage")
+    config.addinivalue_line("markers", "external_services: mark test as requiring any external Azure services")
+
+# Helper function to check if a service is available
+def is_service_available(host, port):
+    """Check if a service is available at the given host and port."""
+    try:
+        socket.create_connection((host, port), timeout=1)
+        return True
+    except (socket.timeout, socket.error, ConnectionRefusedError):
+        return False
+
+# Skip tests requiring external services if they are not available
+def pytest_runtest_setup(item):
+    markers = [m.name for m in item.iter_markers()]
+    
+    # Skip tests that require Cosmos DB if it's not available
+    if "requires_cosmos" in markers or "external_services" in markers:
+        if not is_service_available("localhost", 8081):
+            pytest.skip("Cosmos DB emulator is not available")
+    
+    # Skip tests that require Blob Storage if it's not available
+    if "requires_blob_storage" in markers or "external_services" in markers:
+        if not is_service_available("127.0.0.1", 10000):
+            pytest.skip("Azure Blob Storage emulator is not available")
+            
+    # Skip tests that require Queue Storage if it's not available
+    if "requires_queue" in markers or "external_services" in markers:
+        if not is_service_available("127.0.0.1", 10001):
+            pytest.skip("Azure Queue Storage emulator is not available")
 
 @pytest.fixture(scope="session")
 def cosmos_client():

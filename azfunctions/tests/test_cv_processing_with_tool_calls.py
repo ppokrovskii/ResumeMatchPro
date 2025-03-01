@@ -116,6 +116,7 @@ class MockOpenAIServiceWithToolCalls:
         
         return document_analysis
 
+@pytest.mark.external_services
 def test_cv_processing_with_tool_calls():
     """
     Test the processing of CV documents with OpenAI tool calls.

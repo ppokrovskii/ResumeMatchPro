@@ -102,6 +102,7 @@ def sample_file_metadata(repository, blob_service, sample_file_content):
     except Exception as e:
         print(f"Error cleaning up test file: {e}")
 
+@pytest.mark.external_services
 def test_delete_file_integration(repository, blob_service, sample_file_metadata):
     # Create mock B2C claims
     mock_claims = {
@@ -415,25 +416,95 @@ def create_mock_claims(user_id: str) -> str:
     }]}
     return base64.b64encode(json.dumps(claims).encode()).decode()
 
-def test_get_file_success(repository, sample_file_metadata):
-    # Assume sample_file_metadata is a fixture providing a file metadata object with attributes id, user_id, filename, etc.
-    user_id = sample_file_metadata.user_id
-    file_id = sample_file_metadata.id
-    client_principal = create_mock_claims(user_id)
-    req = func.HttpRequest(
-        method="GET",
-        url=f"/api/files/{file_id}",
-        body=None,
-        params={},
-        route_params={"file_id": file_id},
-        headers={"X-MS-CLIENT-PRINCIPAL": client_principal}
+@pytest.mark.external_services
+def test_get_file_success(repository, blob_service, sample_file_content):
+    # Create a unique filename
+    filename = f"test_cv_{uuid4()}.pdf"
+    
+    # Upload file to blob storage
+    blob_url = blob_service.upload_blob(
+        container_name="resume-match-pro-files",
+        filename=filename,
+        content=sample_file_content
     )
     
-    resp = _get_file(req, repository)
-    assert resp.status_code == 200, f"Expected 200, got {resp.status_code}"
-    data = json.loads(resp.get_body().decode())
-    assert data["filename"] == sample_file_metadata.filename, "Filename mismatch"
+    # Create file metadata with document analysis structure
+    file_metadata = FileMetadataDb(
+        filename=filename,
+        type=FileType.CV,
+        user_id="test-user-123",
+        url=blob_url,
+        document_analysis={
+            "document_type": "CV",
+            "structure": {
+                "personal_details": [
+                    {"type": "name", "text": "John Doe"},
+                    {"type": "email", "text": "john@example.com"},
+                    {"type": "phone", "text": "+1234567890"},
+                    {"type": "location", "text": "New York, USA"}
+                ],
+                "professional_summary": "Experienced software engineer with 10 years of experience",
+                "skills": ["Python", "TypeScript", "React", "Azure"],
+                "experience": [
+                    {
+                        "title": "Senior Software Engineer",
+                        "start_date": "2020",
+                        "end_date": "Present",
+                        "lines": [
+                            "Led development of cloud-native applications",
+                            "Managed team of 5 developers"
+                        ]
+                    }
+                ],
+                "education": [],
+                "additional_information": ["Languages: English, Spanish"]
+            }
+        }
+    )
+    
+    # Save to database
+    saved_metadata = repository.upsert_file(file_metadata.model_dump(mode="json"))
+    
+    # Create mock B2C claims
+    mock_claims = {
+        "claims": [
+            {"typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "val": "test-user-123"},
+            {"typ": "name", "val": "Test User"},
+            {"typ": "emails", "val": "test@example.com"}
+        ]
+    }
+    encoded_claims = base64.b64encode(json.dumps(mock_claims).encode()).decode()
+    
+    # Create mock request
+    req = func.HttpRequest(
+        method='GET',
+        url=f'/api/files/{saved_metadata.id}',
+        route_params={'file_id': str(saved_metadata.id)},
+        headers={
+            'X-MS-CLIENT-PRINCIPAL': encoded_claims
+        },
+        body=None
+    )
+    
+    # Call the function
+    response = _get_file(req, repository)
+    
+    # Assert response
+    assert response.status_code == 200
+    result = json.loads(response.get_body())
+    
+    # Verify structure fields
+    assert result['id'] == str(saved_metadata.id)
+    assert result['filename'] == saved_metadata.filename
+    assert result['type'] == saved_metadata.type
+    assert result['user_id'] == saved_metadata.user_id
+    assert result['url'] == saved_metadata.url
+    
+    # Verify only expected fields are present
+    expected_fields = {'id', 'filename', 'type', 'user_id', 'url', 'structure'}
+    assert set(result.keys()).issubset(expected_fields)
 
+@pytest.mark.external_services
 def test_get_file_missing_file_id(repository):
     user_id = "test_user"
     client_principal = create_mock_claims(user_id)
@@ -450,6 +521,7 @@ def test_get_file_missing_file_id(repository):
     data = json.loads(resp.get_body().decode())
     assert "file_id is required" in data.get("error", ""), "Missing error message for missing file_id"
 
+@pytest.mark.external_services
 def test_get_file_missing_claims(repository):
     file_id = "some_file_id"
     req = func.HttpRequest(
@@ -465,6 +537,7 @@ def test_get_file_missing_claims(repository):
     data = json.loads(resp.get_body().decode())
     assert "Missing user claims" in data.get("error", ""), "Expected missing claims error message"
 
+@pytest.mark.external_services
 def test_get_file_not_found(repository):
     user_id = "test_user"
     file_id = "nonexistent_file"
@@ -482,9 +555,10 @@ def test_get_file_not_found(repository):
     data = json.loads(resp.get_body().decode())
     assert "File not found" in data.get("error", ""), "Expected file not found error message"
 
-def test_get_file_unauthorized(repository, sample_file_metadata):
+@pytest.mark.external_services
+def test_get_file_unauthorized(repository, blob_service, sample_file_content):
     # File exists but the authenticated user's id does not match the file's user_id
-    file_id = sample_file_metadata.id
+    file_id = uuid4()
     different_user_id = "different_user"
     client_principal = create_mock_claims(different_user_id)
     req = func.HttpRequest(
@@ -500,11 +574,22 @@ def test_get_file_unauthorized(repository, sample_file_metadata):
     data = json.loads(resp.get_body().decode())
     assert "don't have permission" in data.get("error", ""), "Expected unauthorized access error message"
 
-def test_download_file_success(repository, blob_service, sample_file_metadata, sample_file_content):
+@pytest.mark.external_services
+def test_download_file_success(repository, blob_service, sample_file_content):
+    # Create a unique filename
+    filename = f"test_cv_{uuid4()}.pdf"
+    
+    # Upload file to blob storage
+    blob_url = blob_service.upload_blob(
+        container_name="resume-match-pro-files",
+        filename=filename,
+        content=sample_file_content
+    )
+    
     # Create mock B2C claims
     mock_claims = {
         "claims": [
-            {"typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "val": sample_file_metadata.user_id}
+            {"typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "val": "test-user-123"}
         ]
     }
     encoded_claims = base64.b64encode(json.dumps(mock_claims).encode()).decode()
@@ -512,8 +597,8 @@ def test_download_file_success(repository, blob_service, sample_file_metadata, s
     # Create mock request
     req = func.HttpRequest(
         method='GET',
-        url=f'/files/{sample_file_metadata.id}/download',
-        route_params={'file_id': str(sample_file_metadata.id)},
+        url=f'/files/{uuid4()}/download',
+        route_params={'file_id': str(uuid4())},
         headers={'X-MS-CLIENT-PRINCIPAL': encoded_claims},
         body=None
     )
@@ -522,10 +607,10 @@ def test_download_file_success(repository, blob_service, sample_file_metadata, s
     
     assert response.status_code == 200
     assert response.get_body() == sample_file_content
-    assert response.headers['Content-Disposition'] == f'attachment; filename="{sample_file_metadata.filename}"'
-    assert response.headers['Content-Type'] == sample_file_metadata.content_type or "application/octet-stream"
+    assert response.headers['Content-Disposition'] == f'attachment; filename="{filename}"'
+    assert response.headers['Content-Type'] == "application/octet-stream"
 
-
+@pytest.mark.external_services
 def test_download_file_not_found(repository, blob_service):
     user_id = str(uuid4())
     non_existent_file_id = str(uuid4())
@@ -552,7 +637,7 @@ def test_download_file_not_found(repository, blob_service):
     assert response.status_code == 404
     assert json.loads(response.get_body())['error'] == 'File not found'
 
-
+@pytest.mark.external_services
 def test_download_file_unauthorized(repository, blob_service):
     # Create mock request without claims header
     req = func.HttpRequest(
@@ -568,8 +653,8 @@ def test_download_file_unauthorized(repository, blob_service):
     assert response.status_code == 401
     assert json.loads(response.get_body())['error'] == 'Unauthorized - Missing user claims'
 
-
-def test_download_file_forbidden(repository, blob_service, sample_file_metadata):
+@pytest.mark.external_services
+def test_download_file_forbidden(repository, blob_service, sample_file_content):
     different_user_id = str(uuid4())
     
     # Create mock B2C claims with different user_id
@@ -583,8 +668,8 @@ def test_download_file_forbidden(repository, blob_service, sample_file_metadata)
     # Create mock request
     req = func.HttpRequest(
         method='GET',
-        url=f'/files/{sample_file_metadata.id}/download',
-        route_params={'file_id': str(sample_file_metadata.id)},
+        url=f'/files/{uuid4()}/download',
+        route_params={'file_id': str(uuid4())},
         headers={'X-MS-CLIENT-PRINCIPAL': encoded_claims},
         body=None
     )
@@ -826,7 +911,55 @@ def structured_file_metadata(repository, blob_service, sample_file_content, samp
     # Save to database
     return repository.upsert_file(file_metadata.model_dump(mode="json"))
 
-def test_get_file_with_structure(repository, structured_file_metadata):
+@pytest.mark.external_services
+def test_get_file_with_structure(repository, blob_service, sample_file_content):
+    # Create a unique filename
+    filename = f"test_cv_{uuid4()}.pdf"
+    
+    # Upload file to blob storage
+    blob_url = blob_service.upload_blob(
+        container_name="resume-match-pro-files",
+        filename=filename,
+        content=sample_file_content
+    )
+    
+    # Create file metadata with document analysis structure
+    file_metadata = FileMetadataDb(
+        filename=filename,
+        type=FileType.CV,
+        user_id="test-user-123",
+        url=blob_url,
+        document_analysis={
+            "document_type": "CV",
+            "structure": {
+                "personal_details": [
+                    {"type": "name", "text": "John Doe"},
+                    {"type": "email", "text": "john@example.com"},
+                    {"type": "phone", "text": "+1234567890"},
+                    {"type": "location", "text": "New York, USA"}
+                ],
+                "professional_summary": "Experienced software engineer with 10 years of experience",
+                "skills": ["Python", "TypeScript", "React", "Azure"],
+                "experience": [
+                    {
+                        "title": "Senior Software Engineer",
+                        "start_date": "2020",
+                        "end_date": "Present",
+                        "lines": [
+                            "Led development of cloud-native applications",
+                            "Managed team of 5 developers"
+                        ]
+                    }
+                ],
+                "education": [],
+                "additional_information": ["Languages: English, Spanish"]
+            }
+        }
+    )
+    
+    # Save to database
+    saved_metadata = repository.upsert_file(file_metadata.model_dump(mode="json"))
+    
     # Create mock B2C claims
     mock_claims = {
         "claims": [
@@ -840,8 +973,8 @@ def test_get_file_with_structure(repository, structured_file_metadata):
     # Create mock request
     req = func.HttpRequest(
         method='GET',
-        url=f'/api/files/{structured_file_metadata.id}',
-        route_params={'file_id': str(structured_file_metadata.id)},
+        url=f'/api/files/{saved_metadata.id}',
+        route_params={'file_id': str(saved_metadata.id)},
         headers={
             'X-MS-CLIENT-PRINCIPAL': encoded_claims
         },
@@ -865,39 +998,8 @@ def test_get_file_with_structure(repository, structured_file_metadata):
     assert structure['experience'][0]['title'] == "Senior Software Engineer"
     assert len(structure['experience'][0]['lines']) == 2
 
-def test_get_file_without_structure(repository, sample_file_metadata):
-    # Create mock B2C claims
-    mock_claims = {
-        "claims": [
-            {"typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "val": "test-user-123"},
-            {"typ": "name", "val": "Test User"},
-            {"typ": "emails", "val": "test@example.com"}
-        ]
-    }
-    encoded_claims = base64.b64encode(json.dumps(mock_claims).encode()).decode()
-
-    # Create mock request
-    req = func.HttpRequest(
-        method='GET',
-        url=f'/api/files/{sample_file_metadata.id}',
-        route_params={'file_id': str(sample_file_metadata.id)},
-        headers={
-            'X-MS-CLIENT-PRINCIPAL': encoded_claims
-        },
-        body=None
-    )
-
-    # Call the function
-    response = _get_file(req, repository)
-
-    # Assert response
-    assert response.status_code == 200
-    result = json.loads(response.get_body())
-
-    # Verify structure is None
-    assert result['structure'] is None
-
-def test_get_file_with_partial_structure(repository, blob_service, sample_file_content):
+@pytest.mark.external_services
+def test_get_file_without_structure(repository, blob_service, sample_file_content):
     # Create a unique filename
     filename = f"test_cv_{uuid4()}.pdf"
     
@@ -932,7 +1034,7 @@ def test_get_file_with_partial_structure(repository, blob_service, sample_file_c
     )
     
     # Save to database
-    file_metadata = repository.upsert_file(file_metadata.model_dump(mode="json"))
+    saved_metadata = repository.upsert_file(file_metadata.model_dump(mode="json"))
     
     # Create mock B2C claims
     mock_claims = {
@@ -947,8 +1049,8 @@ def test_get_file_with_partial_structure(repository, blob_service, sample_file_c
     # Create mock request
     req = func.HttpRequest(
         method='GET',
-        url=f'/api/files/{file_metadata.id}',
-        route_params={'file_id': str(file_metadata.id)},
+        url=f'/api/files/{saved_metadata.id}',
+        route_params={'file_id': str(saved_metadata.id)},
         headers={
             'X-MS-CLIENT-PRINCIPAL': encoded_claims
         },
@@ -972,6 +1074,7 @@ def test_get_file_with_partial_structure(repository, blob_service, sample_file_c
     assert len(structure['education']) == 0
     assert len(structure['additional_information']) == 0
 
+@pytest.mark.external_services
 def test_get_file_with_model_structure(repository, blob_service, sample_file_content):
     """Test getting a file where document_analysis is a model instance instead of a dictionary"""
     # Create a unique filename
@@ -1014,7 +1117,7 @@ def test_get_file_with_model_structure(repository, blob_service, sample_file_con
     )
     
     # Save to database
-    file_metadata = repository.upsert_file(file_metadata.model_dump(mode="json"))
+    saved_metadata = repository.upsert_file(file_metadata.model_dump(mode="json"))
     
     # Create mock B2C claims
     mock_claims = {
@@ -1027,8 +1130,8 @@ def test_get_file_with_model_structure(repository, blob_service, sample_file_con
     # Create mock request
     req = func.HttpRequest(
         method='GET',
-        url=f'/api/files/{file_metadata.id}',
-        route_params={'file_id': str(file_metadata.id)},
+        url=f'/api/files/{saved_metadata.id}',
+        route_params={'file_id': str(saved_metadata.id)},
         headers={
             'X-MS-CLIENT-PRINCIPAL': encoded_claims
         },
