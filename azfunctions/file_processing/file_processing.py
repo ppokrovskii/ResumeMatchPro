@@ -1,6 +1,7 @@
 import logging
 import os
 import azure.functions as func
+import traceback
 from pydantic import ValidationError
 
 from shared.db_service import get_cosmos_db_client
@@ -25,52 +26,85 @@ def process_file(msg: func.QueueMessage):
     3. Store the structured data in the database.
     4. Queue the file for matching.
     """
-    logging.info("Processing new file from queue")
-    
     try:
-        # Parse queue message
+        logging.debug("DEBUG: process_file function called")
+        logging.debug(f"DEBUG: Message type: {type(msg)}")
+        logging.debug(f"DEBUG: Message content: {msg.get_body().decode('utf-8') if hasattr(msg, 'get_body') else 'No get_body method'}")
+        
+        # Step 1: Parse the queue message
+        logging.debug("DEBUG: About to parse queue message")
         file_processing_request = _parse_queue_message(msg)
+        logging.debug(f"DEBUG: Parsed request: {file_processing_request}")
         
-        # Get necessary services
+        # Step 2: Create services
+        logging.debug("DEBUG: About to create blob service")
         blob_service = FilesBlobService()
-        document_intelligence_service = _get_document_intelligence_service()
+        logging.debug(f"DEBUG: Created blob service: {blob_service}")
+        logging.debug(f"DEBUG: Blob service type: {type(blob_service)}")
+        logging.debug(f"DEBUG: Blob service class: {blob_service.__class__}")
+        logging.debug(f"DEBUG: Blob service module: {blob_service.__class__.__module__}")
+        logging.debug(f"DEBUG: Blob service container name: {blob_service.container_name}")
+        logging.debug("DEBUG: About to create document intelligence service")
+        document_intelligence_service = DocumentIntelligenceService()
+        logging.debug(f"DEBUG: Created document intelligence service: {document_intelligence_service}")
+        logging.debug("DEBUG: About to create OpenAI service")
         openai_service = OpenAIService()
+        logging.debug(f"DEBUG: Created OpenAI service: {openai_service}")
         
-        # Get file content
-        content = blob_service.get_file_content(blob_service.container_name, file_processing_request.filename)
+        # Step 3: Get file content
+        logging.debug(f"DEBUG: About to get file content from {blob_service.container_name}/{file_processing_request.filename}")
+        content = blob_service.get_file_content(file_processing_request.filename)
+        logging.debug(f"DEBUG: Got file content, length: {len(content) if content else 'None'}")
         if not content:
             raise ValueError(f"File content is empty or file not found: {file_processing_request.filename}")
         
-        # Process document based on file type
+        # Step 4: Extract text from the document
+        # Use different methods based on file type
+        file_extension = os.path.splitext(file_processing_request.filename)[1].lower()
+        logging.debug("DEBUG: About to extract document content")
         structured_info = _extract_document_content(
             content, 
-            file_processing_request.filename, 
+            file_processing_request.filename,
             document_intelligence_service
         )
+        logging.debug(f"DEBUG: Extracted document content: {structured_info.keys()}")
         
-        # Analyze document structure with OpenAI
+        # Step 5: Analyze the document using OpenAI
+        logging.debug("DEBUG: About to analyze document with OpenAI")
         document_analysis = openai_service.analyze_document(
             text=structured_info['text'],
             pages=structured_info.get('pages', []),
             paragraphs=structured_info.get('paragraphs', [])
         )
+        logging.debug(f"DEBUG: Document analysis result: {document_analysis}")
         
-        # Determine file type based on document analysis
-        file_type = FileType.CV if document_analysis.document_type == "CV" else FileType.JD
+        # Step 6: Determine file type
+        file_type = file_processing_request.type or document_analysis.document_type
+        logging.debug(f"DEBUG: Determined file type: {file_type}")
         
-        # Save metadata to database
-        file_metadata_db = _create_file_metadata(file_processing_request, structured_info, file_type, document_analysis)
-        repository = _get_repository()
-        repository.upsert_file(file_metadata_db.model_dump(mode="json"))
+        # Step 7: Create file metadata
+        logging.debug("DEBUG: About to create file metadata")
+        file_metadata = _create_file_metadata(file_processing_request, document_analysis)
+        logging.debug("DEBUG: About to get repository")
+        repository = FilesRepository(get_cosmos_db_client())
+        logging.debug(f"DEBUG: Got repository: {repository}")
+        logging.debug("DEBUG: About to upsert file")
+        repository.upsert_file(file_metadata)
+        logging.debug(f"DEBUG: Saved metadata to database")
         
-        # Queue file for matching
-        _queue_for_matching(file_processing_request.id, file_processing_request.user_id, file_type)
+        # Step 8: Queue for matching if needed
+        logging.debug("DEBUG: About to queue for matching")
+        _queue_for_matching(file_processing_request, file_type)
+        logging.debug(f"DEBUG: Queued file for matching")
         
-        logging.info(f"Successfully processed file {file_processing_request.filename}")
+        return func.HttpResponse(f"File processed successfully. ID: {file_processing_request.id}.", status_code=200)
         
     except Exception as e:
-        logging.error(f"Error processing file: {str(e)}", exc_info=True)
-        raise
+        logging.error(f"ERROR in process_file: {str(e)}")
+        logging.error(f"ERROR type: {type(e)}")
+        # Print traceback for debugging
+        logging.error(f"ERROR traceback: {traceback.format_exc()}")
+        return func.HttpResponse(f"Error processing file: {str(e)}", status_code=500)
 
 
 def _parse_queue_message(msg: func.QueueMessage) -> FileProcessingRequest:

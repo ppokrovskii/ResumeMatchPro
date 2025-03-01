@@ -1,0 +1,2 @@
+during commit do not skip tests configured as pre-hook script
+when merging develop to main never delete develop

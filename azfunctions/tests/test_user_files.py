@@ -10,15 +10,12 @@ from pathlib import Path
 from dotenv import load_dotenv
 from azure.cosmos import CosmosClient
 from user_files.user_files import _get_file, _download_file
-from azure.ai.formrecognizer import DocumentAnalysisClient
 from user_files.user_files import _get_files, _delete_file, user_files_bp
-from user_files.models import UserFilesRequest, UserFilesResponse
 from shared.models import FileMetadataDb, FileType, DocumentPage, Line, TableCell, DocumentStyle
 from shared.files_repository import FilesRepository
 from shared.blob_service import FilesBlobService
 from unittest import mock
 from shared.openai_service.models import DocumentAnalysis, DocumentStructure
-from unittest.mock import MagicMock
 
 # Configure logging
 logging.basicConfig(
