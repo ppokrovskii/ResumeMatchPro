@@ -91,7 +91,7 @@ const GlobalDragDrop: React.FC<GlobalDragDropProps> = ({
                     'Please select the file type:\n\nClick OK for CVs, Cancel for Job Descriptions'
                 ) ? 'CV' : 'JD';
 
-                const response = await uploadFiles(validFiles, userFileType, account, instance);
+                const response = await uploadFiles(validFiles, account, instance);
                 onFilesUploaded(response, userFileType);
                 message.success(`${validFiles.length} files uploaded successfully as ${userFileType}`);
             } else {
@@ -100,7 +100,7 @@ const GlobalDragDrop: React.FC<GlobalDragDropProps> = ({
                     'Please select the file type:\n\nClick OK for CV, Cancel for Job Description'
                 ) ? 'CV' : 'JD';
 
-                const response = await uploadFiles(validFiles, userFileType, account, instance);
+                const response = await uploadFiles(validFiles, account, instance);
                 onFilesUploaded(response, userFileType);
                 message.success(`${validFiles[0].name} uploaded successfully as ${userFileType}`);
             }
@@ -108,6 +108,8 @@ const GlobalDragDrop: React.FC<GlobalDragDropProps> = ({
             console.error('Error uploading files:', error);
             const errorMessage = error instanceof Error ? error.message : 'Upload failed';
             message.error(errorMessage);
+        } finally {
+            setIsDragging(false);
         }
     }, [isAuthenticated, user, accounts, instance, onFilesUploaded]);
 
