@@ -132,12 +132,10 @@ interface FileUploadResponse {
 
 export const uploadFiles = async (
     files: File[],
-    fileType: string,
     account: AccountInfo,
     instance: IPublicClientApplication
 ): Promise<FileUploadResponse> => {
     const formData = new FormData();
-    formData.append('type', fileType);
     files.forEach(file => {
         formData.append('content', file);
     });

@@ -8,10 +8,9 @@ import { uploadFiles } from '../../services/fileService';
 
 interface FilesUploadProps {
     onFilesUploaded: (response: { files: { name: string }[] }) => void;
-    fileType: string;
 }
 
-const FilesUpload: React.FC<FilesUploadProps> = ({ onFilesUploaded, fileType }) => {
+const FilesUpload: React.FC<FilesUploadProps> = ({ onFilesUploaded }) => {
     const { isAuthenticated, user } = useContext(AuthContext);
     const { instance, accounts } = useMsal();
     const uploadingFiles = useRef<Set<string>>(new Set());
@@ -34,7 +33,7 @@ const FilesUpload: React.FC<FilesUploadProps> = ({ onFilesUploaded, fileType }) 
                 throw new Error('No account found');
             }
 
-            const response = await uploadFiles([rcFile], fileType, account, instance);
+            const response = await uploadFiles([rcFile], account, instance);
             onFilesUploaded(response);
             onSuccess?.(response);
             message.success(`${rcFile.name} uploaded successfully`);

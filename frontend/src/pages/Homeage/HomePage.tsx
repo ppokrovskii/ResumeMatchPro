@@ -114,13 +114,12 @@ const HomePage: React.FC = () => {
   }
 
   return (
-    <div className={styles.homePage}>
+    <div className={styles.container}>
       {isAuthenticated && (
-        <div className={styles.columns}>
+        <div className={styles.columnsContainer}>
           <div className={styles.column}>
             <h2>CVs</h2>
             <FilesUpload
-              fileType="CV"
               onFilesUploaded={handleFilesUploaded}
             />
             <FilesList
@@ -137,7 +136,6 @@ const HomePage: React.FC = () => {
           <div className={styles.column}>
             <h2>Job Descriptions</h2>
             <FilesUpload
-              fileType="JD"
               onFilesUploaded={handleFilesUploaded}
             />
             <FilesList
