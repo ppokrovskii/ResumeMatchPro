@@ -1,6 +1,6 @@
 import { CloseOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useMsal } from '@azure/msal-react';
-import { Button, Card, Divider, List, Tag, Typography, message } from 'antd';
+import { Button, Card, Divider, List, Spin, Tag, Typography, message } from 'antd';
 import React from 'react';
 import { RmpFile, downloadFile } from '../../services/fileService';
 import styles from './FileDetails.module.css';
@@ -8,15 +8,24 @@ import styles from './FileDetails.module.css';
 const { Title, Text, Paragraph } = Typography;
 
 interface FileDetailsProps {
-    file: RmpFile;
-    onBack: () => void;
+    file: RmpFile | null;
+    isLoading?: boolean;
+    onClose: () => void;
+    canRunMatching?: boolean;
 }
 
-const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack }) => {
+const FileDetails: React.FC<FileDetailsProps> = ({
+    file,
+    isLoading = false,
+    onClose,
+    canRunMatching = false
+}) => {
     const { instance, accounts } = useMsal();
 
     const handleDownload = async () => {
         try {
+            if (!file) return;
+
             const account = accounts[0];
             if (!account) {
                 throw new Error('No account found');
@@ -30,7 +39,7 @@ const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack }) => {
     };
 
     const renderPersonalDetails = () => {
-        if (!file.structure?.personal_details?.length) return null;
+        if (!file?.structure?.personal_details?.length) return null;
         return (
             <div className={styles.section}>
                 <Title level={5}>Personal Details</Title>
@@ -48,7 +57,7 @@ const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack }) => {
     };
 
     const renderSkills = () => {
-        if (!file.structure?.skills?.length) return null;
+        if (!file?.structure?.skills?.length) return null;
         return (
             <div className={styles.section}>
                 <Title level={5}>Skills</Title>
@@ -62,7 +71,7 @@ const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack }) => {
     };
 
     const renderExperience = () => {
-        if (!file.structure?.experience?.length) return null;
+        if (!file?.structure?.experience?.length) return null;
         return (
             <div className={styles.section}>
                 <Title level={5}>Experience</Title>
@@ -84,6 +93,36 @@ const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack }) => {
         );
     };
 
+    if (isLoading) {
+        return (
+            <div className={styles.container}>
+                <div className={styles.loadingContainer}>
+                    <Spin size="large" />
+                    <Text>Loading file details...</Text>
+                </div>
+            </div>
+        );
+    }
+
+    if (!file) {
+        return (
+            <div className={styles.container}>
+                <div className={styles.header}>
+                    <Button
+                        type="text"
+                        icon={<CloseOutlined />}
+                        onClick={onClose}
+                        className={styles.closeButton}
+                        aria-label="Close file details"
+                    />
+                </div>
+                <div className={styles.content}>
+                    <Text>No file selected.</Text>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className={styles.container}>
             <div className={styles.header}>
@@ -102,7 +141,7 @@ const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack }) => {
                 <Button
                     type="text"
                     icon={<CloseOutlined />}
-                    onClick={onBack}
+                    onClick={onClose}
                     className={styles.closeButton}
                     aria-label="Close file details"
                 />
@@ -135,6 +174,12 @@ const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack }) => {
                                     />
                                 </div>
                             </>
+                        )}
+
+                        {canRunMatching && (
+                            <div className={styles.actions}>
+                                <Button type="primary">Run Matching</Button>
+                            </div>
                         )}
                     </>
                 ) : (
