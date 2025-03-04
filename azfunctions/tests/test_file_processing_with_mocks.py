@@ -183,7 +183,7 @@ def test_file_processing_core_workflow():
         # Step 4: Create file metadata
         print("Step 4: Creating file metadata")
         file_type = FileType.JD
-        file_metadata = _create_file_metadata(request, structured_info, file_type, document_analysis)
+        file_metadata = _create_file_metadata(request, document_analysis)
         
         # Assert expected behavior for file metadata
         assert file_metadata is not None
@@ -220,7 +220,7 @@ def test_file_processing_core_workflow():
         
         # Patch the QueueService in the _queue_for_matching function
         with patch('file_processing.file_processing.QueueService', return_value=mock_queue_service):
-            _queue_for_matching(str(file_id), "test_user", file_type)
+            _queue_for_matching(request, file_type)
             
             # Assert expected behavior for queue service
             assert mock_queue_service.create_queue_if_not_exists.call_count == 1

@@ -17,14 +17,28 @@ from shared.openai_service.openai_service import OpenAIService
 # create blueprint with Queue trigger
 file_processing_bp = func.Blueprint()
 
+# Function for integration tests
+def parse_resume_with_document_intelligence(file_content: bytes, filename: str, document_intelligence_service: DocumentIntelligenceService) -> dict:
+    """
+    Parse a resume file using Document Intelligence service.
+    This function is used for integration testing.
+    """
+    return _extract_document_content(file_content, filename, document_intelligence_service)
+
 @file_processing_bp.queue_trigger(arg_name="msg", queue_name="processing-queue", connection="AzureWebJobsStorage")
-def process_file(msg: func.QueueMessage):
+def process_file(msg: func.QueueMessage) -> func.HttpResponse:
     """
     Process a file uploaded by a user.
     1. Extract text and structure from the file.
     2. Analyze the document to determine its type (CV/Resume or Job Description).
     3. Store the structured data in the database.
     4. Queue the file for matching.
+    """
+    return _process_file_impl(msg)
+
+def _process_file_impl(msg: func.QueueMessage) -> func.HttpResponse:
+    """
+    Implementation of process_file that can be called directly in tests.
     """
     try:
         logging.debug("DEBUG: process_file function called")
@@ -36,27 +50,26 @@ def process_file(msg: func.QueueMessage):
         file_processing_request = _parse_queue_message(msg)
         logging.debug(f"DEBUG: Parsed request: {file_processing_request}")
         
-        # Step 2: Create services
+        # Step 2: Create services using getter functions
         logging.debug("DEBUG: About to create blob service")
-        blob_service = FilesBlobService()
+        blob_service = _get_blob_service()
         logging.debug(f"DEBUG: Created blob service: {blob_service}")
         logging.debug(f"DEBUG: Blob service type: {type(blob_service)}")
         logging.debug(f"DEBUG: Blob service class: {blob_service.__class__}")
         logging.debug(f"DEBUG: Blob service module: {blob_service.__class__.__module__}")
         logging.debug(f"DEBUG: Blob service container name: {blob_service.container_name}")
+        
         logging.debug("DEBUG: About to create document intelligence service")
-        document_intelligence_service = DocumentIntelligenceService(
-            key=os.getenv('AZURE_DOCUMENT_INTELLIGENCE_KEY'),
-            endpoint=os.getenv('AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT')
-        )
+        document_intelligence_service = _get_document_intelligence_service()
         logging.debug(f"DEBUG: Created document intelligence service: {document_intelligence_service}")
+        
         logging.debug("DEBUG: About to create OpenAI service")
-        openai_service = OpenAIService()
+        openai_service = _get_openai_service()
         logging.debug(f"DEBUG: Created OpenAI service: {openai_service}")
         
         # Step 3: Get file content
         logging.debug(f"DEBUG: About to get file content from {blob_service.container_name}/{file_processing_request.filename}")
-        content = blob_service.get_file_content(file_processing_request.filename)
+        content = blob_service.get_file_content(blob_service.container_name, file_processing_request.filename)
         logging.debug(f"DEBUG: Got file content, length: {len(content) if content else 'None'}")
         if not content:
             raise ValueError(f"File content is empty or file not found: {file_processing_request.filename}")
@@ -89,7 +102,7 @@ def process_file(msg: func.QueueMessage):
         logging.debug("DEBUG: About to create file metadata")
         file_metadata = _create_file_metadata(file_processing_request, document_analysis)
         logging.debug("DEBUG: About to get repository")
-        repository = FilesRepository(get_cosmos_db_client())
+        repository = _get_repository()
         logging.debug(f"DEBUG: Got repository: {repository}")
         logging.debug("DEBUG: About to upsert file")
         repository.upsert_file(file_metadata)
@@ -102,12 +115,24 @@ def process_file(msg: func.QueueMessage):
         
         return func.HttpResponse(f"File processed successfully. ID: {file_processing_request.id}.", status_code=200)
         
+    except ValidationError as e:
+        logging.error(f"ERROR in process_file - Validation error: {str(e)}")
+        logging.error(f"ERROR type: {type(e)}")
+        logging.error(f"ERROR traceback: {traceback.format_exc()}")
+        # Re-raise the exception to be caught by the test
+        raise e
+    except TimeoutError as e:
+        logging.error(f"ERROR in process_file - Timeout error: {str(e)}")
+        logging.error(f"ERROR traceback: {traceback.format_exc()}")
+        # Re-raise the exception to be caught by the test
+        raise e
     except Exception as e:
         logging.error(f"ERROR in process_file: {str(e)}")
         logging.error(f"ERROR type: {type(e)}")
         # Print traceback for debugging
         logging.error(f"ERROR traceback: {traceback.format_exc()}")
-        return func.HttpResponse(f"Error processing file: {str(e)}", status_code=500)
+        # Re-raise the exception to be caught by the test
+        raise e
 
 
 def _parse_queue_message(msg: func.QueueMessage) -> FileProcessingRequest:
@@ -118,11 +143,11 @@ def _parse_queue_message(msg: func.QueueMessage) -> FileProcessingRequest:
     except ValidationError as e:
         logging.error(f"Validation error creating FileProcessingRequest: {e}")
         logging.error("Invalid fields: " + ", ".join(str(err["loc"]) for err in e.errors()))
-        raise ValueError(f"Invalid message: {e}")
-    except Exception as e:
-        logging.error(f"Error parsing message: {str(e)}")
-        logging.error(f"Raw message content: {msg.get_body().decode('utf-8')}")
+        # Re-raise the validation error instead of converting to ValueError
         raise
+    except Exception as e:
+        logging.error(f"Error parsing queue message: {e}")
+        raise ValueError(f"Invalid message format: {e}")
 
 
 def _get_document_intelligence_service() -> DocumentIntelligenceService:
@@ -137,6 +162,21 @@ def _get_repository() -> FilesRepository:
     """Initialize and return Files Repository."""
     cosmos_db_client = get_cosmos_db_client()
     return FilesRepository(cosmos_db_client)
+
+
+def _get_blob_service() -> FilesBlobService:
+    """Initialize and return Files Blob Service."""
+    return FilesBlobService()
+
+
+def _get_openai_service() -> OpenAIService:
+    """Initialize and return OpenAI Service."""
+    return OpenAIService()
+
+
+def _get_queue_service() -> QueueService:
+    """Initialize and return Queue Service."""
+    return QueueService()
 
 
 def _extract_document_content(content: bytes, filename: str, document_intelligence_service: DocumentIntelligenceService) -> dict:
@@ -157,32 +197,31 @@ def _extract_document_content(content: bytes, filename: str, document_intelligen
 
 def _create_file_metadata(
     request: FileProcessingRequest, 
-    structured_info: dict, 
-    file_type: FileType, 
     document_analysis
 ) -> FileMetadataDb:
     """Create file metadata object with structured information."""
     request_data = request.model_dump()
-    request_data.pop('type')  # Remove type from request data
+    file_type = request_data.pop('type', None) or document_analysis.document_type  # Get type from request or analysis
     return FileMetadataDb(
         **request_data,
-        **structured_info,
         type=file_type,
         document_analysis=document_analysis
     )
 
 
-def _queue_for_matching(file_id: str, user_id: str, file_type: FileType):
+def _queue_for_matching(request: FileProcessingRequest, file_type: FileType):
     """Send file to matching queue for further processing."""
     queue_message = FileProcessingOutputQueueMessage(
-        file_id=file_id,
-        user_id=user_id,
-        type=file_type
+        file_id=request.id,
+        user_id=request.user_id,
+        type=file_type,
+        filename=request.filename,
+        url=request.url
     )
     
-    queue_service = QueueService(connection_string=os.getenv("AzureWebJobsStorage"))
+    queue_service = _get_queue_service()
     queue_service.create_queue_if_not_exists("matching-queue")
     queue_service.send_message("matching-queue", queue_message.model_dump_json())
-    logging.info(f"File {file_id} queued for matching")
+    logging.info(f"File {request.id} queued for matching")
     
     
