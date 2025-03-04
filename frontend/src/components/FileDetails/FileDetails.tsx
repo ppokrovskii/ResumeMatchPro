@@ -12,6 +12,7 @@ interface FileDetailsProps {
     isLoading?: boolean;
     onClose: () => void;
     canRunMatching?: boolean;
+    onRunMatching?: () => Promise<void>;
 }
 
 const FileDetails: React.FC<FileDetailsProps> = ({
