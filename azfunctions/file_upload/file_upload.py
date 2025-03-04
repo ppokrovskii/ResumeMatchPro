@@ -105,13 +105,23 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
         try:
             if not user_repository.can_upload_file(user_id):
                 return func.HttpResponse(
-                    json.dumps("File upload limit reached"),
+                    json.dumps({
+                        "error": {
+                            "code": "FILE_UPLOAD_LIMIT_REACHED",
+                            "message": "You have reached your file upload limit. Please delete some files before uploading new ones."
+                        }
+                    }),
                     status_code=403,
                     mimetype="application/json"
                 )
         except ValueError as e:
             return func.HttpResponse(
-                json.dumps(f"User not found: {str(e)}"),
+                json.dumps({
+                    "error": {
+                        "code": "USER_NOT_FOUND",
+                        "message": f"User not found: {str(e)}"
+                    }
+                }),
                 status_code=404,
                 mimetype="application/json"
             )

@@ -43,7 +43,10 @@ const FilesUpload: React.FC<FilesUploadProps> = ({ onFilesUploaded, fileType }) 
         } catch (error) {
             console.error('Error uploading files:', error);
             onError?.(error as Error);
-            message.error('Upload failed');
+
+            // Display user-friendly error message
+            const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+            message.error(errorMessage);
         } finally {
             uploadingFiles.current.delete(fileKey);
         }

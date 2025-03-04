@@ -157,9 +157,24 @@ export const uploadFiles = async (
         console.error('Upload failed:', {
             status: response.status,
             statusText: response.statusText,
-            headers: Object.fromEntries(response.headers.entries()),
-            body: await response.text()
+            headers: Object.fromEntries(response.headers.entries())
         });
+
+        // Try to parse the error response as JSON
+        let errorData;
+        try {
+            const errorText = await response.text();
+            console.error('Error response body:', errorText);
+            errorData = JSON.parse(errorText);
+
+            if (errorData && errorData.error) {
+                throw new Error(errorData.error.message || 'Upload failed');
+            }
+        } catch (parseError) {
+            // If JSON parsing fails, throw generic error
+            console.error('Error parsing error response:', parseError);
+        }
+
         throw new Error('Upload failed');
     }
 
