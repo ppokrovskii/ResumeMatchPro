@@ -1,2 +1,3 @@
-during commit do not skip tests configured as pre-hook script
-when merging develop to main never delete develop
+never delete 'develop' branch during merge
+never use no-verify flag on git commit command
+never disable pre-commit hooks

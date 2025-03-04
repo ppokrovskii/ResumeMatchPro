@@ -45,7 +45,10 @@ def process_file(msg: func.QueueMessage):
         logging.debug(f"DEBUG: Blob service module: {blob_service.__class__.__module__}")
         logging.debug(f"DEBUG: Blob service container name: {blob_service.container_name}")
         logging.debug("DEBUG: About to create document intelligence service")
-        document_intelligence_service = DocumentIntelligenceService()
+        document_intelligence_service = DocumentIntelligenceService(
+            key=os.getenv('AZURE_DOCUMENT_INTELLIGENCE_KEY'),
+            endpoint=os.getenv('AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT')
+        )
         logging.debug(f"DEBUG: Created document intelligence service: {document_intelligence_service}")
         logging.debug("DEBUG: About to create OpenAI service")
         openai_service = OpenAIService()

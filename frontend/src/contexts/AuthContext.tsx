@@ -82,12 +82,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             instance.setActiveAccount(account);
           }
 
-          const response = await instance.acquireTokenSilent({
+          // First check if the token is expired
+          const tokenExpirationCheck = await instance.acquireTokenSilent({
             account: account,
             scopes: ["openid", "profile"]
-          });
+          }).catch(() => null);
 
-          const claims = response.idTokenClaims as ExtendedIdTokenClaims;
+          // If token is expired or not present, redirect to login immediately
+          if (!tokenExpirationCheck) {
+            // Silent token acquisition failed, redirecting to login
+            setUser(null);
+            await instance.loginRedirect();
+            return;
+          }
+
+          const claims = tokenExpirationCheck.idTokenClaims as ExtendedIdTokenClaims;
           const userIsNew = claims.newUser || false;
 
           // Check if we've already registered this user
@@ -98,10 +107,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (userIsNew && !isAlreadyRegistered) {
             try {
               await registerUser(claims, account, instance);
-              // Add user to registered users list
               registeredUsers.push(claims.sub);
               localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-              // Show welcome message only once per session
               if (!hasShownWelcome) {
                 notification.success({
                   message: 'Welcome to Resume Match Pro!',
@@ -126,32 +133,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
         } catch (error) {
           console.error('Failed to get token claims:', error);
-          // Try to get a new token if silent acquisition fails
-          try {
-            const response = await instance.acquireTokenPopup({
-              account: account,
-              scopes: ["openid", "profile"]
-            });
-
-            const claims = response.idTokenClaims as ExtendedIdTokenClaims;
-            setUser({
-              name: account.name || '',
-              isAdmin: claims?.extension_IsAdmin || false,
-              idTokenClaims: claims,
-              account: account,
-              homeAccountId: account.homeAccountId,
-              isNewUser: false
-            });
-          } catch (popupError) {
-            console.error('Failed to get token via popup:', popupError);
-            setUser({
-              name: account.name || '',
-              isAdmin: false,
-              account: account,
-              homeAccountId: account.homeAccountId,
-              isNewUser: false
-            });
-          }
+          // Clear user state and redirect to login
+          setUser(null);
+          await instance.loginRedirect();
         }
       } else {
         setUser(null);
