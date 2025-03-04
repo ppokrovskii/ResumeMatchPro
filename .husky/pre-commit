@@ -11,15 +11,4 @@ npm run test:ci || exit 1
 cd ../azfunctions
 echo "Running Azure Functions tests..."
 # Run tests and store the exit code, but don't exit immediately on failure
-python -m pytest tests/ -v -n auto -k "not external_services" || {
-  echo "=============================================="
-  echo "WARNING: Some tests failed, but they may require external services"
-  echo "To run all tests, make sure you have the following services running:"
-  echo "- Azure Cosmos DB Emulator (port 8081)"
-  echo "- Azure Storage Emulator (ports 10000, 10001, 10002)"
-  echo "=============================================="
-  echo "Proceeding with commit anyway..."
-  echo "You can still run the full test suite manually with:"
-  echo "cd azfunctions && python -m pytest tests/ -v"
-  echo "=============================================="
-}
+python -m pytest tests/ -v

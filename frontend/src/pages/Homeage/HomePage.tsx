@@ -33,7 +33,7 @@ const HomePage: React.FC = () => {
     fileDetails: null,
   });
 
-  const handleFilesUploaded = async (response: { files: { name: string }[] }, fileType: 'CV' | 'JD') => {
+  const handleFilesUploaded = async (response: { files: { name: string }[] }) => {
     if (!user) return;
 
     try {
@@ -59,25 +59,49 @@ const HomePage: React.FC = () => {
 
       // Fetch file details first
       const fileDetails = await getFile(file.id, account, instance);
+      const fileType = file.type;
 
       // Update only the relevant column state without affecting the other column
-      if (file.type === 'JD') {
+      if (fileType === 'JD') {
         setJdColumnState({ isShowingDetails: true, selectedFile: file, fileDetails });
       } else {
         setCvColumnState({ isShowingDetails: true, selectedFile: file, fileDetails });
       }
 
       // Get matching results
-      const results = await getMatchingResults(file.id, file.type, account, instance);
+      const results = await getMatchingResults(file.id, fileType, account, instance);
       const scoresMap: { [key: string]: number } = {};
       results.forEach(result => {
-        const targetFile = file.type === 'CV' ? result.jd : result.cv;
+        const targetFile = fileType === 'CV' ? result.jd : result.cv;
         scoresMap[targetFile.id] = result.overall_match_percentage;
       });
       setMatchingScores(scoresMap);
     } catch (error) {
       console.error('Error getting file details and matching results:', error);
       message.error('Failed to load file details and matching results');
+    }
+  };
+
+  const handleCloseDetails = () => {
+    setJdColumnState({ isShowingDetails: false, selectedFile: null, fileDetails: null });
+    setCvColumnState({ isShowingDetails: false, selectedFile: null, fileDetails: null });
+  };
+
+  const handleRunMatching = async () => {
+    if (!user) return;
+
+    try {
+      const account = accounts[0];
+      if (!account) {
+        throw new Error('No account found');
+      }
+
+      // Implement the logic to run matching
+      // This is a placeholder and should be replaced with the actual implementation
+      message.info('Running matching...');
+    } catch (error) {
+      console.error('Error running matching:', error);
+      message.error('Failed to run matching');
     }
   };
 
@@ -90,57 +114,70 @@ const HomePage: React.FC = () => {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.columnsContainer}>
-        <div className={styles.column}>
-          {jdColumnState.isShowingDetails && jdColumnState.fileDetails ? (
-            <FileDetails
-              file={jdColumnState.fileDetails}
-              onBack={() => setJdColumnState({ isShowingDetails: false, selectedFile: null, fileDetails: null })}
+    <div className={styles.homePage}>
+      {isAuthenticated && (
+        <div className={styles.columns}>
+          <div className={styles.column}>
+            <h2>CVs</h2>
+            <FilesUpload
+              fileType="CV"
+              onFilesUploaded={handleFilesUploaded}
             />
-          ) : (
-            <>
-              <h2 className={styles.columnTitle}>Job Descriptions</h2>
-              <div className={styles.uploadSection}>
-                <FilesUpload onFilesUploaded={(files) => handleFilesUploaded(files, 'JD')} fileType='JD' />
-              </div>
-              <FilesList
-                files={jdFiles}
-                onFileSelect={handleFileSelect}
-                selectedFile={jdColumnState.selectedFile}
-                fileType="JD"
-                matchingScores={cvColumnState.selectedFile?.type === 'CV' ? matchingScores : {}}
-                refreshFiles={refreshFiles}
-                isLoading={isLoading}
+            <FilesList
+              files={cvFiles}
+              isLoading={isLoading}
+              onFileSelect={handleFileSelect}
+              selectedFile={cvColumnState.selectedFile}
+              fileType="CV"
+              matchingScores={matchingScores}
+              refreshFiles={refreshFiles}
+            />
+          </div>
+
+          <div className={styles.column}>
+            <h2>Job Descriptions</h2>
+            <FilesUpload
+              fileType="JD"
+              onFilesUploaded={handleFilesUploaded}
+            />
+            <FilesList
+              files={jdFiles}
+              isLoading={isLoading}
+              onFileSelect={handleFileSelect}
+              selectedFile={jdColumnState.selectedFile}
+              fileType="JD"
+              matchingScores={matchingScores}
+              refreshFiles={refreshFiles}
+            />
+          </div>
+
+          {(cvColumnState.isShowingDetails || jdColumnState.isShowingDetails) && (
+            <div className={styles.column}>
+              <h2>
+                {cvColumnState.isShowingDetails ? 'CV Details' : 'JD Details'}
+              </h2>
+              <FileDetails
+                file={
+                  cvColumnState.isShowingDetails
+                    ? cvColumnState.fileDetails
+                    : jdColumnState.fileDetails
+                }
+                isLoading={
+                  (cvColumnState.isShowingDetails && !cvColumnState.fileDetails) ||
+                  (jdColumnState.isShowingDetails && !jdColumnState.fileDetails)
+                }
+                onClose={handleCloseDetails}
+                canRunMatching={cvColumnState.isShowingDetails && jdFiles.length > 0}
+                onRunMatching={
+                  cvColumnState.isShowingDetails
+                    ? handleRunMatching
+                    : undefined
+                }
               />
-            </>
+            </div>
           )}
         </div>
-        <div className={styles.column}>
-          {cvColumnState.isShowingDetails && cvColumnState.fileDetails ? (
-            <FileDetails
-              file={cvColumnState.fileDetails}
-              onBack={() => setCvColumnState({ isShowingDetails: false, selectedFile: null, fileDetails: null })}
-            />
-          ) : (
-            <>
-              <h2 className={styles.columnTitle}>CVs</h2>
-              <div className={styles.uploadSection}>
-                <FilesUpload onFilesUploaded={(files) => handleFilesUploaded(files, 'CV')} fileType='CV' />
-              </div>
-              <FilesList
-                files={cvFiles}
-                onFileSelect={handleFileSelect}
-                selectedFile={cvColumnState.selectedFile}
-                fileType="CV"
-                matchingScores={jdColumnState.selectedFile?.type === 'JD' ? matchingScores : {}}
-                refreshFiles={refreshFiles}
-                isLoading={isLoading}
-              />
-            </>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -1,3 +1,8 @@
 never delete 'develop' branch during merge
 never use no-verify flag on git commit command
 never disable pre-commit hooks
+pre-commit hooks must run all the tests and fail if any test fails
+before fixing a defect write a auto-test to reproduce it and only after that proceed with the fix
+before refactoring of any module cover that module with tests ensure at least 80% of coverage
+after implementing a new requirement or user story write tests for it
+in tests do not mock cosmos db, blob storage and sqs, I have local emulators for them
