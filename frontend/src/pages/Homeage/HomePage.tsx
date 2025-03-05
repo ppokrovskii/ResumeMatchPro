@@ -173,9 +173,17 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const handleCloseDetails = () => {
-    setJdColumnState({ isShowingDetails: false, selectedFile: null, fileDetails: null });
-    setCvColumnState({ isShowingDetails: false, selectedFile: null, fileDetails: null });
+  const handleCloseDetails = (fileType?: string) => {
+    // If fileType is provided, only close that specific column
+    if (fileType === 'JD') {
+      setJdColumnState({ isShowingDetails: false, selectedFile: null, fileDetails: null });
+    } else if (fileType === 'CV') {
+      setCvColumnState({ isShowingDetails: false, selectedFile: null, fileDetails: null });
+    } else {
+      // Fallback to closing both if no fileType is specified (for backward compatibility)
+      setJdColumnState({ isShowingDetails: false, selectedFile: null, fileDetails: null });
+      setCvColumnState({ isShowingDetails: false, selectedFile: null, fileDetails: null });
+    }
   };
 
   const handleRunMatching = async () => {
@@ -222,7 +230,7 @@ const HomePage: React.FC = () => {
                   <FileDetails
                     file={cvColumnState.fileDetails}
                     isLoading={!cvColumnState.fileDetails}
-                    onClose={handleCloseDetails}
+                    onClose={() => handleCloseDetails('CV')}
                     canRunMatching={jdFiles.length > 0}
                     onRunMatching={handleRunMatching}
                   />
@@ -250,7 +258,7 @@ const HomePage: React.FC = () => {
                   <FileDetails
                     file={jdColumnState.fileDetails}
                     isLoading={!jdColumnState.fileDetails}
-                    onClose={handleCloseDetails}
+                    onClose={() => handleCloseDetails('JD')}
                     canRunMatching={false}
                     onRunMatching={undefined}
                   />
