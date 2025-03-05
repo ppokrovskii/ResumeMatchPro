@@ -32,7 +32,7 @@ class DocumentStyle(BaseModel):
 class FileMetadataDb(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     filename: str
-    type: FileType
+    type: Optional[FileType] = None
     user_id: str
     url: str
     text: Optional[str] = None

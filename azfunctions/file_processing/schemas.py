@@ -11,7 +11,7 @@ class FileType(str, Enum):
 class FileProcessingBase(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     filename: str
-    type: FileType
+    type: Optional[FileType] = None
     user_id: str
     url: str
 

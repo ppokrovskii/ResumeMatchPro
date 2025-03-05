@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Optional
 from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
@@ -9,7 +10,7 @@ class FileType(str, Enum):
     
 class FileUploadBase(BaseModel):
     filename: str
-    type: FileType
+    type: Optional[FileType] = None
     user_id: str
 
 class FileUploadRequest(FileUploadBase):

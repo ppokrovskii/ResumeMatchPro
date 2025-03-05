@@ -568,6 +568,46 @@ def test_file_upload_bytes_with_content_disposition(repository, user_repository,
     queue_service.create_queue_if_not_exists.assert_called_once()
     queue_service.send_message.assert_called_once()
 
+def test_file_upload_without_type(repository, user_repository, blob_service, test_user, monkeypatch):
+    # OPTIMIZATION: Use the queue_service fixture instead of monkeypatching
+    queue_service = MagicMock()
+    queue_service.create_queue_if_not_exists = MagicMock()
+    queue_service.send_message = MagicMock()
+    monkeypatch.setattr('file_upload.file_upload.QueueService', lambda connection_string=None: queue_service)
+    
+    # Create mock file
+    filename = f'test_{uuid4()}.pdf'
+    mock_file = MockFile(filename)
+    
+    # Create request without type
+    req = MockHttpRequest(
+        method='POST',
+        url='/api/files/upload',
+        params={},
+        body=None
+    )
+    req.files = MockFiles({'content': [mock_file]})
+    req.form = {}  # No type specified
+    req.headers = {'X-MS-CLIENT-PRINCIPAL': create_mock_b2c_token(test_user.userId)}
+    
+    # Test the function
+    response = _files_upload(req, blob_service, repository, user_repository)
+    
+    # Assert
+    assert response.status_code == 200
+    response_body = json.loads(response.get_body())
+    assert len(response_body["files"]) == 1
+    assert response_body["files"][0]["filename"] == filename
+    assert response_body["files"][0]["url"] == "https://example.com/test-blob"
+    assert response_body["files"][0]["user_id"] == test_user.userId
+    
+    # Verify interactions
+    blob_service.upload_blob.assert_called_once()
+    repository.upsert_file.assert_called_once()
+    user_repository.increment_files_count.assert_called_once_with(test_user.userId)
+    queue_service.create_queue_if_not_exists.assert_called_once()
+    queue_service.send_message.assert_called_once()
+
 # OPTIMIZATION: Remove the dummy classes that are no longer needed
 # The DummyQueueService can be kept for backward compatibility with other tests
 # that might still use it 
