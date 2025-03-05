@@ -2,7 +2,9 @@
 
 .container {
   padding: 24px;
-  height: 100vh;
+  max-width: 1600px;
+  margin: 0 auto;
+  min-height: calc(100vh - 64px);
   /* Use viewport height */
   overflow: hidden;
   display: flex;
@@ -13,40 +15,42 @@
 }
 
 .globalUploadMessage {
-  margin-bottom: 20px;
   width: 100%;
+  margin-bottom: 24px;
 }
 
 .columnsContainer {
   display: flex;
   gap: 24px;
-  flex: 1;
-  /* Take remaining height */
-  min-height: 0;
-  /* Allow container to shrink */
+  height: calc(100% - 100px);
+  margin-bottom: 20px;
 }
 
 .column {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  /* Prevent flex items from overflowing */
-  background: white;
+  background-color: #ffffff;
   border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  /* Remove max-width constraint to allow flexible layouts */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: all 0.2s ease;
+  border: 1px solid #f0f0f0;
+}
+
+.column:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .columnTitle {
-  margin: 0 0 16px 0;
   font-size: 20px;
   font-weight: 600;
-  flex-shrink: 0;
-  /* Prevent title from shrinking */
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #262626;
 }
 
 .uploadSection {
@@ -79,22 +83,21 @@
 
 @media screen and (max-width: 768px) {
   .container {
-    padding: 1rem;
-    height: auto;
-    min-height: 100vh;
+    padding: 16px;
   }
 
   .columnsContainer {
     flex-direction: column;
-    gap: 1rem;
+    gap: 16px;
   }
 
   .column {
-    min-height: 300px;
-    max-width: 100%;
+    width: 100%;
+    padding: 16px;
+    margin-bottom: 16px;
   }
 
   .globalUploadMessage {
-    margin-bottom: 15px;
+    margin-bottom: 16px;
   }
 }

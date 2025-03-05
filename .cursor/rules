@@ -6,3 +6,4 @@ before fixing a defect write a auto-test to reproduce it and only after that pro
 before refactoring of any module cover that module with tests ensure at least 80% of coverage
 after implementing a new requirement or user story write tests for it
 in tests do not mock cosmos db, blob storage and sqs, I have local emulators for them
+after a commit push to develop, watch github actions until succesful completion.

@@ -46,6 +46,48 @@ const HomePage: React.FC = () => {
     setFileList([]);
   };
 
+  const handleFilesSelected = async (fileList: FileList) => {
+    if (!isAuthenticated || !accounts.length) {
+      message.error('Please sign in to upload files');
+      return;
+    }
+
+    const account = accounts[0];
+    if (!account) {
+      message.error('No account found');
+      return;
+    }
+
+    const files: RcFile[] = [];
+    for (let i = 0; i < fileList.length; i++) {
+      const file = fileList[i] as unknown as RcFile;
+      if (file.size / 1024 / 1024 < 10) {  // 10MB size limit
+        files.push(file);
+      } else {
+        message.error(`${file.name} is too large, please upload files smaller than 10MB.`);
+      }
+    }
+
+    if (files.length === 0) return;
+
+    try {
+      message.loading('Uploading files...', 0);
+      const response = await uploadFiles(files, account, instance);
+      message.destroy();
+
+      if (files.length === 1) {
+        message.success(`${files[0].name} uploaded successfully`);
+      } else {
+        message.success(`${files.length} files uploaded successfully`);
+      }
+
+      handleFilesUploaded(response);
+    } catch (error) {
+      message.destroy();
+      message.error('Upload failed: ' + (error instanceof Error ? error.message : String(error)));
+    }
+  };
+
   const handleUpload = async (options: UploadRequestOption) => {
     const { file, onSuccess, onError } = options;
     const rcFile = file as RcFile;
@@ -167,7 +209,10 @@ const HomePage: React.FC = () => {
       {isAuthenticated && (
         <>
           <div className={styles.globalUploadMessage}>
-            <UploadMessage onUploadClick={handleUploadClick} />
+            <UploadMessage
+              onUploadClick={handleUploadClick}
+              onFilesSelected={handleFilesSelected}
+            />
           </div>
           <div className={styles.columnsContainer}>
             <div className={styles.column}>

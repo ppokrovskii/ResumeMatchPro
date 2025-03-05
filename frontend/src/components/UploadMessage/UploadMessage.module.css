@@ -1,23 +1,74 @@
 .uploadMessage {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
-    margin-bottom: 16px;
-    background-color: #f9f9f9;
-    border-radius: 6px;
-    border: 1px dashed #d9d9d9;
+    justify-content: space-between;
+    padding: 16px 24px;
+    background-color: #f9f9ff;
+    border: 1px dashed #bdc3c7;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
-.uploadMessage span {
-    font-size: 14px;
-    color: #666;
+.uploadMessage:hover {
+    border-color: #1890ff;
+    background-color: #f0f5ff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.messageContent {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.fileIcon {
+    font-size: 22px;
+    color: #1890ff;
+    margin-right: 12px;
+}
+
+.messageContent span {
+    font-size: 15px;
+    color: #52525b;
+    max-width: 70%;
+}
+
+.uploadButton {
+    margin-left: 16px;
+    transition: all 0.3s ease;
+    color: white !important;
+}
+
+.uploadButton:hover {
+    transform: translateY(-2px);
+}
+
+.hiddenFileInput {
+    display: none;
 }
 
 @media screen and (max-width: 768px) {
     .uploadMessage {
         flex-direction: column;
-        gap: 10px;
-        align-items: flex-start;
+        padding: 16px;
+        gap: 16px;
+    }
+
+    .messageContent {
+        justify-content: center;
+        text-align: center;
+        margin-bottom: 8px;
+    }
+
+    .messageContent span {
+        max-width: 100%;
+        text-align: center;
+    }
+
+    .uploadButton {
+        margin-left: 0;
+        width: 100%;
     }
 }
