@@ -6,14 +6,12 @@ import { uploadFiles } from '../../services/fileService';
 import './GlobalDragDrop.css';
 
 interface GlobalDragDropProps {
-    onFilesUploaded: (response: { files: { name: string }[] }, fileType: 'CV' | 'JD') => void;
-    defaultFileType?: 'CV' | 'JD';
+    onFilesUploaded: (response: { files: { name: string }[] }) => void;
     children: React.ReactNode;
 }
 
 const GlobalDragDrop: React.FC<GlobalDragDropProps> = ({
     onFilesUploaded,
-    defaultFileType = 'CV',
     children
 }) => {
     const [isDragging, setIsDragging] = useState(false);
@@ -85,24 +83,15 @@ const GlobalDragDrop: React.FC<GlobalDragDropProps> = ({
                 throw new Error('No account found');
             }
 
-            // Show file type selection if multiple files are dropped
-            if (validFiles.length > 1) {
-                const userFileType = window.confirm(
-                    'Please select the file type:\n\nClick OK for CVs, Cancel for Job Descriptions'
-                ) ? 'CV' : 'JD';
+            // Process files without asking for file type (auto-detected by backend)
+            const response = await uploadFiles(validFiles, account, instance);
+            onFilesUploaded(response);
 
-                const response = await uploadFiles(validFiles, account, instance);
-                onFilesUploaded(response, userFileType);
-                message.success(`${validFiles.length} files uploaded successfully as ${userFileType}`);
+            // Display success message
+            if (validFiles.length === 1) {
+                message.success(`${validFiles[0].name} uploaded successfully`);
             } else {
-                // For single file, use modal dialog to select type
-                const userFileType = window.confirm(
-                    'Please select the file type:\n\nClick OK for CV, Cancel for Job Description'
-                ) ? 'CV' : 'JD';
-
-                const response = await uploadFiles(validFiles, account, instance);
-                onFilesUploaded(response, userFileType);
-                message.success(`${validFiles[0].name} uploaded successfully as ${userFileType}`);
+                message.success(`${validFiles.length} files uploaded successfully`);
             }
         } catch (error) {
             console.error('Error uploading files:', error);

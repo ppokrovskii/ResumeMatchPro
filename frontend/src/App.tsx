@@ -21,8 +21,8 @@ interface AppProps {
 const AppContent: React.FC = () => {
   const { isAuthenticated } = useContext(AuthContext);
 
-  const handleFilesUploaded = (response: { files: { name: string }[] }, fileType: 'CV' | 'JD') => {
-    message.success(`${response.files.length} ${fileType} files uploaded successfully`);
+  const handleFilesUploaded = (response: { files: { name: string }[] }) => {
+    message.success(`${response.files.length} files uploaded successfully`);
     // Navigate to home page if not already there
     if (window.location.pathname !== '/') {
       window.location.href = '/';

@@ -12,6 +12,11 @@
   box-sizing: border-box;
 }
 
+.globalUploadMessage {
+  margin-bottom: 20px;
+  width: 100%;
+}
+
 .columnsContainer {
   display: flex;
   gap: 24px;
@@ -87,5 +92,9 @@
   .column {
     min-height: 300px;
     max-width: 100%;
+  }
+
+  .globalUploadMessage {
+    margin-bottom: 15px;
   }
 }

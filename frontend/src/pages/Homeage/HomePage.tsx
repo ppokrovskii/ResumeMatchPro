@@ -1,12 +1,13 @@
 import { useMsal } from '@azure/msal-react';
-import { message } from 'antd';
-import React, { useContext, useState } from 'react';
+import { message, Modal, Upload } from 'antd';
+import { RcFile, UploadRequestOption } from 'rc-upload/lib/interface';
+import React, { useContext, useRef, useState } from 'react';
 import FileDetails from '../../components/FileDetails/FileDetails';
 import FilesList from '../../components/FilesList/FilesList';
-import FilesUpload from '../../components/FilesUpload/FilesUpload';
+import UploadMessage from '../../components/UploadMessage/UploadMessage';
 import { AuthContext } from '../../contexts/AuthContext';
 import { useFiles } from '../../hooks/useFiles';
-import { getFile, getMatchingResults, RmpFile } from '../../services/fileService';
+import { getFile, getMatchingResults, RmpFile, uploadFiles } from '../../services/fileService';
 import styles from './HomePage.module.css';
 
 interface ColumnState {
@@ -20,6 +21,9 @@ const HomePage: React.FC = () => {
   const { instance, accounts } = useMsal();
   const { cvFiles, jdFiles, isLoading, refreshFiles } = useFiles(instance, accounts, isAuthenticated);
   const [matchingScores, setMatchingScores] = useState<{ [key: string]: number }>({});
+  const [isUploadModalVisible, setIsUploadModalVisible] = useState(false);
+  const uploadingFiles = useRef<Set<string>>(new Set());
+  const [fileList, setFileList] = useState<RcFile[]>([]);
 
   // Track state for each column
   const [jdColumnState, setJdColumnState] = useState<ColumnState>({
@@ -33,6 +37,50 @@ const HomePage: React.FC = () => {
     fileDetails: null,
   });
 
+  const handleUploadClick = () => {
+    setIsUploadModalVisible(true);
+  };
+
+  const handleUploadModalCancel = () => {
+    setIsUploadModalVisible(false);
+    setFileList([]);
+  };
+
+  const handleUpload = async (options: UploadRequestOption) => {
+    const { file, onSuccess, onError } = options;
+    const rcFile = file as RcFile;
+
+    // Check if this file is already being uploaded
+    const fileKey = `${rcFile.name}-${rcFile.size}-${rcFile.lastModified}`;
+    if (uploadingFiles.current.has(fileKey)) {
+      return;
+    }
+
+    try {
+      uploadingFiles.current.add(fileKey);
+      const account = accounts[0];
+      if (!account) {
+        throw new Error('No account found');
+      }
+
+      const response = await uploadFiles([rcFile], account, instance);
+      handleFilesUploaded(response);
+      onSuccess?.(response);
+      message.success(`${rcFile.name} uploaded successfully`);
+      // Clear the file list after successful upload
+      setFileList([]);
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      onError?.(error as Error);
+
+      // Display user-friendly error message
+      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+      message.error(errorMessage);
+    } finally {
+      uploadingFiles.current.delete(fileKey);
+    }
+  };
+
   const handleFilesUploaded = async (response: { files: { name: string }[] }) => {
     if (!user) return;
 
@@ -44,6 +92,7 @@ const HomePage: React.FC = () => {
 
       await refreshFiles();
       message.success('Files uploaded successfully');
+      setIsUploadModalVisible(false);
     } catch (error) {
       console.error('Error handling uploaded files:', error);
       message.error('Failed to process uploaded files');
@@ -116,69 +165,91 @@ const HomePage: React.FC = () => {
   return (
     <div className={styles.container}>
       {isAuthenticated && (
-        <div className={styles.columnsContainer}>
-          <div className={styles.column}>
-            {cvColumnState.isShowingDetails ? (
-              <>
-                <h2>CV Details</h2>
-                <FileDetails
-                  file={cvColumnState.fileDetails}
-                  isLoading={!cvColumnState.fileDetails}
-                  onClose={handleCloseDetails}
-                  canRunMatching={jdFiles.length > 0}
-                  onRunMatching={handleRunMatching}
-                />
-              </>
-            ) : (
-              <>
-                <h2>CVs</h2>
-                <FilesUpload
-                  onFilesUploaded={handleFilesUploaded}
-                />
-                <FilesList
-                  files={cvFiles}
-                  isLoading={isLoading}
-                  onFileSelect={handleFileSelect}
-                  selectedFile={cvColumnState.selectedFile}
-                  fileType="CV"
-                  matchingScores={matchingScores}
-                  refreshFiles={refreshFiles}
-                />
-              </>
-            )}
+        <>
+          <div className={styles.globalUploadMessage}>
+            <UploadMessage onUploadClick={handleUploadClick} />
+          </div>
+          <div className={styles.columnsContainer}>
+            <div className={styles.column}>
+              {cvColumnState.isShowingDetails ? (
+                <>
+                  <h2>CV Details</h2>
+                  <FileDetails
+                    file={cvColumnState.fileDetails}
+                    isLoading={!cvColumnState.fileDetails}
+                    onClose={handleCloseDetails}
+                    canRunMatching={jdFiles.length > 0}
+                    onRunMatching={handleRunMatching}
+                  />
+                </>
+              ) : (
+                <>
+                  <h2>CVs</h2>
+                  <FilesList
+                    files={cvFiles}
+                    isLoading={isLoading}
+                    onFileSelect={handleFileSelect}
+                    selectedFile={cvColumnState.selectedFile}
+                    fileType="CV"
+                    matchingScores={matchingScores}
+                    refreshFiles={refreshFiles}
+                  />
+                </>
+              )}
+            </div>
+
+            <div className={styles.column}>
+              {jdColumnState.isShowingDetails ? (
+                <>
+                  <h2>JD Details</h2>
+                  <FileDetails
+                    file={jdColumnState.fileDetails}
+                    isLoading={!jdColumnState.fileDetails}
+                    onClose={handleCloseDetails}
+                    canRunMatching={false}
+                    onRunMatching={undefined}
+                  />
+                </>
+              ) : (
+                <>
+                  <h2>Job Descriptions</h2>
+                  <FilesList
+                    files={jdFiles}
+                    isLoading={isLoading}
+                    onFileSelect={handleFileSelect}
+                    selectedFile={jdColumnState.selectedFile}
+                    fileType="JD"
+                    matchingScores={matchingScores}
+                    refreshFiles={refreshFiles}
+                  />
+                </>
+              )}
+            </div>
           </div>
 
-          <div className={styles.column}>
-            {jdColumnState.isShowingDetails ? (
-              <>
-                <h2>JD Details</h2>
-                <FileDetails
-                  file={jdColumnState.fileDetails}
-                  isLoading={!jdColumnState.fileDetails}
-                  onClose={handleCloseDetails}
-                  canRunMatching={false}
-                  onRunMatching={undefined}
-                />
-              </>
-            ) : (
-              <>
-                <h2>Job Descriptions</h2>
-                <FilesUpload
-                  onFilesUploaded={handleFilesUploaded}
-                />
-                <FilesList
-                  files={jdFiles}
-                  isLoading={isLoading}
-                  onFileSelect={handleFileSelect}
-                  selectedFile={jdColumnState.selectedFile}
-                  fileType="JD"
-                  matchingScores={matchingScores}
-                  refreshFiles={refreshFiles}
-                />
-              </>
-            )}
-          </div>
-        </div>
+          <Modal
+            title="Upload Files"
+            open={isUploadModalVisible}
+            onCancel={handleUploadModalCancel}
+            footer={null}
+          >
+            <Upload.Dragger
+              multiple
+              accept=".pdf,.docx"
+              customRequest={handleUpload}
+              fileList={fileList}
+              onChange={({ fileList }) => setFileList(fileList as RcFile[])}
+            >
+              <p className="ant-upload-drag-icon">
+                <i className="fas fa-inbox"></i>
+              </p>
+              <p className="ant-upload-text">Click or drag file to this area to upload</p>
+              <p className="ant-upload-hint">
+                Supports PDF and Word documents. Files will be automatically processed.
+              </p>
+            </Upload.Dragger>
+          </Modal>
+        </>
       )}
     </div>
   );
