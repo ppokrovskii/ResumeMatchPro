@@ -1,4 +1,4 @@
-import { DeleteOutlined, StarFilled, StarOutlined } from '@ant-design/icons';
+import { DeleteOutlined, LoadingOutlined, StarFilled, StarOutlined } from '@ant-design/icons';
 import { useMsal } from '@azure/msal-react';
 import { Button, List, message, Spin } from 'antd';
 import React, { useContext } from 'react';
@@ -68,9 +68,12 @@ const FilesList: React.FC<FilesListProps> = ({
     );
   };
 
+  // Custom spinner icon with larger size
+  const antIcon = <LoadingOutlined style={{ fontSize: 24 }} spin />;
+
   return (
     <div className={styles.filesListWrapper}>
-      <Spin spinning={isLoading} tip="Loading files...">
+      <Spin spinning={isLoading} tip="Loading files..." indicator={antIcon}>
         <List
           className={styles.filesList}
           itemLayout="horizontal"

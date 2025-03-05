@@ -2,12 +2,17 @@
     width: 100%;
     min-height: 200px;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .filesList {
     width: 100%;
     overflow-y: auto;
     flex-grow: 1;
+    min-height: 0;
+    /* Prevent overflow issues */
 }
 
 .fileItem {
@@ -57,4 +62,41 @@
 .percentage {
     color: rgba(0, 0, 0, 0.45);
     font-size: 12px;
+}
+
+/* Improve loading state styling */
+:global(.ant-spin-nested-loading) {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+:global(.ant-spin-container) {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+:global(.ant-spin) {
+    max-height: none !important;
+}
+
+:global(.ant-spin-spinning) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+}
+
+:global(.ant-spin-text) {
+    margin-top: 8px;
+    font-size: 14px;
+}
+
+/* Hide scrollbar when loading */
+:global(.ant-spin-spinning + .ant-spin-container) {
+    overflow-y: hidden !important;
 }

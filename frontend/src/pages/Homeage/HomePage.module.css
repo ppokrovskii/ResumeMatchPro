@@ -22,7 +22,9 @@
 .columnsContainer {
   display: flex;
   gap: 24px;
-  height: calc(100% - 100px);
+  flex: 1;
+  min-height: 0;
+  /* Allow content to scroll properly */
   margin-bottom: 20px;
 }
 
@@ -32,10 +34,11 @@
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: auto;
+  min-height: 400px;
+  /* Ensure minimum height for columns */
   transition: all 0.2s ease;
   border: 1px solid #f0f0f0;
 }
@@ -44,19 +47,21 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
-.columnTitle {
-  font-size: 20px;
-  font-weight: 600;
+.column h2 {
+  margin-top: 0;
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid #f0f0f0;
   color: #262626;
+  flex-shrink: 0;
 }
 
-.uploadSection {
-  margin-bottom: 16px;
-  flex-shrink: 0;
-  /* Prevent upload section from shrinking */
+/* Ensure the content area takes up remaining space */
+.column>div {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* FilesList container */
