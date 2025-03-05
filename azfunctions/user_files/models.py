@@ -58,7 +58,7 @@ class ResumeStructure(BaseModel):
 class File(BaseModel):
     id: str
     filename: str
-    type: str
+    type: Optional[str] = None
     user_id: str
     url: str
     structure: Optional[ResumeStructure] = None

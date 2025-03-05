@@ -16,6 +16,7 @@ from shared.files_repository import FilesRepository
 from shared.blob_service import FilesBlobService
 from unittest import mock
 from shared.openai_service.models import DocumentAnalysis, DocumentStructure
+from unittest.mock import Mock
 
 # Configure logging
 logging.basicConfig(
@@ -1147,3 +1148,61 @@ def test_get_file_with_model_structure(repository, blob_service, sample_file_con
     assert len(structure['skills']) == 2
     assert len(structure['experience']) == 1
     assert structure['experience'][0]['title'] == "Developer"
+
+@pytest.mark.external_services
+def test_get_files_with_null_type(repository, blob_service, sample_file_content):
+    # Create a unique filename
+    filename = f"test_file_null_type_{uuid4()}.txt"
+    
+    # Upload file to blob storage
+    blob_url = blob_service.upload_blob(
+        container_name="resume-match-pro-files",
+        filename=filename,
+        content=sample_file_content
+    )
+    
+    # Create file metadata in repository with null type
+    file_metadata = {
+        "id": str(uuid4()),
+        "user_id": "test-user-123",
+        "filename": filename,
+        "type": None,  # Set type to None
+        "url": blob_url,
+        "content_type": "text/plain"
+    }
+    saved_metadata = repository.upsert_file(file_metadata)
+    
+    try:
+        # Create mock request with headers
+        mock_headers = {'X-MS-CLIENT-PRINCIPAL': create_mock_claims("test-user-123")}
+        req = Mock(spec=func.HttpRequest)
+        req.headers = mock_headers
+        req.method = 'GET'
+        req.url = '/api/files'
+        req.params = {}
+        req.route_params = {}
+        req.get_body.return_value = None
+        
+        # Call the function
+        response = _get_files(req, repository)
+        
+        # Check response
+        assert response.status_code == 200
+        response_body = json.loads(response.get_body())
+        assert isinstance(response_body, dict)
+        assert "files" in response_body
+        
+        # Find our file in the response
+        found = False
+        for file in response_body["files"]:
+            if file["filename"] == filename:
+                found = True
+                assert file["type"] is None
+                break
+        
+        assert found, f"File {filename} not found in response"
+        
+    finally:
+        # Clean up - add user_id parameter
+        repository.delete_file(user_id="test-user-123", file_id=saved_metadata.id)
+        blob_service.delete_blob("resume-match-pro-files", filename)
