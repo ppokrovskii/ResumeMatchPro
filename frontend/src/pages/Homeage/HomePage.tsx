@@ -118,62 +118,66 @@ const HomePage: React.FC = () => {
       {isAuthenticated && (
         <div className={styles.columnsContainer}>
           <div className={styles.column}>
-            <h2>CVs</h2>
-            <FilesUpload
-              onFilesUploaded={handleFilesUploaded}
-            />
-            <FilesList
-              files={cvFiles}
-              isLoading={isLoading}
-              onFileSelect={handleFileSelect}
-              selectedFile={cvColumnState.selectedFile}
-              fileType="CV"
-              matchingScores={matchingScores}
-              refreshFiles={refreshFiles}
-            />
+            {cvColumnState.isShowingDetails ? (
+              <>
+                <h2>CV Details</h2>
+                <FileDetails
+                  file={cvColumnState.fileDetails}
+                  isLoading={!cvColumnState.fileDetails}
+                  onClose={handleCloseDetails}
+                  canRunMatching={jdFiles.length > 0}
+                  onRunMatching={handleRunMatching}
+                />
+              </>
+            ) : (
+              <>
+                <h2>CVs</h2>
+                <FilesUpload
+                  onFilesUploaded={handleFilesUploaded}
+                />
+                <FilesList
+                  files={cvFiles}
+                  isLoading={isLoading}
+                  onFileSelect={handleFileSelect}
+                  selectedFile={cvColumnState.selectedFile}
+                  fileType="CV"
+                  matchingScores={matchingScores}
+                  refreshFiles={refreshFiles}
+                />
+              </>
+            )}
           </div>
 
           <div className={styles.column}>
-            <h2>Job Descriptions</h2>
-            <FilesUpload
-              onFilesUploaded={handleFilesUploaded}
-            />
-            <FilesList
-              files={jdFiles}
-              isLoading={isLoading}
-              onFileSelect={handleFileSelect}
-              selectedFile={jdColumnState.selectedFile}
-              fileType="JD"
-              matchingScores={matchingScores}
-              refreshFiles={refreshFiles}
-            />
+            {jdColumnState.isShowingDetails ? (
+              <>
+                <h2>JD Details</h2>
+                <FileDetails
+                  file={jdColumnState.fileDetails}
+                  isLoading={!jdColumnState.fileDetails}
+                  onClose={handleCloseDetails}
+                  canRunMatching={false}
+                  onRunMatching={undefined}
+                />
+              </>
+            ) : (
+              <>
+                <h2>Job Descriptions</h2>
+                <FilesUpload
+                  onFilesUploaded={handleFilesUploaded}
+                />
+                <FilesList
+                  files={jdFiles}
+                  isLoading={isLoading}
+                  onFileSelect={handleFileSelect}
+                  selectedFile={jdColumnState.selectedFile}
+                  fileType="JD"
+                  matchingScores={matchingScores}
+                  refreshFiles={refreshFiles}
+                />
+              </>
+            )}
           </div>
-
-          {(cvColumnState.isShowingDetails || jdColumnState.isShowingDetails) && (
-            <div className={styles.column}>
-              <h2>
-                {cvColumnState.isShowingDetails ? 'CV Details' : 'JD Details'}
-              </h2>
-              <FileDetails
-                file={
-                  cvColumnState.isShowingDetails
-                    ? cvColumnState.fileDetails
-                    : jdColumnState.fileDetails
-                }
-                isLoading={
-                  (cvColumnState.isShowingDetails && !cvColumnState.fileDetails) ||
-                  (jdColumnState.isShowingDetails && !jdColumnState.fileDetails)
-                }
-                onClose={handleCloseDetails}
-                canRunMatching={cvColumnState.isShowingDetails && jdFiles.length > 0}
-                onRunMatching={
-                  cvColumnState.isShowingDetails
-                    ? handleRunMatching
-                    : undefined
-                }
-              />
-            </div>
-          )}
         </div>
       )}
     </div>
