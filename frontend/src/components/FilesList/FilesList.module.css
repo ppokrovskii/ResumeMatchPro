@@ -64,6 +64,16 @@
     font-size: 12px;
 }
 
+/* Status tag styling */
+:global(.ant-tag) {
+    margin-left: 8px;
+    font-size: 11px;
+    line-height: 16px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+}
+
 /* Improve loading state styling */
 :global(.ant-spin-nested-loading) {
     width: 100%;

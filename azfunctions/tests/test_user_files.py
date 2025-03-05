@@ -502,7 +502,7 @@ def test_get_file_success(repository, blob_service, sample_file_content):
     assert result['url'] == saved_metadata.url
     
     # Verify only expected fields are present
-    expected_fields = {'id', 'filename', 'type', 'user_id', 'url', 'structure'}
+    expected_fields = {'id', 'filename', 'type', 'user_id', 'url', 'structure', 'status', 'status_message'}
     assert set(result.keys()).issubset(expected_fields)
 
 @pytest.mark.external_services
@@ -807,7 +807,7 @@ def test_get_file_with_docx_structure(repository, structured_docx_file_metadata)
     assert result['url'] == structured_docx_file_metadata.url
     
     # Verify only expected fields are present
-    expected_fields = {'id', 'filename', 'type', 'user_id', 'url', 'structure'}
+    expected_fields = {'id', 'filename', 'type', 'user_id', 'url', 'structure', 'status', 'status_message'}
     assert set(result.keys()).issubset(expected_fields)
 
 def test_get_file_with_pdf_structure(repository, structured_pdf_file_metadata):
@@ -849,7 +849,7 @@ def test_get_file_with_pdf_structure(repository, structured_pdf_file_metadata):
     assert result['url'] == structured_pdf_file_metadata.url
     
     # Verify only expected fields are present
-    expected_fields = {'id', 'filename', 'type', 'user_id', 'url', 'structure'}
+    expected_fields = {'id', 'filename', 'type', 'user_id', 'url', 'structure', 'status', 'status_message'}
     assert set(result.keys()).issubset(expected_fields)
 
 @pytest.fixture
