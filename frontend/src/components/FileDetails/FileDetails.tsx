@@ -5,7 +5,7 @@ import React from 'react';
 import { RmpFile, downloadFile } from '../../services/fileService';
 import styles from './FileDetails.module.css';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Paragraph, Text } = Typography;
 
 interface FileDetailsProps {
     file: RmpFile | null;
@@ -37,46 +37,6 @@ const FileDetails: React.FC<FileDetailsProps> = ({
             console.error('Error downloading file:', error);
             message.error('Failed to download file');
         }
-    };
-
-    const getStatusTag = (file: RmpFile) => {
-        if (!file.status) return null;
-
-        let color = 'default';
-        let text = file.status;
-
-        switch (file.status) {
-            case 'UPLOADED':
-                color = 'blue';
-                text = 'Uploaded';
-                break;
-            case 'PROCESSING':
-                color = 'processing';
-                text = 'Processing';
-                break;
-            case 'EXTRACTING_TEXT':
-                color = 'processing';
-                text = 'Extracting Text';
-                break;
-            case 'ANALYZING':
-                color = 'processing';
-                text = 'Analyzing';
-                break;
-            case 'COMPLETED':
-                color = 'success';
-                text = 'Completed';
-                break;
-            case 'ERROR':
-                color = 'error';
-                text = 'Error';
-                break;
-            default:
-                color = 'default';
-        }
-
-        return (
-            <Tag color={color} className={styles.statusTag}>{text}</Tag>
-        );
     };
 
     const renderPersonalDetails = () => {
@@ -136,7 +96,6 @@ const FileDetails: React.FC<FileDetailsProps> = ({
                         <Title level={4} className={styles.title}>
                             {file?.filename}
                         </Title>
-                        {file && getStatusTag(file)}
                     </div>
                     <Button
                         type="text"
@@ -158,22 +117,10 @@ const FileDetails: React.FC<FileDetailsProps> = ({
             }
         >
             <Spin spinning={isLoading}>
-                {file && file.status === 'PROCESSING' && (
-                    <div className={styles.processingMessage}>
-                        <Spin size="small" />
-                        <Text type="secondary">{file.status_message || 'File is being processed...'}</Text>
-                    </div>
-                )}
-
-                {file && file.status === 'ERROR' && (
-                    <div className={styles.errorMessage}>
-                        <Text type="danger">{file.status_message || 'An error occurred during processing'}</Text>
-                    </div>
-                )}
-
-                {/* Only show content if file is completed or no status is available (backward compatibility) */}
-                {file && (!file.status || file.status === 'COMPLETED') && (
-                    <>
+                {/* Always show content */}
+                {file && (
+                    <div className={styles.content}>
+                        {/* Display file type */}
                         {file.type && (
                             <div className={styles.fileType}>
                                 <Tag color={file.type === 'CV' ? 'blue' : 'green'}>
@@ -182,22 +129,50 @@ const FileDetails: React.FC<FileDetailsProps> = ({
                             </div>
                         )}
 
-                        {/* Render file structure if available */}
-                        {file.structure && (
-                            <div className={styles.fileContent}>
-                                {renderPersonalDetails()}
-
-                                {file.structure.professional_summary && (
-                                    <div className={styles.section}>
-                                        <Title level={5}>Professional Summary</Title>
-                                        <Paragraph>{file.structure.professional_summary}</Paragraph>
-                                    </div>
-                                )}
-
-                                {/* Rest of the component remains unchanged */}
+                        {/* Summary section for JD */}
+                        {file.type === 'JD' && file.structure && 'role_summary' in file.structure && (
+                            <div className={styles.section}>
+                                <Title level={5}>Job Description</Title>
+                                <Paragraph>{file.structure.role_summary as string}</Paragraph>
                             </div>
                         )}
-                    </>
+
+                        {/* Personal details section (mainly for CV) */}
+                        {renderPersonalDetails()}
+
+                        {/* Job requirements for JD */}
+                        {file.type === 'JD' && file.structure &&
+                            'required_skills' in file.structure &&
+                            Array.isArray(file.structure.required_skills) &&
+                            file.structure.required_skills.length > 0 && (
+                                <div className={styles.section}>
+                                    <Title level={5}>Required Skills</Title>
+                                    <List
+                                        dataSource={file.structure.required_skills as string[]}
+                                        renderItem={(skill: string) => (
+                                            <List.Item>
+                                                <Text>{skill}</Text>
+                                            </List.Item>
+                                        )}
+                                    />
+                                </div>
+                            )}
+
+                        {/* Skills section for CV */}
+                        {file.type === 'CV' && file.structure &&
+                            'skills' in file.structure &&
+                            Array.isArray(file.structure.skills) &&
+                            file.structure.skills.length > 0 && (
+                                <div className={styles.section}>
+                                    <Title level={5}>Skills</Title>
+                                    <div className={styles.skillsList}>
+                                        {(file.structure.skills as string[]).map((skill, index) => (
+                                            <Tag key={index} className={styles.skillTag}>{skill}</Tag>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                    </div>
                 )}
             </Spin>
         </Card>
