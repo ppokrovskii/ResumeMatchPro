@@ -54,7 +54,7 @@ def _process_file_impl(msg: func.QueueMessage) -> func.HttpResponse:
         repository = _get_repository()
         
         # Update status to PROCESSING
-        _update_file_status(repository, file_processing_request.id, FileStatus.PROCESSING, "File processing started")
+        _update_file_status(repository, file_processing_request.id, FileStatus.PROCESSING, "File processing started", file_processing_request.user_id)
         
         # Step 2: Create services using getter functions
         logging.debug("DEBUG: About to create blob service")
@@ -78,12 +78,12 @@ def _process_file_impl(msg: func.QueueMessage) -> func.HttpResponse:
         content = blob_service.get_file_content(blob_service.container_name, file_processing_request.filename)
         logging.debug(f"DEBUG: Got file content, length: {len(content) if content else 'None'}")
         if not content:
-            _update_file_status(repository, file_processing_request.id, FileStatus.ERROR, "File content is empty or file not found")
+            _update_file_status(repository, file_processing_request.id, FileStatus.ERROR, "File content is empty or file not found", file_processing_request.user_id)
             raise ValueError(f"File content is empty or file not found: {file_processing_request.filename}")
         
         # Step 4: Extract text from the document
         # Update status to EXTRACTING_TEXT
-        _update_file_status(repository, file_processing_request.id, FileStatus.EXTRACTING_TEXT, "Extracting text from document")
+        _update_file_status(repository, file_processing_request.id, FileStatus.EXTRACTING_TEXT, "Extracting text from document", file_processing_request.user_id)
         
         # Use different methods based on file type
         file_extension = os.path.splitext(file_processing_request.filename)[1].lower()
@@ -97,7 +97,7 @@ def _process_file_impl(msg: func.QueueMessage) -> func.HttpResponse:
         
         # Step 5: Analyze the document using OpenAI
         # Update status to ANALYZING
-        _update_file_status(repository, file_processing_request.id, FileStatus.ANALYZING, "Analyzing document content")
+        _update_file_status(repository, file_processing_request.id, FileStatus.ANALYZING, "Analyzing document content", file_processing_request.user_id)
         
         logging.debug("DEBUG: About to analyze document with OpenAI")
         document_analysis = openai_service.analyze_document(
@@ -136,7 +136,8 @@ def _process_file_impl(msg: func.QueueMessage) -> func.HttpResponse:
         # Update status to ERROR
         try:
             repository = _get_repository()
-            _update_file_status(repository, file_processing_request.id, FileStatus.ERROR, f"Validation error: {str(e)}")
+            user_id = getattr(file_processing_request, "user_id", None) if 'file_processing_request' in locals() else None
+            _update_file_status(repository, file_processing_request.id, FileStatus.ERROR, f"Validation error: {str(e)}", user_id)
         except Exception as status_error:
             logging.error(f"Failed to update status: {status_error}")
         # Re-raise the exception to be caught by the test
@@ -147,7 +148,8 @@ def _process_file_impl(msg: func.QueueMessage) -> func.HttpResponse:
         # Update status to ERROR
         try:
             repository = _get_repository()
-            _update_file_status(repository, file_processing_request.id, FileStatus.ERROR, f"Timeout error: {str(e)}")
+            user_id = getattr(file_processing_request, "user_id", None) if 'file_processing_request' in locals() else None
+            _update_file_status(repository, file_processing_request.id, FileStatus.ERROR, f"Timeout error: {str(e)}", user_id)
         except Exception as status_error:
             logging.error(f"Failed to update status: {status_error}")
         # Re-raise the exception to be caught by the test
@@ -160,7 +162,8 @@ def _process_file_impl(msg: func.QueueMessage) -> func.HttpResponse:
         # Update status to ERROR
         try:
             repository = _get_repository()
-            _update_file_status(repository, file_processing_request.id, FileStatus.ERROR, f"Processing error: {str(e)}")
+            user_id = getattr(file_processing_request, "user_id", None) if 'file_processing_request' in locals() else None
+            _update_file_status(repository, file_processing_request.id, FileStatus.ERROR, f"Processing error: {str(e)}", user_id)
         except Exception as status_error:
             logging.error(f"Failed to update status: {status_error}")
         # Re-raise the exception to be caught by the test
@@ -257,11 +260,21 @@ def _queue_for_matching(request: FileProcessingRequest, file_type: FileType):
     logging.info(f"File {request.id} queued for matching")
     
 
-def _update_file_status(repository: FilesRepository, file_id, status: FileStatus, message: str = None):
+def _update_file_status(repository: FilesRepository, file_id, status: FileStatus, message: str = None, user_id: str = None):
     """Update the status of a file in the database."""
     try:
         # Get the current file metadata
-        file_metadata = repository.get_file_by_id(file_id)
+        if user_id:
+            file_metadata = repository.get_file(file_id=str(file_id), user_id=user_id)
+        else:
+            logging.warning(f"No user_id provided for file {file_id}, status update may fail")
+            try:
+                # Attempt to get file without user_id restriction (for backward compatibility)
+                file_metadata = repository.get_file(file_id=str(file_id), user_id=None)
+            except Exception as e:
+                logging.error(f"Failed to get file without user_id: {e}")
+                file_metadata = None
+        
         if file_metadata:
             # Update the status
             file_metadata.status = status

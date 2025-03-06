@@ -16,8 +16,8 @@ import asyncio
 from datetime import datetime
 import base64
 import azure.functions as func
-from file_processing.file_processing import parse_resume_with_document_intelligence
-from shared.models import FileMetadataDb, FileType, DocumentAnalysis
+from file_processing.file_processing import parse_resume_with_document_intelligence, _update_file_status
+from shared.models import FileMetadataDb, FileType, DocumentAnalysis, FileStatus
 import traceback
 
 # Load test environment variables
@@ -423,6 +423,23 @@ class TestFileProcessing(TestCase):
         message.get_json.return_value = message_data
         
         return message
+
+    def test_update_file_status_missing_user_id(self):
+        """Test that _update_file_status can handle missing user_id gracefully."""
+        # Arrange
+        mock_repository = MagicMock()
+        mock_repository.get_file.return_value = MagicMock()
+        
+        file_id = "test_file_id"
+        status = FileStatus.PROCESSING
+        message = "Processing file"
+        
+        # Act
+        _update_file_status(mock_repository, file_id, status, message)
+        
+        # Assert
+        # Should call get_file with the file_id but without a user_id
+        mock_repository.get_file.assert_called_once_with(file_id=str(file_id), user_id=None)
 
 class IntegrationOpenAIService(OpenAIService):
     def __init__(self):
