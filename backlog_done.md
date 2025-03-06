@@ -33,3 +33,5 @@ returns: {
 }
 
 Fix: Made the 'type' field in the File model optional to handle null values.
+
+story: as a user I want to be able to see progress of files processing.
