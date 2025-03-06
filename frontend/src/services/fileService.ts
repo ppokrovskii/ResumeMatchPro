@@ -39,6 +39,8 @@ export interface RmpFile {
     user_id: string;
     url: string;
     structure?: ResumeStructure;
+    status?: string;
+    status_message?: string;
 }
 
 export interface FilesResponse {

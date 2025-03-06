@@ -4,6 +4,8 @@ from uuid import UUID, uuid4
 from openai import BaseModel
 from pydantic import Field
 
+from shared.models import FileStatus
+
 
 class FileType(str, Enum):
     CV = "CV"
@@ -62,6 +64,8 @@ class File(BaseModel):
     user_id: str
     url: str
     structure: Optional[ResumeStructure] = None
+    status: Optional[str] = None
+    status_message: Optional[str] = None
 
 
 class UserFilesResponse(BaseModel):

@@ -13,7 +13,7 @@ from shared.files_repository import FilesRepository
 from shared.queue_service import QueueService
 from file_upload.schemas import FileUploadOutputQueueMessage, FileUploadRequest, FileUploadResponse, FileUploadResponses
 from shared.blob_service import FilesBlobService
-from shared.models import FileMetadataDb
+from shared.models import FileMetadataDb, FileStatus
 from shared.user_repository import UserRepository
 
 # create blueprint
@@ -208,7 +208,9 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
                     filename=file_upload_request.filename,
                     type=file_upload_request.type,
                     user_id=user_id,
-                    url=blob_url
+                    url=blob_url,
+                    status=FileStatus.UPLOADED,
+                    status_message="File uploaded successfully, waiting for processing"
                 )
                 file_metadata = files_repository.upsert_file(file_metadata.model_dump(mode="json"))
                 # Increment the user's file count after successful upload
@@ -232,7 +234,9 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
                 filename=file_metadata.filename,
                 url=file_metadata.url,
                 type=file_metadata.type,
-                user_id=file_metadata.user_id
+                user_id=file_metadata.user_id,
+                status=file_metadata.status,
+                status_message=file_metadata.status_message
             ))
         
         return func.HttpResponse(

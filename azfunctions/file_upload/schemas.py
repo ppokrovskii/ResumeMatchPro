@@ -3,6 +3,7 @@ from typing import Optional
 from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
+from shared.models import FileStatus
 
 class FileType(str, Enum):
     CV = "CV"
@@ -19,6 +20,8 @@ class FileUploadRequest(FileUploadBase):
 class FileUploadResponse(FileUploadBase):
     id: UUID = Field(default_factory=uuid4)
     url: str
+    status: Optional[str] = None
+    status_message: Optional[str] = None
     
     # class Config:
     #     from_attributes = True

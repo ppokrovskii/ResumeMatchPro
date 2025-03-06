@@ -9,6 +9,14 @@ class FileType(str, Enum):
     CV = "CV"
     JD = "JD"
 
+class FileStatus(str, Enum):
+    UPLOADED = "UPLOADED"
+    PROCESSING = "PROCESSING"
+    EXTRACTING_TEXT = "EXTRACTING_TEXT"
+    ANALYZING = "ANALYZING"
+    COMPLETED = "COMPLETED"
+    ERROR = "ERROR"
+
 class Line(BaseModel):
     content: str
 
@@ -37,6 +45,8 @@ class FileMetadataDb(BaseModel):
     url: str
     text: Optional[str] = None
     content_type: Optional[str] = None
+    status: FileStatus = FileStatus.UPLOADED
+    status_message: Optional[str] = None
     
     # Structured document information
     pages: Optional[List[DocumentPage]] = None

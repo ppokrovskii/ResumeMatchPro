@@ -10,7 +10,7 @@ from file_processing.schemas import FileProcessingOutputQueueMessage, FileProces
 from shared.blob_service import FilesBlobService
 from shared.document_intelligence_service import DocumentIntelligenceService
 from shared.docx_service import DocxService
-from shared.models import FileMetadataDb, FileType
+from shared.models import FileMetadataDb, FileType, FileStatus
 from shared.queue_service import QueueService
 from shared.openai_service.openai_service import OpenAIService
 
@@ -50,6 +50,12 @@ def _process_file_impl(msg: func.QueueMessage) -> func.HttpResponse:
         file_processing_request = _parse_queue_message(msg)
         logging.debug(f"DEBUG: Parsed request: {file_processing_request}")
         
+        # Create repository early to update status
+        repository = _get_repository()
+        
+        # Update status to PROCESSING
+        _update_file_status(repository, file_processing_request.id, FileStatus.PROCESSING, "File processing started")
+        
         # Step 2: Create services using getter functions
         logging.debug("DEBUG: About to create blob service")
         blob_service = _get_blob_service()
@@ -72,9 +78,13 @@ def _process_file_impl(msg: func.QueueMessage) -> func.HttpResponse:
         content = blob_service.get_file_content(blob_service.container_name, file_processing_request.filename)
         logging.debug(f"DEBUG: Got file content, length: {len(content) if content else 'None'}")
         if not content:
+            _update_file_status(repository, file_processing_request.id, FileStatus.ERROR, "File content is empty or file not found")
             raise ValueError(f"File content is empty or file not found: {file_processing_request.filename}")
         
         # Step 4: Extract text from the document
+        # Update status to EXTRACTING_TEXT
+        _update_file_status(repository, file_processing_request.id, FileStatus.EXTRACTING_TEXT, "Extracting text from document")
+        
         # Use different methods based on file type
         file_extension = os.path.splitext(file_processing_request.filename)[1].lower()
         logging.debug("DEBUG: About to extract document content")
@@ -86,6 +96,9 @@ def _process_file_impl(msg: func.QueueMessage) -> func.HttpResponse:
         logging.debug(f"DEBUG: Extracted document content: {structured_info.keys()}")
         
         # Step 5: Analyze the document using OpenAI
+        # Update status to ANALYZING
+        _update_file_status(repository, file_processing_request.id, FileStatus.ANALYZING, "Analyzing document content")
+        
         logging.debug("DEBUG: About to analyze document with OpenAI")
         document_analysis = openai_service.analyze_document(
             text=structured_info['text'],
@@ -101,9 +114,10 @@ def _process_file_impl(msg: func.QueueMessage) -> func.HttpResponse:
         # Step 7: Create file metadata
         logging.debug("DEBUG: About to create file metadata")
         file_metadata = _create_file_metadata(file_processing_request, document_analysis)
-        logging.debug("DEBUG: About to get repository")
-        repository = _get_repository()
-        logging.debug(f"DEBUG: Got repository: {repository}")
+        # Set status to COMPLETED
+        file_metadata.status = FileStatus.COMPLETED
+        file_metadata.status_message = "File processing completed"
+        
         logging.debug("DEBUG: About to upsert file")
         repository.upsert_file(file_metadata)
         logging.debug(f"DEBUG: Saved metadata to database")
@@ -119,11 +133,23 @@ def _process_file_impl(msg: func.QueueMessage) -> func.HttpResponse:
         logging.error(f"ERROR in process_file - Validation error: {str(e)}")
         logging.error(f"ERROR type: {type(e)}")
         logging.error(f"ERROR traceback: {traceback.format_exc()}")
+        # Update status to ERROR
+        try:
+            repository = _get_repository()
+            _update_file_status(repository, file_processing_request.id, FileStatus.ERROR, f"Validation error: {str(e)}")
+        except Exception as status_error:
+            logging.error(f"Failed to update status: {status_error}")
         # Re-raise the exception to be caught by the test
         raise e
     except TimeoutError as e:
         logging.error(f"ERROR in process_file - Timeout error: {str(e)}")
         logging.error(f"ERROR traceback: {traceback.format_exc()}")
+        # Update status to ERROR
+        try:
+            repository = _get_repository()
+            _update_file_status(repository, file_processing_request.id, FileStatus.ERROR, f"Timeout error: {str(e)}")
+        except Exception as status_error:
+            logging.error(f"Failed to update status: {status_error}")
         # Re-raise the exception to be caught by the test
         raise e
     except Exception as e:
@@ -131,6 +157,12 @@ def _process_file_impl(msg: func.QueueMessage) -> func.HttpResponse:
         logging.error(f"ERROR type: {type(e)}")
         # Print traceback for debugging
         logging.error(f"ERROR traceback: {traceback.format_exc()}")
+        # Update status to ERROR
+        try:
+            repository = _get_repository()
+            _update_file_status(repository, file_processing_request.id, FileStatus.ERROR, f"Processing error: {str(e)}")
+        except Exception as status_error:
+            logging.error(f"Failed to update status: {status_error}")
         # Re-raise the exception to be caught by the test
         raise e
 
@@ -223,5 +255,24 @@ def _queue_for_matching(request: FileProcessingRequest, file_type: FileType):
     queue_service.create_queue_if_not_exists("matching-queue")
     queue_service.send_message("matching-queue", queue_message.model_dump_json())
     logging.info(f"File {request.id} queued for matching")
+    
+
+def _update_file_status(repository: FilesRepository, file_id, status: FileStatus, message: str = None):
+    """Update the status of a file in the database."""
+    try:
+        # Get the current file metadata
+        file_metadata = repository.get_file_by_id(file_id)
+        if file_metadata:
+            # Update the status
+            file_metadata.status = status
+            file_metadata.status_message = message
+            # Save the updated metadata
+            repository.upsert_file(file_metadata)
+            logging.info(f"Updated file {file_id} status to {status}: {message}")
+        else:
+            logging.warning(f"Could not update status for file {file_id}: File not found")
+    except Exception as e:
+        logging.error(f"Error updating file status: {e}")
+        # Don't raise the exception to avoid interrupting the main process
     
     

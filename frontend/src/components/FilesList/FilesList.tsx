@@ -1,6 +1,6 @@
 import { DeleteOutlined, LoadingOutlined, StarFilled, StarOutlined } from '@ant-design/icons';
 import { useMsal } from '@azure/msal-react';
-import { Button, List, message, Spin } from 'antd';
+import { Button, List, message, Spin, Tag, Tooltip } from 'antd';
 import React, { useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { deleteFile, RmpFile } from '../../services/fileService';
@@ -68,6 +68,48 @@ const FilesList: React.FC<FilesListProps> = ({
     );
   };
 
+  const getStatusTag = (file: RmpFile) => {
+    if (!file.status) return null;
+
+    let color = 'default';
+    let text = file.status;
+
+    switch (file.status) {
+      case 'UPLOADED':
+        color = 'blue';
+        text = 'Uploaded';
+        break;
+      case 'PROCESSING':
+        color = 'processing';
+        text = 'Processing';
+        break;
+      case 'EXTRACTING_TEXT':
+        color = 'processing';
+        text = 'Extracting Text';
+        break;
+      case 'ANALYZING':
+        color = 'processing';
+        text = 'Analyzing';
+        break;
+      case 'COMPLETED':
+        color = 'success';
+        text = 'Completed';
+        break;
+      case 'ERROR':
+        color = 'error';
+        text = 'Error';
+        break;
+      default:
+        color = 'default';
+    }
+
+    return (
+      <Tooltip title={file.status_message}>
+        <Tag color={color}>{text}</Tag>
+      </Tooltip>
+    );
+  };
+
   // Custom spinner icon with larger size
   const antIcon = <LoadingOutlined style={{ fontSize: 24 }} spin />;
 
@@ -100,7 +142,12 @@ const FilesList: React.FC<FilesListProps> = ({
               onClick={() => onFileSelect(file)}
             >
               <List.Item.Meta
-                title={file.filename}
+                title={
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>{file.filename}</span>
+                    {getStatusTag(file)}
+                  </div>
+                }
                 description={
                   matchingScores[file.id] !== undefined &&
                   renderStarRating(matchingScores[file.id])
