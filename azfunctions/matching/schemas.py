@@ -91,7 +91,41 @@ class MatchingResultModel(MatchingBaseModel):
     def from_json(cls, json_data):
         cv = FileModel(**json_data['cv'])
         jd = FileModel(**json_data['jd'])
-        jd_requirements = JD_Requirements(**json_data['JD_Requirements'])
-        candidate_capabilities = Candidate_Capabilities(**json_data['Candidate_Capabilities'])
-        cv_match = CV_Match(**json_data['cv_match'])
-        return cls(cv=cv, jd=jd, jd_requirements=jd_requirements, candidate_capabilities=candidate_capabilities, cv_match=cv_match, **json_data)
+        
+        # Handle both camelCase and snake_case field names for compatibility
+        if 'JD_Requirements' in json_data:
+            jd_requirements = JD_Requirements(**json_data['JD_Requirements'])
+        elif 'jd_requirements' in json_data:
+            jd_requirements = JD_Requirements(**json_data['jd_requirements'])
+        else:
+            raise ValueError("Missing JD requirements in the response")
+            
+        if 'Candidate_Capabilities' in json_data:
+            candidate_capabilities = Candidate_Capabilities(**json_data['Candidate_Capabilities'])
+        elif 'candidate_capabilities' in json_data:
+            candidate_capabilities = Candidate_Capabilities(**json_data['candidate_capabilities'])
+        else:
+            raise ValueError("Missing candidate capabilities in the response")
+            
+        if 'CV_Match' in json_data:
+            cv_match = CV_Match(**json_data['CV_Match'])
+        elif 'cv_match' in json_data:
+            cv_match = CV_Match(**json_data['cv_match'])
+        else:
+            raise ValueError("Missing CV match in the response")
+            
+        # Remove the keys we've already processed to avoid duplicates
+        for key in ['cv', 'jd', 'JD_Requirements', 'jd_requirements', 
+                   'Candidate_Capabilities', 'candidate_capabilities',
+                   'CV_Match', 'cv_match']:
+            if key in json_data:
+                json_data.pop(key, None)
+                
+        return cls(
+            cv=cv, 
+            jd=jd, 
+            jd_requirements=jd_requirements, 
+            candidate_capabilities=candidate_capabilities, 
+            cv_match=cv_match, 
+            **json_data
+        )

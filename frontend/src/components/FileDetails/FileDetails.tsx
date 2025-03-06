@@ -94,7 +94,7 @@ const FileDetails: React.FC<FileDetailsProps> = ({
                 <div className={styles.cardHeader}>
                     <div className={styles.titleContainer}>
                         <Title level={4} className={styles.title}>
-                            {file?.filename}
+                            {file?.type === 'CV' ? 'CVs' : 'Job Descriptions'}
                         </Title>
                     </div>
                     <Button
@@ -102,6 +102,7 @@ const FileDetails: React.FC<FileDetailsProps> = ({
                         icon={<CloseOutlined />}
                         onClick={onClose}
                         className={styles.closeButton}
+                        aria-label="Close file details"
                     />
                 </div>
             }
@@ -120,6 +121,18 @@ const FileDetails: React.FC<FileDetailsProps> = ({
                 {/* Always show content */}
                 {file && (
                     <div className={styles.content}>
+                        {/* File name displayed as a subtitle */}
+                        <Title level={5} className={styles.subtitle}>
+                            {file.type === 'CV' && file.name && file.job_title
+                                ? `${file.name} - ${file.job_title}`
+                                : file.type === 'CV' && file.name
+                                    ? file.name
+                                    : file.type === 'JD' && file.job_title
+                                        ? file.job_title
+                                        : file.filename
+                            }
+                        </Title>
+
                         {/* Display file type */}
                         {file.type && (
                             <div className={styles.fileType}>

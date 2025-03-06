@@ -71,6 +71,59 @@ const FilesList: React.FC<FilesListProps> = ({
   // Custom spinner icon with larger size
   const antIcon = <LoadingOutlined style={{ fontSize: 24 }} spin />;
 
+  const renderItem = (item: RmpFile) => {
+    const isSelected = selectedFile?.id === item.id;
+    const hasMatchingScore = matchingScores[item.id] !== undefined;
+    const score = matchingScores[item.id] || 0;
+
+    // Display formatted name based on available fields
+    const displayName = () => {
+      if (item.type === 'CV' && item.name && item.job_title) {
+        return `${item.name} - ${item.job_title}`;
+      } else if (item.type === 'CV' && item.name) {
+        return item.name;
+      } else if (item.type === 'JD' && item.job_title) {
+        return item.job_title;
+      } else {
+        return item.filename;
+      }
+    };
+
+    return (
+      <List.Item
+        key={item.id}
+        className={`${styles.fileItem} ${isSelected ? styles.selectedFile : ''}`}
+        onClick={() => onFileSelect(item)}
+        actions={[
+          <Button
+            key="delete"
+            type="text"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(item.id);
+            }}
+          />
+        ]}
+      >
+        <List.Item.Meta
+          title={
+            <div className={styles.titleWrapper}>
+              {displayName()}
+            </div>
+          }
+        />
+        {hasMatchingScore && fileType === 'CV' && (
+          <div className={styles.scoreContainer}>
+            {[1, 2, 3, 4, 5].map((star) => renderStarRating(star))}
+            <span className={styles.scoreText}>{Math.round(score)}%</span>
+          </div>
+        )}
+      </List.Item>
+    );
+  };
+
   return (
     <div className={styles.filesListWrapper}>
       <Spin spinning={isLoading} tip="Loading files..." indicator={antIcon}>
@@ -83,31 +136,7 @@ const FilesList: React.FC<FilesListProps> = ({
             return scoreB - scoreA;
           })}
           locale={{ emptyText: isLoading ? ' ' : 'No files found' }}
-          renderItem={file => (
-            <List.Item
-              className={`${styles.fileItem} ${selectedFile?.id === file.id ? styles.selected : ''}`}
-              actions={[
-                <Button
-                  key="delete"
-                  icon={<DeleteOutlined />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(file.id);
-                  }}
-                  className={styles.deleteButton}
-                />
-              ]}
-              onClick={() => onFileSelect(file)}
-            >
-              <List.Item.Meta
-                title={<span>{file.filename}</span>}
-                description={
-                  matchingScores[file.id] !== undefined &&
-                  renderStarRating(matchingScores[file.id])
-                }
-              />
-            </List.Item>
-          )}
+          renderItem={renderItem}
         />
       </Spin>
     </div>

@@ -41,6 +41,8 @@ export interface RmpFile {
     structure?: ResumeStructure;
     status?: string;
     status_message?: string;
+    name?: string;
+    job_title?: string;
 }
 
 export interface FilesResponse {

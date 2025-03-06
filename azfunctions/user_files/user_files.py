@@ -10,6 +10,7 @@ from shared.files_repository import FilesRepository
 from shared.blob_service import FilesBlobService
 from user_files.models import UserFilesRequest, UserFilesResponse, File, ResumeStructure, PersonalDetail, ExperienceEntry, Page, Line, TableCell
 from shared.openai_service.models import DocumentAnalysis
+from shared.models import FileType
 
 def get_user_id_from_claims(req: func.HttpRequest) -> str:
     """Extract user ID from B2C claims in the request headers."""
@@ -80,7 +81,37 @@ def _get_files(req: func.HttpRequest, files_repository: FilesRepository) -> func
         # Use user_id from claims
         request = UserFilesRequest(user_id=user_id, type=req.params.get('type'))
         files_metadata_db = files_repository.get_files_from_db(request.user_id, request.type)
-        response = UserFilesResponse(files=[file_metadata.model_dump(mode="json") for file_metadata in files_metadata_db])
+        
+        # Extract name and job_title from file structure
+        files_response = []
+        for file_metadata in files_metadata_db:
+            file_json = file_metadata.model_dump(mode="json")
+            
+            # Extract name and job title from document analysis structure if available
+            if file_metadata.document_analysis and hasattr(file_metadata.document_analysis, 'structure'):
+                structure = file_metadata.document_analysis.structure
+                
+                # Extract name for CV files
+                if file_metadata.type == FileType.CV and structure.personal_details:
+                    # Look for 'name' type in personal details
+                    for detail in structure.personal_details:
+                        if detail.type.lower() == 'name':
+                            file_json['name'] = detail.text
+                            break
+                
+                # Extract job_title for both CV and JD files
+                if file_metadata.type == FileType.CV:
+                    # For CV, look for 'job_title' attribute in document structure
+                    if hasattr(structure, 'job_title') and structure.job_title:
+                        file_json['job_title'] = structure.job_title
+                else:
+                    # For JD, look for 'job_title' attribute in document structure
+                    if hasattr(structure, 'job_title') and structure.job_title:
+                        file_json['job_title'] = structure.job_title
+            
+            files_response.append(file_json)
+        
+        response = UserFilesResponse(files=files_response)
         return func.HttpResponse(
             body=response.model_dump_json(),
             mimetype="application/json",
@@ -258,6 +289,27 @@ def _get_file(req: func.HttpRequest, files_repository: FilesRepository) -> func.
             # Extract structure from document_analysis if available
             if file_db.document_analysis and hasattr(file_db.document_analysis, 'structure'):
                 file_response.structure = file_db.document_analysis.structure
+                
+                # Extract name and job title from document analysis structure if available
+                structure = file_db.document_analysis.structure
+                
+                # Extract name for CV files
+                if file_db.type == FileType.CV and structure.personal_details:
+                    # Look for 'name' type in personal details
+                    for detail in structure.personal_details:
+                        if isinstance(detail, dict) and detail.get('type', '').lower() == 'name':
+                            file_response.name = detail.get('text')
+                            break
+                
+                # Extract job_title for both CV and JD files
+                if file_db.type == FileType.CV:
+                    # For CV, look for 'job_title' attribute in document structure
+                    if hasattr(structure, 'job_title') and structure.job_title:
+                        file_response.job_title = structure.job_title
+                else:
+                    # For JD, look for 'job_title' attribute in document structure
+                    if hasattr(structure, 'job_title') and structure.job_title:
+                        file_response.job_title = structure.job_title
 
             # Return file metadata
             return func.HttpResponse(

@@ -25,6 +25,12 @@
     white-space: nowrap;
 }
 
+.subtitle {
+    margin-top: 0 !important;
+    margin-bottom: 16px !important;
+    color: rgba(0, 0, 0, 0.65);
+}
+
 .closeButton {
     margin-left: auto;
 }

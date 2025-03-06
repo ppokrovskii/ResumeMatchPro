@@ -66,6 +66,8 @@ class File(BaseModel):
     structure: Optional[ResumeStructure] = None
     status: Optional[str] = None
     status_message: Optional[str] = None
+    name: Optional[str] = None
+    job_title: Optional[str] = None
 
 
 class UserFilesResponse(BaseModel):
