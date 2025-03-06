@@ -48,6 +48,7 @@ class MockOpenAIService:
             education_requirements=[
                 "Bachelor's degree in Computer Science or related field"
             ],
+            job_title="Software Engineer",
             additional_information=[]
         )
         
@@ -191,6 +192,14 @@ def test_file_processing_core_workflow():
         assert file_metadata.type == FileType.JD
         assert file_metadata.document_analysis == document_analysis
         print("File metadata created successfully")
+        
+        # Verify the document analysis results
+        assert file_metadata.document_analysis is not None, "Document analysis is missing"
+        assert file_metadata.document_analysis.document_type == "JD", "Document type should be JD"
+        assert file_metadata.document_analysis.structure.job_title == "Software Engineer", "Job title should be 'Software Engineer'"
+        
+        # Verify the file type was set correctly
+        assert file_metadata.type == FileType.JD, "File type should be JD"
         
         # Step 5: Mock repository and test saving metadata
         print("Step 5: Testing repository operations")

@@ -31,6 +31,7 @@ class CVStructure(BaseModel):
     skills: List[str]
     experience: List[ExperienceBlock]
     education: List[EducationBlock]
+    job_title: Optional[str] = None
     additional_information: Optional[List[str]] = None
 
 class JDStructure(BaseModel):
@@ -38,6 +39,7 @@ class JDStructure(BaseModel):
     role_summary: str
     required_skills: List[str]
     experience_requirements: List[str]
+    job_title: Optional[str] = None
     education_requirements: Optional[List[str]] = None
     additional_information: Optional[List[str]] = None
 
@@ -58,6 +60,7 @@ class DocumentStructure(BaseModel):
     education_requirements: Optional[List[str]] = None
     
     # Common fields
+    job_title: Optional[str] = None
     additional_information: Optional[List[str]] = None
     
     # Allow arbitrary fields

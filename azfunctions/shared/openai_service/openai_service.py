@@ -35,6 +35,7 @@ class OpenAIService:
 
         For CVs:
         - Personal details (name, email, phone, location, etc.)
+        - Job title (current or most recent position)
         - Professional summary/objective
         - Skills (technical, soft skills, languages, etc.)
         - Professional experience (with dates, titles, and responsibilities)
@@ -43,6 +44,7 @@ class OpenAIService:
 
         For JDs:
         - Company/position details
+        - Job title (the position being advertised)
         - Role summary/overview
         - Required skills and qualifications
         - Experience requirements
@@ -117,7 +119,8 @@ class OpenAIService:
                                     "additional_information": {
                                         "type": "array",
                                         "items": {"type": "string"}
-                                    }
+                                    },
+                                    "job_title": {"type": "string"}
                                 },
                                 "required": ["personal_details", "professional_summary", "skills", "experience", "education"]
                             }
@@ -164,7 +167,8 @@ class OpenAIService:
                                     "additional_information": {
                                         "type": "array",
                                         "items": {"type": "string"}
-                                    }
+                                    },
+                                    "job_title": {"type": "string"}
                                 },
                                 "required": ["company_details", "role_summary", "required_skills", "experience_requirements"]
                             }
