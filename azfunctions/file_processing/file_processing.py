@@ -119,7 +119,7 @@ def _process_file_impl(msg: func.QueueMessage) -> func.HttpResponse:
         file_metadata.status_message = "File processing completed"
         
         logging.debug("DEBUG: About to upsert file")
-        repository.upsert_file(file_metadata)
+        repository.upsert_file(file_metadata.model_dump(mode="json"))
         logging.debug(f"DEBUG: Saved metadata to database")
         
         # Step 8: Queue for matching if needed
@@ -211,7 +211,10 @@ def _get_openai_service() -> OpenAIService:
 
 def _get_queue_service() -> QueueService:
     """Initialize and return Queue Service."""
-    return QueueService()
+    connection_string = os.environ.get("AZURE_STORAGE_CONNECTION_STRING")
+    if not connection_string:
+        raise ValueError("AZURE_STORAGE_CONNECTION_STRING environment variable not set")
+    return QueueService(connection_string=connection_string)
 
 
 def _extract_document_content(content: bytes, filename: str, document_intelligence_service: DocumentIntelligenceService) -> dict:
@@ -280,7 +283,7 @@ def _update_file_status(repository: FilesRepository, file_id, status: FileStatus
             file_metadata.status = status
             file_metadata.status_message = message
             # Save the updated metadata
-            repository.upsert_file(file_metadata)
+            repository.upsert_file(file_metadata.model_dump(mode="json"))
             logging.info(f"Updated file {file_id} status to {status}: {message}")
         else:
             logging.warning(f"Could not update status for file {file_id}: File not found")
