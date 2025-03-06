@@ -35,3 +35,6 @@ returns: {
 Fix: Made the 'type' field in the File model optional to handle null values.
 
 story: as a user I want to be able to see progress of files processing.
+
+defect: file processing fails with error: FilesRepository.get_file_by_id() missing 1 required positional argument: 'file_id'
+Fix: Updated _update_file_status function to properly handle the user_id parameter when calling get_file_by_id
