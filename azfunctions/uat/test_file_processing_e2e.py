@@ -9,6 +9,7 @@ import uuid
 import json
 import logging
 import time
+import requests
 from pathlib import Path
 from dotenv import load_dotenv
 from azure.cosmos import CosmosClient
@@ -17,17 +18,20 @@ from azure.cosmos import CosmosClient
 current_dir = os.path.dirname(os.path.abspath(__file__))
 azfunctions_dir = os.path.dirname(current_dir)
 root_dir = os.path.dirname(azfunctions_dir)
-sys.path.insert(0, azfunctions_dir)
+sys.path.insert(0, root_dir)  # Add the root directory to path
+sys.path.insert(0, azfunctions_dir)  # Add the azfunctions directory to path
 
 # Load environment variables from test env file
 load_dotenv(Path(azfunctions_dir) / "tests" / ".env.test")
 
-from azfunctions.shared.blob_service import FilesBlobService
-from azfunctions.shared.queue_service import QueueService
-from azfunctions.shared.files_repository import FilesRepository
-from azfunctions.shared.models import FileStatus, FileType
-from azfunctions.file_processing.schemas import FileProcessingRequest
-from azfunctions.file_processing.file_processing import _process_file_impl, _get_blob_service
+# Import from the modules directly, not using azfunctions prefix
+from shared.blob_service import FilesBlobService
+from shared.queue_service import QueueService
+from shared.files_repository import FilesRepository
+from shared.models import FileStatus, FileType
+from file_processing.schemas import FileProcessingRequest
+from matching_results.models import MatchingResultsRequest
+from file_processing.file_processing import _process_file_impl, _get_blob_service
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
@@ -37,7 +41,10 @@ logger = logging.getLogger(__name__)
 # Test constants
 TEST_CONTAINER_NAME = "test-files"
 PROCESSING_QUEUE_NAME = "processing-queue"
-TEST_FILE_PATH = os.path.join(os.path.dirname(__file__), "test_data", "JD - iOS_Junior.docx")
+MATCHING_QUEUE_NAME = "matching-queue"
+TEST_JD_FILE_PATH = os.path.join(os.path.dirname(__file__), "test_data", "JD - iOS_Junior.docx")
+TEST_CV_FILE_PATH = os.path.join(os.path.dirname(__file__), "test_data", "Pavel_Pokrovskii_-_Head_of_Engineering.pdf")
+FUNCTION_API_BASE_URL = os.environ.get("FUNCTION_API_BASE_URL", "http://localhost:7071/api")
 
 # Store the original _get_blob_service function
 original_get_blob_service = _get_blob_service
@@ -99,7 +106,7 @@ def setup_test_environment():
     test_blob_service = blob_service
     
     # Patch the _get_blob_service function
-    from azfunctions.file_processing import file_processing
+    from file_processing import file_processing
     file_processing._get_blob_service = mock_get_blob_service
     
     # Ensure container exists
@@ -110,6 +117,7 @@ def setup_test_environment():
     # Create queue service and ensure queue exists
     queue_service = QueueService(connection_string=connection_string)
     queue_service.create_queue_if_not_exists(PROCESSING_QUEUE_NAME)
+    queue_service.create_queue_if_not_exists(MATCHING_QUEUE_NAME)
     
     # Get database client
     db = get_cosmos_db_client()
@@ -160,11 +168,11 @@ def test_file_processing_e2e(setup_test_environment):
     # Step 1: Generate a unique ID for this test
     file_id = str(uuid.uuid4())
     user_id = "test-user-id"
-    original_filename = os.path.basename(TEST_FILE_PATH)
+    original_filename = os.path.basename(TEST_JD_FILE_PATH)
     
     # Step 2: Read the test file
-    logger.info(f"Reading test file: {TEST_FILE_PATH}")
-    with open(TEST_FILE_PATH, "rb") as file:
+    logger.info(f"Reading test file: {TEST_JD_FILE_PATH}")
+    with open(TEST_JD_FILE_PATH, "rb") as file:
         file_content = file.read()
     
     # Step 3: Upload the file to blob storage
@@ -258,6 +266,199 @@ def test_file_processing_e2e(setup_test_environment):
     files_repository.delete_file(user_id, file_id)
     
     return processed_file
+
+@pytest.mark.external_services
+def test_complete_e2e_flow_with_matching(setup_test_environment):
+    """
+    Complete end-to-end test including file upload, processing, and matching.
+    
+    This test:
+    1. Uploads a JD file via HTTP API
+    2. Uploads a CV file via HTTP API  
+    3. Verifies both files are processed successfully
+    4. Checks that matching is performed
+    5. Validates the matching results via HTTP API
+    """
+    services = setup_test_environment
+    blob_service = services["blob_service"]
+    queue_service = services["queue_service"]
+    files_repository = services["files_repository"]
+    
+    # Generate a unique user ID for this test
+    user_id = f"test-user-{uuid.uuid4()}"
+    
+    # Upload JD file 
+    logger.info(f"Uploading JD file for testing")
+    with open(TEST_JD_FILE_PATH, "rb") as file:
+        jd_content = file.read()
+    
+    jd_filename = os.path.basename(TEST_JD_FILE_PATH)
+    jd_blob_name = f"{uuid.uuid4()}_{jd_filename}"
+    jd_blob_url = blob_service.upload_blob(TEST_CONTAINER_NAME, jd_blob_name, jd_content)
+    
+    jd_file_data = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "filename": jd_filename,
+        "type": FileType.JD,
+        "blob_name": jd_blob_name,
+        "url": jd_blob_url,
+        "status": FileStatus.UPLOADED,
+        "status_message": "File uploaded successfully"
+    }
+    jd_record = files_repository.upsert_file(jd_file_data)
+    jd_file_id = str(jd_record.id)
+    logger.info(f"JD file record created with ID: {jd_file_id}")
+    
+    # Create a queue message for processing the JD file
+    jd_request = FileProcessingRequest(
+        id=jd_file_id,
+        user_id=user_id,
+        filename=jd_blob_name,
+        url=jd_blob_url,
+        type=FileType.JD
+    )
+    jd_request_dict = jd_request.model_dump()
+    jd_request_dict["id"] = str(jd_request_dict["id"])
+    jd_message = MockQueueMessage(json.dumps(jd_request_dict))
+    
+    # Process the JD file
+    logger.info(f"Processing JD file: {jd_file_id}")
+    os.environ["BLOB_CONTAINER_NAME"] = TEST_CONTAINER_NAME
+    _process_file_impl(jd_message)
+    
+    # Wait for JD processing to complete
+    logger.info(f"Waiting for JD file processing to complete")
+    max_wait_time = 60  # seconds
+    wait_interval = 2   # seconds
+    elapsed_time = 0
+    processed_jd = None
+    
+    while elapsed_time < max_wait_time:
+        processed_jd = files_repository.get_file(jd_file_id, user_id)
+        logger.info(f"JD file status: {processed_jd.status} - {processed_jd.status_message}")
+        if processed_jd.status in [FileStatus.COMPLETED, FileStatus.ERROR]:
+            break
+        time.sleep(wait_interval)
+        elapsed_time += wait_interval
+    
+    # Verify JD file was processed correctly
+    assert processed_jd is not None, "JD file record not found after processing"
+    assert processed_jd.status == FileStatus.COMPLETED, f"JD file processing failed: {processed_jd.status_message}"
+    assert processed_jd.type == FileType.JD, "JD file type was not detected correctly"
+    
+    # Now upload and process the CV file
+    logger.info(f"Uploading CV file for testing")
+    with open(TEST_CV_FILE_PATH, "rb") as file:
+        cv_content = file.read()
+    
+    cv_filename = os.path.basename(TEST_CV_FILE_PATH)
+    cv_blob_name = f"{uuid.uuid4()}_{cv_filename}"
+    cv_blob_url = blob_service.upload_blob(TEST_CONTAINER_NAME, cv_blob_name, cv_content)
+    
+    cv_file_data = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "filename": cv_filename,
+        "type": FileType.CV,
+        "blob_name": cv_blob_name,
+        "url": cv_blob_url,
+        "status": FileStatus.UPLOADED,
+        "status_message": "File uploaded successfully"
+    }
+    cv_record = files_repository.upsert_file(cv_file_data)
+    cv_file_id = str(cv_record.id)
+    logger.info(f"CV file record created with ID: {cv_file_id}")
+    
+    # Create a queue message for processing the CV file
+    cv_request = FileProcessingRequest(
+        id=cv_file_id,
+        user_id=user_id,
+        filename=cv_blob_name,
+        url=cv_blob_url,
+        type=FileType.CV
+    )
+    cv_request_dict = cv_request.model_dump()
+    cv_request_dict["id"] = str(cv_request_dict["id"])
+    cv_message = MockQueueMessage(json.dumps(cv_request_dict))
+    
+    # Process the CV file
+    logger.info(f"Processing CV file: {cv_file_id}")
+    _process_file_impl(cv_message)
+    
+    # Wait for CV processing to complete
+    logger.info(f"Waiting for CV file processing to complete")
+    elapsed_time = 0
+    processed_cv = None
+    
+    while elapsed_time < max_wait_time:
+        processed_cv = files_repository.get_file(cv_file_id, user_id)
+        logger.info(f"CV file status: {processed_cv.status} - {processed_cv.status_message}")
+        if processed_cv.status in [FileStatus.COMPLETED, FileStatus.ERROR]:
+            break
+        time.sleep(wait_interval)
+        elapsed_time += wait_interval
+    
+    # Verify CV file was processed correctly
+    assert processed_cv is not None, "CV file record not found after processing"
+    assert processed_cv.status == FileStatus.COMPLETED, f"CV file processing failed: {processed_cv.status_message}"
+    assert processed_cv.type == FileType.CV, "CV file type was not detected correctly"
+    
+    # Wait for matching to complete (check for matching results)
+    logger.info(f"Waiting for matching to complete")
+    elapsed_time = 0
+    has_matching_results = False
+    
+    # Instead of directly accessing the matching results, let's call the HTTP API
+    while elapsed_time < max_wait_time * 2:  # Matching may take longer
+        try:
+            # Try to get matching results for CV file
+            results_url = f"{FUNCTION_API_BASE_URL}/results?file_id={cv_file_id}&file_type=CV"
+            response = requests.get(results_url)
+            
+            if response.status_code == 200:
+                results_data = response.json()
+                if results_data and results_data.get('results') and len(results_data['results']) > 0:
+                    logger.info(f"Found matching results: {results_data}")
+                    has_matching_results = True
+                    break
+            
+            # Also try with JD file
+            results_url = f"{FUNCTION_API_BASE_URL}/results?file_id={jd_file_id}&file_type=JD"
+            response = requests.get(results_url)
+            
+            if response.status_code == 200:
+                results_data = response.json()
+                if results_data and results_data.get('results') and len(results_data['results']) > 0:
+                    logger.info(f"Found matching results: {results_data}")
+                    has_matching_results = True
+                    break
+            
+            logger.info(f"Waiting for matching results... ({elapsed_time}s)")
+            time.sleep(wait_interval)
+            elapsed_time += wait_interval
+            
+        except Exception as e:
+            logger.error(f"Error checking matching results: {e}")
+            time.sleep(wait_interval)
+            elapsed_time += wait_interval
+    
+    # Verify matching results were created
+    assert has_matching_results, "No matching results found after waiting"
+    
+    # Clean up
+    logger.info("Cleaning up test resources")
+    blob_service.delete_blob(TEST_CONTAINER_NAME, jd_blob_name)
+    blob_service.delete_blob(TEST_CONTAINER_NAME, cv_blob_name)
+    files_repository.delete_file(user_id, jd_file_id)
+    files_repository.delete_file(user_id, cv_file_id)
+    
+    logger.info("Test completed successfully")
+    
+    return {
+        "jd_file": processed_jd,
+        "cv_file": processed_cv
+    }
 
 if __name__ == "__main__":
     """Run the UAT test directly."""

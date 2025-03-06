@@ -38,3 +38,6 @@ story: as a user I want to be able to see progress of files processing.
 
 defect: file processing fails with error: FilesRepository.get_file_by_id() missing 1 required positional argument: 'file_id'
 Fix: Updated _update_file_status function to properly handle the user_id parameter when calling get_file_by_id
+
+story: in file_processing.py when I call document analysis add Job Title to structure expected from AI to CV and JD.
+Fix: Added job_title field to CVStructure, JDStructure, and DocumentStructure models in the OpenAI service. Updated the prompt to explicitly mention extracting the job title for both CV and JD documents. Added tests to verify that the job title is correctly extracted and included in the file metadata.
