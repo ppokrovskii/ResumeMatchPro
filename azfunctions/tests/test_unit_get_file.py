@@ -84,6 +84,10 @@ class TestGetFile(unittest.TestCase):
         self.assertIn('structure', result)
         self.assertEqual(result['structure']['personal_details'][0]['text'], "John Doe")
         self.assertEqual(result['structure']['skills'], ["Python", "Azure"])
+        
+        # Verify name and job_title fields are present
+        self.assertIn('name', result)
+        self.assertIn('job_title', result)
     
     def test_get_file_missing_file_id(self):
         """Test get_file with missing file_id."""

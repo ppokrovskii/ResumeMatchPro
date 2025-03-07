@@ -20,7 +20,7 @@ class FileProcessingRequest(FileProcessingBase):
     
     
 class FileProcessingOutputQueueMessage(BaseModel):
-    id: UUID
+    file_id: UUID
     user_id: str
     type: FileType
     filename: Optional[str] = None

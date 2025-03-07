@@ -28,7 +28,7 @@ class MatchingBaseModel(BaseModel):
     
     
 class MatchingRequestBase(MatchingBaseModel):
-    id: UUID = Field(default_factory=uuid4)
+    file_id: UUID = Field(default_factory=uuid4)
     filename: str
     type: FileType
     user_id: str
@@ -38,7 +38,7 @@ class MatchingRequestMessage(MatchingRequestBase):
     pass
 
 class MatchingRequestModel(MatchingBaseModel):
-    id: UUID
+    file_id: UUID
     filename: str
     type: FileType
     user_id: str

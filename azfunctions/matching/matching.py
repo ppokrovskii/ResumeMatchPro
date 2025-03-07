@@ -26,11 +26,11 @@ def match_resume(msg: func.QueueMessage):
     files_repository = FilesRepository(cosmos_db_client)
     user_repository = UserRepository(cosmos_db_client)
     
-    file_metadata_db = files_repository.get_file_by_id(matching_request.user_id, matching_request.id)
+    file_metadata_db = files_repository.get_file_by_id(matching_request.user_id, matching_request.file_id)
     if not file_metadata_db:
-        raise ValueError(f"File with id {matching_request.id} not found in db")
+        raise ValueError(f"File with id {matching_request.file_id} not found in db")
     if not file_metadata_db.text:
-        raise ValueError(f"File with id {matching_request.id} has no text. Was not processed yet?")
+        raise ValueError(f"File with id {matching_request.file_id} has no text. Was not processed yet?")
     # delete exising matching results for file with same user_id and file name
     matching_results_repository = MatchingResultsRepository(cosmos_db_client)
     matching_results_repository.delete_matching_results_by_file(file_metadata_db.user_id, file_metadata_db.filename)
