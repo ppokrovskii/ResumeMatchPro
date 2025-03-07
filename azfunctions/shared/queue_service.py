@@ -6,7 +6,10 @@ class QueueService:
     def __init__(self, connection_string):
         # self.connection_string = connection_string
         # default_credential = DefaultAzureCredential()
-        self.queue_service_client = QueueServiceClient.from_connection_string(connection_string)
+        self.queue_service_client = QueueServiceClient.from_connection_string(
+            connection_string,
+            logging_enable=False
+        )
 
     def create_queue_if_not_exists(self, queue_name):
         # check if queue exists

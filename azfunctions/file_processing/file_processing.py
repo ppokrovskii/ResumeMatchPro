@@ -28,13 +28,16 @@ def parse_resume_with_document_intelligence(file_content: bytes, filename: str, 
 @file_processing_bp.queue_trigger(arg_name="msg", queue_name="processing-queue", connection="AzureWebJobsStorage")
 def process_file(msg: func.QueueMessage) -> func.HttpResponse:
     """
-    Process a file uploaded by a user.
-    1. Extract text and structure from the file.
-    2. Analyze the document to determine its type (CV/Resume or Job Description).
-    3. Store the structured data in the database.
-    4. Queue the file for matching.
+    Process file.
+    Takes a message from the queue (filename and contents metadata)
+    and updates the file metadata.
     """
-    return _process_file_impl(msg)
+    try:
+        return _process_file_impl(msg)
+    except Exception as e:
+        logging.error(f"Error in process_file: {str(e)}")
+        # Return a success response to prevent retry
+        return func.HttpResponse(status_code=200)
 
 def _process_file_impl(msg: func.QueueMessage) -> func.HttpResponse:
     """

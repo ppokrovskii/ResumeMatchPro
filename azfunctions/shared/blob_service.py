@@ -10,7 +10,10 @@ class FilesBlobService:
     def create_files_blob_service_client(self):
         # Azure Blob Storage info
         connect_str = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
-        blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+        blob_service_client = BlobServiceClient.from_connection_string(
+            connect_str,
+            logging_enable=False
+        )
         return blob_service_client
 
     def upload_blob(self, container_name, filename, content):

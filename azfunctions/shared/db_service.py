@@ -6,8 +6,13 @@ def get_cosmos_db_client():
     url = os.environ.get("COSMOS_URL")
     cosmos_key = os.environ.get("COSMOS_KEY")
     db_name = os.environ.get("COSMOS_DB_NAME")
-    # create a CosmosClient
-    client = CosmosClient(url=url, credential=(cosmos_key))
+    # create a CosmosClient with logging disabled
+    client = CosmosClient(
+        url=url, 
+        credential=cosmos_key, 
+        logging_enable=False,
+        enable_diagnostics_logging=False
+    )
     # create db if not exists
     client.create_database_if_not_exists(db_name)
     return client.get_database_client(db_name)

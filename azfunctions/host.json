@@ -6,6 +6,17 @@
         "isEnabled": true,
         "excludedTypes": "Request"
       }
+    },
+    "logLevel": {
+      "default": "Information",
+      "Host.Results": "Error",
+      "Function": "Information",
+      "Host.Aggregator": "Error",
+      "azure": "Error",
+      "azure.core": "Error",
+      "azure.cosmos": "Error",
+      "azure.storage": "Error",
+      "azure.identity": "Error"
     }
   },
   "extensionBundle": {
