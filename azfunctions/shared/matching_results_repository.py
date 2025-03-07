@@ -37,13 +37,11 @@ class MatchingResultsRepository:
             # Create a new document
             self.container.upsert_item(matching_result)
             
-    def delete_matching_results_by_file(self, user_id, file_id):
+    def delete_matching_results_by_file(self, user_id, filename):
         if isinstance(user_id, UUID):
             user_id = str(user_id)
-        if isinstance(file_id, UUID):
-            file_id = str(file_id)
-        query = "SELECT * FROM c WHERE c.user_id = @user_id AND (c.cv.id = @file_id OR c.jd.id = @file_id)"
-        parameters = [{"name": "@user_id", "value": user_id}, {"name": "@file_id", "value": file_id}]
+        query = "SELECT * FROM c WHERE c.user_id = @user_id AND (c.cv.filename = @filename OR c.jd.filename = @filename)"
+        parameters = [{"name": "@user_id", "value": user_id}, {"name": "@filename", "value": filename}]
         items = list(self.container.query_items(query, parameters=parameters))
         for item in items:
             self.container.delete_item(item, partition_key=item["user_id"])

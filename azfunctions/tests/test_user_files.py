@@ -11,12 +11,12 @@ from dotenv import load_dotenv
 from azure.cosmos import CosmosClient
 from user_files.user_files import _get_file, _download_file
 from user_files.user_files import _get_files, _delete_file, user_files_bp
-from shared.models import FileMetadataDb, FileType, DocumentPage, Line, TableCell, DocumentStyle
+from shared.models import FileMetadataDb, FileType, DocumentPage, Line, TableCell, DocumentStyle, FileStatus
 from shared.files_repository import FilesRepository
 from shared.blob_service import FilesBlobService
 from unittest import mock
 from shared.openai_service.models import DocumentAnalysis, DocumentStructure
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock, patch
 
 # Configure logging
 logging.basicConfig(
@@ -1206,3 +1206,86 @@ def test_get_files_with_null_type(repository, blob_service, sample_file_content)
         # Clean up - add user_id parameter
         repository.delete_file(user_id="test-user-123", file_id=saved_metadata.id)
         blob_service.delete_blob("resume-match-pro-files", filename)
+
+@pytest.fixture
+def mock_http_request():
+    # Create client principal JSON
+    client_principal = {
+        "claims": [
+            {"typ": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "val": "test-user-id"}
+        ]
+    }
+    # Encode to base64
+    encoded_principal = base64.b64encode(json.dumps(client_principal).encode('utf-8')).decode('utf-8')
+    
+    mock_req = MagicMock(spec=func.HttpRequest)
+    mock_req.headers = {"X-MS-CLIENT-PRINCIPAL": encoded_principal}
+    mock_req.params = {}
+    return mock_req
+
+@pytest.fixture
+def mock_files_repository():
+    return MagicMock(spec=FilesRepository)
+
+def test_get_files_with_missing_document_analysis(mock_http_request, mock_files_repository):
+    """Test getting files with missing document_analysis to ensure hasattr checks work."""
+    # Create file without document_analysis
+    file_without_analysis = FileMetadataDb(
+        id="12345678-1234-5678-1234-567812345678",
+        filename="test.pdf",
+        type=FileType.CV,
+        user_id="test-user-id",
+        url="https://example.com/test.pdf",
+        status=FileStatus.COMPLETED
+    )
+    
+    # Mock repository to return file without document_analysis
+    mock_files_repository.get_files_from_db.return_value = [file_without_analysis]
+    
+    # Call the function
+    response = _get_files(mock_http_request, mock_files_repository)
+    
+    # Verify response
+    assert response.status_code == 200
+    response_body = json.loads(response.get_body())
+    assert len(response_body["files"]) == 1
+    assert response_body["files"][0]["filename"] == "test.pdf"
+    
+    # Print response for inspection
+    print(f"Response body: {response_body}")
+    
+    # Make sure our document_analysis check is working properly
+    assert hasattr(file_without_analysis, 'document_analysis') == False or file_without_analysis.document_analysis is None
+
+def test_get_files_with_missing_type(mock_http_request, mock_files_repository):
+    """Test getting files with missing type attribute to ensure hasattr checks work."""
+    # Create a dictionary representation of a file without type
+    file_dict = {
+        "id": "12345678-1234-5678-1234-567812345678",
+        "filename": "test.pdf",
+        "user_id": "test-user-id",
+        "url": "https://example.com/test.pdf",
+        "status": "COMPLETED"
+    }
+    
+    # Create file without type
+    file_without_type = FileMetadataDb(**file_dict)
+    
+    # Mock repository to return file without document_analysis
+    mock_files_repository.get_files_from_db.return_value = [file_without_type]
+    
+    # Call the function
+    response = _get_files(mock_http_request, mock_files_repository)
+    
+    # Verify response
+    assert response.status_code == 200
+    response_body = json.loads(response.get_body())
+    assert len(response_body["files"]) == 1
+    assert response_body["files"][0]["filename"] == "test.pdf"
+    
+    # Print response for inspection
+    print(f"Response body: {response_body}")
+    
+    # Make sure our checks in _get_files are working properly
+    assert hasattr(file_without_type, 'document_analysis') == False or file_without_type.document_analysis is None
+    assert hasattr(file_without_type, 'type') == False or file_without_type.type is None

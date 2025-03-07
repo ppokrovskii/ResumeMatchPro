@@ -88,11 +88,11 @@ def _get_files(req: func.HttpRequest, files_repository: FilesRepository) -> func
             file_json = file_metadata.model_dump(mode="json")
             
             # Extract name and job title from document analysis structure if available
-            if file_metadata.document_analysis and hasattr(file_metadata.document_analysis, 'structure'):
+            if hasattr(file_metadata, 'document_analysis') and file_metadata.document_analysis and hasattr(file_metadata.document_analysis, 'structure'):
                 structure = file_metadata.document_analysis.structure
                 
                 # Extract name for CV files
-                if file_metadata.type == FileType.CV and structure.personal_details:
+                if hasattr(file_metadata, 'type') and file_metadata.type == FileType.CV and structure.personal_details:
                     # Look for 'name' type in personal details
                     for detail in structure.personal_details:
                         if detail.type.lower() == 'name':
@@ -100,14 +100,15 @@ def _get_files(req: func.HttpRequest, files_repository: FilesRepository) -> func
                             break
                 
                 # Extract job_title for both CV and JD files
-                if file_metadata.type == FileType.CV:
-                    # For CV, look for 'job_title' attribute in document structure
-                    if hasattr(structure, 'job_title') and structure.job_title:
-                        file_json['job_title'] = structure.job_title
-                else:
-                    # For JD, look for 'job_title' attribute in document structure
-                    if hasattr(structure, 'job_title') and structure.job_title:
-                        file_json['job_title'] = structure.job_title
+                if hasattr(file_metadata, 'type'):
+                    if file_metadata.type == FileType.CV:
+                        # For CV, look for 'job_title' attribute in document structure
+                        if hasattr(structure, 'job_title') and structure.job_title:
+                            file_json['job_title'] = structure.job_title
+                    else:
+                        # For JD, look for 'job_title' attribute in document structure
+                        if hasattr(structure, 'job_title') and structure.job_title:
+                            file_json['job_title'] = structure.job_title
             
             files_response.append(file_json)
         

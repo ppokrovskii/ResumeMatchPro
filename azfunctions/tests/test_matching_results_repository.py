@@ -1,11 +1,14 @@
 from uuid import UUID, uuid4
 import pytest
+from typing import Dict, Any
 
 # add project root to sys.path
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 from matching.schemas import CV_Match, Candidate_Capabilities, FileModel, JD_Requirements, MatchingResultModel
+from shared.matching_results_repository import MatchingResultsRepository
+from shared.db_service import get_cosmos_db_client
 
 @pytest.fixture
 def create_matching_result():
@@ -40,10 +43,16 @@ def test_delete_matching_results_by_file(repository, create_matching_result):
     matching_result = sample_matching_result.model_dump(mode="json")
     # Upsert the result to the repository
     repository.upsert_result(matching_result)
-    # Delete the result by file_id
-    repository.delete_matching_results_by_file(sample_matching_result.user_id, sample_matching_result.cv.id)
+    # Delete the result by filename
+    repository.delete_matching_results_by_file(sample_matching_result.user_id, sample_matching_result.cv.filename)
     # Retrieve the result from the repository
     results = repository.get_results_by_cv_id(sample_matching_result.user_id, sample_matching_result.cv.id)
+    assert len(results) == 0
+    
+    # Re-insert and test with JD filename
+    repository.upsert_result(matching_result)
+    repository.delete_matching_results_by_file(sample_matching_result.user_id, sample_matching_result.jd.filename)
+    results = repository.get_results_by_jd_id(sample_matching_result.user_id, sample_matching_result.jd.id)
     assert len(results) == 0
 
 def test_get_results_by_cv_id(repository, create_matching_result):
@@ -65,3 +74,49 @@ def test_get_results_by_jd_id(repository, create_matching_result):
     results = repository.get_results_by_jd_id(sample_matching_result.user_id, sample_matching_result.jd.id)
     assert len(results) == 1
     assert results[0]["jd"]["id"] == str(sample_matching_result.jd.id)
+
+@pytest.fixture(scope="function")
+def sample_file_metadata() -> Dict[str, Any]:
+    return {
+        "id": str(uuid4()),
+        "filename": "test_filename.pdf",
+        "type": "CV",
+        "user_id": str(uuid4()),
+        "url": "https://example.com/test_file.pdf",
+        "text": "Sample text content"
+    }
+
+@pytest.fixture(scope="function")
+def sample_matching_result(sample_file_metadata: Dict[str, Any]) -> Dict[str, Any]:
+    cv_data = sample_file_metadata.copy()
+    jd_data = sample_file_metadata.copy()
+    jd_data["id"] = str(uuid4())
+    jd_data["filename"] = "job_description.pdf"
+    jd_data["type"] = "JD"
+    
+    return {
+        "id": str(uuid4()),
+        "user_id": cv_data["user_id"],
+        "cv": cv_data,
+        "jd": jd_data,
+        "jd_requirements": {
+            "id": str(uuid4()),
+            "skills": ["python", "javascript"],
+            "experience": ["5 years"],
+            "education": ["Bachelor's degree"]
+        },
+        "candidate_capabilities": {
+            "id": str(uuid4()),
+            "skills": ["python", "javascript"],
+            "experience": ["3 years"],
+            "education": ["Bachelor's degree"]
+        },
+        "cv_match": {
+            "id": str(uuid4()),
+            "skills_match": ["python", "javascript"],
+            "experience_match": ["software development"],
+            "education_match": ["Bachelor's degree"],
+            "gaps": ["2 years experience"]
+        },
+        "overall_match_percentage": 85.5
+    }
