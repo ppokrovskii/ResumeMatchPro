@@ -209,7 +209,55 @@ class OpenAIService:
 
         except Exception as e:
             logging.error(f"Error analyzing document: {str(e)}")
-            raise
+            
+            # Check if it's an InternalServerError from OpenAI (HTTP 500)
+            if hasattr(e, 'code') and e.code == 500 or "InternalServerError" in str(type(e)):
+                logging.warning("OpenAI service returned a 500 error. Using fallback document analysis.")
+                
+                # Try to determine document type from the content
+                # Look for common CV/resume keywords
+                cv_keywords = ['resume', 'cv', 'curriculum vitae', 'work experience', 'education', 'skills', 'professional experience']
+                jd_keywords = ['job description', 'responsibilities', 'requirements', 'qualifications', 'we are looking for', 'the ideal candidate']
+                
+                # Count matches for each type
+                cv_score = sum(1 for keyword in cv_keywords if keyword.lower() in text.lower())
+                jd_score = sum(1 for keyword in jd_keywords if keyword.lower() in text.lower())
+                
+                # Determine document type based on keyword matches
+                document_type = "CV" if cv_score >= jd_score else "JD"
+                
+                # Create a minimal structure based on document type
+                if document_type == "CV":
+                    # Create a basic CV structure
+                    return DocumentAnalysis(
+                        document_type=document_type,
+                        structure={
+                            "personal_details": [],
+                            "professional_summary": "Unable to extract due to service error",
+                            "skills": [],
+                            "experience": [],
+                            "education": [],
+                            "additional_information": ["Document processed with fallback analysis due to service error"],
+                            "job_title": ""
+                        }
+                    )
+                else:
+                    # Create a basic JD structure
+                    return DocumentAnalysis(
+                        document_type=document_type,
+                        structure={
+                            "company_details": [],
+                            "role_summary": "Unable to extract due to service error",
+                            "required_skills": [],
+                            "experience_requirements": [],
+                            "education_requirements": [],
+                            "additional_information": ["Document processed with fallback analysis due to service error"],
+                            "job_title": ""
+                        }
+                    )
+            else:
+                # For other types of errors, re-raise
+                raise
 
     def match_cv_and_jd(self, cv_text: str, jd_text: str):
         messages = [{"role": "user", "content": self._create_matching_prompt(cv_text, jd_text)}]

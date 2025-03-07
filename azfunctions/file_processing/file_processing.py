@@ -100,12 +100,75 @@ def _process_file_impl(msg: func.QueueMessage) -> func.HttpResponse:
         _update_file_status(repository, file_processing_request.id, FileStatus.ANALYZING, "Analyzing document content", file_processing_request.user_id)
         
         logging.debug("DEBUG: About to analyze document with OpenAI")
-        document_analysis = openai_service.analyze_document(
-            text=structured_info['text'],
-            pages=structured_info.get('pages', []),
-            paragraphs=structured_info.get('paragraphs', [])
-        )
-        logging.debug(f"DEBUG: Document analysis result: {document_analysis}")
+        try:
+            document_analysis = openai_service.analyze_document(
+                text=structured_info['text'],
+                pages=structured_info.get('pages', []),
+                paragraphs=structured_info.get('paragraphs', [])
+            )
+            logging.debug(f"DEBUG: Document analysis result: {document_analysis}")
+        except Exception as e:
+            logging.error(f"Error during document analysis: {str(e)}")
+            logging.error(f"Error type: {type(e).__name__}")
+            
+            # Check if it's an OpenAI service error
+            if "InternalServerError" in str(type(e)) or (hasattr(e, 'code') and e.code == 500):
+                logging.warning("OpenAI service returned a 500 error. Proceeding with basic analysis.")
+                
+                # Add detailed logging for the error
+                if hasattr(e, 'response'):
+                    logging.error(f"OpenAI API response: {e.response}")
+                if hasattr(e, 'body'):
+                    logging.error(f"Error body: {e.body}")
+                if hasattr(e, 'headers'):
+                    logging.error(f"Error headers: {e.headers}")
+                    
+                # Update status to indicate we're proceeding with limited analysis
+                _update_file_status(
+                    repository, 
+                    file_processing_request.id, 
+                    FileStatus.PROCESSING, 
+                    "OpenAI service error - proceeding with basic analysis", 
+                    file_processing_request.user_id
+                )
+                
+                # Try to determine document type based on filename or user-provided type
+                file_type = file_processing_request.type
+                if not file_type:
+                    # Try to guess from filename
+                    if any(kw in file_processing_request.filename.lower() for kw in ['cv', 'resume']):
+                        file_type = FileType.CV
+                    elif any(kw in file_processing_request.filename.lower() for kw in ['jd', 'job']):
+                        file_type = FileType.JD
+                    else:
+                        # Default to CV if we can't determine
+                        file_type = FileType.CV
+                
+                # Create a minimal document analysis
+                from shared.openai_service.models import DocumentAnalysis
+                document_analysis = DocumentAnalysis(
+                    document_type=file_type,
+                    structure={
+                        "personal_details": [],
+                        "professional_summary": "Unable to extract due to service error",
+                        "skills": [],
+                        "experience": [],
+                        "education": [],
+                        "additional_information": ["Document processed with basic analysis due to OpenAI service error"],
+                        "job_title": ""
+                    } if file_type == FileType.CV else {
+                        "company_details": [],
+                        "role_summary": "Unable to extract due to service error",
+                        "required_skills": [],
+                        "experience_requirements": [],
+                        "education_requirements": [],
+                        "additional_information": ["Document processed with basic analysis due to OpenAI service error"],
+                        "job_title": ""
+                    }
+                )
+            else:
+                # Re-raise for other types of exceptions
+                raise
         
         # Step 6: Determine file type
         file_type = file_processing_request.type or document_analysis.document_type
