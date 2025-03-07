@@ -250,7 +250,7 @@ def _create_file_metadata(
 def _queue_for_matching(request: FileProcessingRequest, file_type: FileType):
     """Send file to matching queue for further processing."""
     queue_message = FileProcessingOutputQueueMessage(
-        file_id=request.id,
+        id=request.id,
         user_id=request.user_id,
         type=file_type,
         filename=request.filename,
