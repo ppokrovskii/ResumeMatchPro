@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+. "$(dirname -- \"$0\")/_/husky.sh"
+
+cd frontend
+echo "Running lint-staged..."
+npx lint-staged || exit 1
+
+echo "Running frontend tests..."
+npm run test:ci || exit 1
+
+cd ../azfunctions
+echo "Running Azure Functions tests..."
+python -m pytest tests/ -v || exit 1
+
+echo "Running schema compatibility tests..."
+python -m pytest uat/test_schema_compatibility.py -v || exit 1
+
+echo "Running UAT tests if emulators are available..."
+python -c "import socket; s1=socket.socket(); s2=socket.socket(); s3=socket.socket(); cosmos_running=s1.connect_ex((\"localhost\", 8081)) == 0; blob_running=s2.connect_ex((\"127.0.0.1\", 10000)) == 0; queue_running=s3.connect_ex((\"127.0.0.1\", 10001)) == 0; s1.close(); s2.close(); s3.close(); exit(0 if cosmos_running and blob_running and queue_running else 1)" && powershell -Command "./run_uat.ps1" || echo "Skipping full UAT tests - emulators not running"

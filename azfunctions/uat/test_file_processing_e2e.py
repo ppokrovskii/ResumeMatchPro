@@ -30,7 +30,7 @@ from shared.blob_service import FilesBlobService
 from shared.queue_service import QueueService
 from shared.files_repository import FilesRepository
 from shared.models import FileStatus, FileType
-from file_processing.schemas import FileProcessingRequest
+from file_processing.schemas import FileProcessingRequest, FileProcessingOutputQueueMessage
 from matching_results.models import MatchingResultsRequest, MatchingResultsResponse
 from file_processing.file_processing import _process_file_impl, _get_blob_service
 from shared.matching_results_repository import MatchingResultsRepository
@@ -38,6 +38,7 @@ from shared.db_service import get_cosmos_db_client
 from matching.matching import match_resume
 from shared.openai_service.openai_service import OpenAIService
 from shared.openai_service.models import MatchingResultModel, JDRequirements, CandidateCapabilities, CVMatch
+from matching.schemas import MatchingRequestMessage
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
@@ -537,11 +538,10 @@ def test_complete_e2e_flow_with_matching(setup_test_environment):
     # But since we're not running the full function app, we'll manually call the matching function
     # First check if there's a matching message in the queue
     logger.info("Checking if CV was queued for matching")
-    from matching.schemas import MatchingRequestMessage
     
     # Create a matching request message for the CV file
     cv_matching_data = {
-        "id": cv_file_id,
+        "file_id": cv_file_id,
         "user_id": user_id,
         "filename": cv_blob_name,
         "url": cv_blob_url,
@@ -551,7 +551,7 @@ def test_complete_e2e_flow_with_matching(setup_test_environment):
     
     # Create a matching request message for the JD file
     jd_matching_data = {
-        "id": jd_file_id,
+        "file_id": jd_file_id,
         "user_id": user_id,
         "filename": jd_blob_name,
         "url": jd_blob_url,
@@ -671,6 +671,54 @@ def test_complete_e2e_flow_with_matching(setup_test_environment):
         "jd_file": processed_jd,
         "cv_file": processed_cv
     }
+
+@pytest.mark.external_services
+def test_queue_message_compatibility():
+    """
+    Test compatibility between FileProcessingOutputQueueMessage and MatchingRequestMessage schemas.
+    
+    This ensures that the message produced by file_processing is compatible 
+    with what match_resume expects.
+    """
+    from file_processing.schemas import FileProcessingOutputQueueMessage
+    from matching.schemas import MatchingRequestMessage
+    
+    test_file_id = uuid.uuid4()
+    test_user_id = "test-user-id"
+    test_filename = "test-file.pdf"
+    test_url = "https://example.com/test-file.pdf"
+    
+    # Create a message as file_processing would
+    processing_message = FileProcessingOutputQueueMessage(
+        file_id=test_file_id,
+        user_id=test_user_id,
+        type=FileType.CV,
+        filename=test_filename,
+        url=test_url
+    )
+    
+    # Convert to JSON as it would be sent to queue
+    message_json = processing_message.model_dump_json()
+    
+    # Test if this message can be parsed by the matching function
+    try:
+        # Create a mock queue message with this JSON content
+        queue_message = MockQueueMessage(message_json)
+        
+        # Parse the message as match_resume would
+        matching_request = MatchingRequestMessage(**queue_message.get_json())
+        
+        # Verify the fields were correctly mapped
+        assert str(matching_request.file_id) == str(test_file_id), "file_id was not correctly mapped"
+        assert matching_request.user_id == test_user_id, "user_id was not correctly mapped"
+        assert matching_request.filename == test_filename, "filename was not correctly mapped"
+        assert matching_request.url == test_url, "url was not correctly mapped"
+        assert matching_request.type == FileType.CV, "type was not correctly mapped"
+        
+        logger.info("✅ Queue message schema compatibility test passed")
+    except Exception as e:
+        logger.error(f"❌ Queue message schema compatibility test failed: {e}")
+        raise
 
 if __name__ == "__main__":
     """Run the UAT test directly."""
