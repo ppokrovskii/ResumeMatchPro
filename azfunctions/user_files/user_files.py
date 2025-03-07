@@ -85,32 +85,44 @@ def _get_files(req: func.HttpRequest, files_repository: FilesRepository) -> func
         # Extract name and job_title from file structure
         files_response = []
         for file_metadata in files_metadata_db:
-            file_json = file_metadata.model_dump(mode="json")
-            
-            # Extract name and job title from document analysis structure if available
-            if hasattr(file_metadata, 'document_analysis') and file_metadata.document_analysis and hasattr(file_metadata.document_analysis, 'structure'):
-                structure = file_metadata.document_analysis.structure
+            try:
+                # Keep the original object for attribute access
                 
-                # Extract name for CV files
-                if hasattr(file_metadata, 'type') and file_metadata.type == FileType.CV and structure.personal_details:
-                    # Look for 'name' type in personal details
-                    for detail in structure.personal_details:
-                        if detail.type.lower() == 'name':
-                            file_json['name'] = detail.text
-                            break
+                # Extract name and job title from document analysis structure if available
+                if hasattr(file_metadata, 'document_analysis') and file_metadata.document_analysis and hasattr(file_metadata.document_analysis, 'structure'):
+                    structure = file_metadata.document_analysis.structure
+                    
+                    # Create the JSON representation after processing the object attributes
+                    file_json = file_metadata.model_dump(mode="json")
+                    
+                    # Extract name for CV files
+                    if hasattr(file_metadata, 'type') and file_metadata.type == FileType.CV and structure.personal_details:
+                        # Look for 'name' type in personal details
+                        for detail in structure.personal_details:
+                            if detail.type.lower() == 'name':
+                                file_json['name'] = detail.text
+                                break
+                    
+                    # Extract job_title for both CV and JD files
+                    if hasattr(file_metadata, 'type'):
+                        if file_metadata.type == FileType.CV:
+                            # For CV, look for 'job_title' attribute in document structure
+                            if hasattr(structure, 'job_title') and structure.job_title:
+                                file_json['job_title'] = structure.job_title
+                        else:
+                            # For JD, look for 'job_title' attribute in document structure
+                            if hasattr(structure, 'job_title') and structure.job_title:
+                                file_json['job_title'] = structure.job_title
+                else:
+                    # If no document_analysis.structure, just dump the model to JSON
+                    file_json = file_metadata.model_dump(mode="json")
                 
-                # Extract job_title for both CV and JD files
-                if hasattr(file_metadata, 'type'):
-                    if file_metadata.type == FileType.CV:
-                        # For CV, look for 'job_title' attribute in document structure
-                        if hasattr(structure, 'job_title') and structure.job_title:
-                            file_json['job_title'] = structure.job_title
-                    else:
-                        # For JD, look for 'job_title' attribute in document structure
-                        if hasattr(structure, 'job_title') and structure.job_title:
-                            file_json['job_title'] = structure.job_title
-            
-            files_response.append(file_json)
+                files_response.append(file_json)
+            except Exception as e:
+                logging.error(f"Error processing file metadata: {str(e)}")
+                # Still include the file, but without the extra processing
+                file_json = file_metadata.model_dump(mode="json")
+                files_response.append(file_json)
         
         response = UserFilesResponse(files=files_response)
         return func.HttpResponse(
