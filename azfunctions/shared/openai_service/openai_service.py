@@ -20,7 +20,7 @@ class OpenAIService:
             azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
         )
         self.deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
-        self.model = 'gpt-35-turbo-16k'
+        self.model = 'gpt-4o'
 
     def analyze_document(self, text: str, pages: list, paragraphs: list) -> DocumentAnalysis:
         """
