@@ -1,13 +1,15 @@
 from enum import Enum
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
-from pydantic import BaseModel, Field
 
+from pydantic import BaseModel, Field
 from shared.openai_service.models import DocumentAnalysis
+
 
 class FileType(str, Enum):
     CV = "CV"
     JD = "JD"
+
 
 class FileStatus(str, Enum):
     UPLOADED = "UPLOADED"
@@ -17,17 +19,21 @@ class FileStatus(str, Enum):
     COMPLETED = "COMPLETED"
     ERROR = "ERROR"
 
+
 class Line(BaseModel):
     content: str
 
+
 class TableCell(BaseModel):
     text: str
+
 
 class DocumentPage(BaseModel):
     page_number: int
     content: str
     lines: List[Line]
     tables: Optional[List[List[List[TableCell]]]] = None
+
 
 class DocumentStyle(BaseModel):
     name: str
@@ -36,6 +42,7 @@ class DocumentStyle(BaseModel):
     is_bold: Optional[bool] = None
     is_italic: Optional[bool] = None
     is_underline: Optional[bool] = None
+
 
 class FileMetadataDb(BaseModel):
     id: UUID = Field(default_factory=uuid4)
@@ -47,7 +54,7 @@ class FileMetadataDb(BaseModel):
     content_type: Optional[str] = None
     status: FileStatus = FileStatus.UPLOADED
     status_message: Optional[str] = None
-    
+
     # Structured document information
     pages: Optional[List[DocumentPage]] = None
     paragraphs: Optional[List[str]] = None
@@ -57,12 +64,11 @@ class FileMetadataDb(BaseModel):
     headers: Optional[List[str]] = None
     footers: Optional[List[str]] = None
     languages: Optional[List[str]] = None
-    
-    # Document analysis results
-    document_analysis: Optional[DocumentAnalysis] = None
-    
+
+    # Extracted document type and structure
+    document_type: Optional[Any] = None
+    structure: Optional[Dict[str, Any]] = None
+
     class Config:
         json_encoders = {UUID: str}
         exclude_none = True
-    
-    

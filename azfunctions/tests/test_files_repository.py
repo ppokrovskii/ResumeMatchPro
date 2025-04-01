@@ -13,20 +13,20 @@ load_dotenv(Path(__file__).parent / ".env.test")
 # add project root to sys.path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from shared.models import FileMetadataDb
 from shared.files_repository import FilesRepository
+from shared.models import FileMetadataDb
 
 
 @pytest.fixture
 def repository():
     # Create a Cosmos DB client and initialize the repository
     client = CosmosClient(
-        url=os.getenv("COSMOS_DB_URL"),
-        credential=os.getenv("COSMOS_DB_KEY"),
-        connection_verify=False  # Skip SSL verification for emulator
+        url=os.getenv("COSMOS_URL"),
+        credential=os.getenv("COSMOS_KEY"),
+        connection_verify=False,  # Skip SSL verification for emulator
     )
     # Create database if not exists
-    database = client.create_database_if_not_exists(os.getenv("COSMOS_DB_DATABASE"))
+    database = client.create_database_if_not_exists(os.getenv("COSMOS_DB_NAME"))
     return FilesRepository(database)
 
 
@@ -34,8 +34,8 @@ def repository():
 @pytest.fixture(autouse=True)
 def run_around_tests(repository):
     repository.delete_all()
-    
-    
+
+
 @pytest.fixture
 def sample_CV() -> FileMetadataDb:
     return FileMetadataDb(
@@ -43,9 +43,10 @@ def sample_CV() -> FileMetadataDb:
         filename="cv.txt",
         type="CV",
         url="https://cv.com",
-        text="Python Developer"
+        text="Python Developer",
     )
-    
+
+
 def test_upsert_file(repository, sample_CV):
     # Create a sample file
     file = sample_CV
@@ -57,8 +58,8 @@ def test_upsert_file(repository, sample_CV):
     files = repository.get_files_from_db(user_id=file.user_id)
     assert len(files) == 1
     assert files[0].filename == file.filename
-    
-    
+
+
 def test_upsert_file_empty_text(repository, sample_CV):
     # Create a sample file
     file = sample_CV
@@ -72,8 +73,8 @@ def test_upsert_file_empty_text(repository, sample_CV):
     assert len(files) == 1
     assert files[0].filename == file.filename
     assert files[0].text == None
-    
-    
+
+
 def test_get_files_from_db(repository, sample_CV):
     # Create a sample file
     file = sample_CV
@@ -85,8 +86,8 @@ def test_get_files_from_db(repository, sample_CV):
     files = repository.get_files_from_db(user_id=file.user_id)
     assert len(files) == 1
     assert files[0].filename == file.filename
-    
-    
+
+
 def test_delete_file_by_user_id_and_filename(repository, sample_CV):
     # Create a sample file
     file = sample_CV
@@ -100,7 +101,8 @@ def test_delete_file_by_user_id_and_filename(repository, sample_CV):
     # Retrieve the file from the repository
     files = repository.get_files_from_db(user_id=file.user_id)
     assert len(files) == 0
-    
+
+
 # def test_delete_file_by_id(repository, sample_CV):
 #     # Create a sample file
 #     file = sample_CV
@@ -111,15 +113,15 @@ def test_delete_file_by_user_id_and_filename(repository, sample_CV):
 #     # Retrieve the file from the repository
 #     files = repository.get_files_from_db(user_id=file.user_id)
 #     file_id = files[0].id
-    
+
 #     # Delete the file from the repository
 #     repository.delete_file(file_id=file_id)
 
 #     # Retrieve the file from the repository
 #     files = repository.get_files_from_db(user_id=file.user_id)
 #     assert len(files) == 0
-    
-    
+
+
 def test_get_file_by_id(repository, sample_CV):
     # Create a sample file
     file = sample_CV
@@ -130,11 +132,12 @@ def test_get_file_by_id(repository, sample_CV):
     # Retrieve the file from the repository
     files = repository.get_files_from_db(user_id=file.user_id)
     file_id = str(files[0].id)
-    
+
     # Retrieve the file by ID
     file = repository.get_file_by_id(user_id=file.user_id, file_id=file_id)
     assert file is not None
     assert file.filename == sample_CV.filename
+
 
 def test_get_file_by_id_not_found(repository):
     # Retrieve the file by ID

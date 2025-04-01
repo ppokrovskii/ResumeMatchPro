@@ -39,6 +39,16 @@ resource "azurerm_linux_function_app" "resumematchpro" {
     app_settings = {
         "FUNCTIONS_WORKER_RUNTIME" = "python"
         "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.ResumeMatchProInsights.instrumentation_key
+        "APPINSIGHTS_ENABLED" = "true"
+        "APPINSIGHTS_SNAPSHOTFEATURE_VERSION" = "1.0"
+        "APPINSIGHTS_DISABLE_QUICKPULSE" = "false"
+        "APPINSIGHTS_ENABLE_AGENT" = "true"
+        "APPINSIGHTS_ENABLE_LOGGING" = "true"
+        "APPINSIGHTS_ENABLE_PERFORMANCE_COUNTERS" = "true"
+        "APPINSIGHTS_ENABLE_REQUESTS" = "true"
+        "APPINSIGHTS_ENABLE_DEPENDENCY_TRACKING" = "true"
+        "APPINSIGHTS_ENABLE_EXCEPTION_TRACKING" = "true"
+        "APPINSIGHTS_ENABLE_METRICS" = "true"
         "AZURE_STORAGE_CONNECTION_STRING" = azurerm_storage_account.storage.primary_connection_string
         "AzureWebJobsStorage" = azurerm_storage_account.storage.primary_connection_string
         

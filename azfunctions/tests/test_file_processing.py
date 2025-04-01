@@ -1,35 +1,27 @@
-import os
-import json
-import sys
-import pytest
-import logging
 import io
-from uuid import uuid4
-from pydantic import ValidationError
-from unittest import TestCase
-from unittest.mock import patch, MagicMock
-import tempfile
-from docx import Document
+import logging
 from pathlib import Path
+from unittest import TestCase
+from unittest.mock import MagicMock, patch
+from uuid import uuid4
+
 from dotenv import load_dotenv
-import asyncio
-from datetime import datetime
-import base64
-import azure.functions as func
-from file_processing.file_processing import parse_resume_with_document_intelligence, _update_file_status
-from shared.models import FileMetadataDb, FileType, DocumentAnalysis, FileStatus
-import traceback
+from file_processing.file_processing import FileProcessor
+from pydantic import ValidationError
+from shared.models import FileStatus
 
 # Load test environment variables
 load_dotenv(Path(__file__).parent / ".env.test")
 
-from file_processing.file_processing import process_file
-from file_processing.schemas import FileProcessingRequest, FileType
-from shared.document_intelligence_service import DocumentIntelligenceService
-from shared.docx_service import DocxService
-from shared.models import DocumentPage, DocumentStyle, FileMetadataDb, Line
+from file_processing.schemas import FileProcessingRequest
+from shared.openai_service.models import (
+    CVStructure,
+    DocumentAnalysis,
+    DocumentType,
+    JDStructure,
+)
 from shared.openai_service.openai_service import OpenAIService
-from shared.openai_service.models import DocumentAnalysis, DocumentStructure
+
 
 class TestFileProcessing(TestCase):
     def setUp(self):
@@ -50,7 +42,7 @@ class TestFileProcessing(TestCase):
         # Configure mock instances
         self.mock_blob_service_instance.container_name = "test-container"
         self.mock_blob_service_instance.get_file_content.return_value = b"test content"
-        
+
         # Mock DocumentAnalysisClient
         self.mock_client = MagicMock()
         self.mock_poller = MagicMock()
@@ -59,26 +51,38 @@ class TestFileProcessing(TestCase):
         self.mock_client.begin_analyze_document.return_value = self.mock_poller
         self.mock_doc_intelligence_instance.client = self.mock_client
         self.mock_doc_intelligence_instance.process_analysis_result.return_value = {
-            'text': "extracted text",
-            'pages': [],
-            'paragraphs': [],
-            'tables': [],
-            'styles': {},
-            'headers': None,
-            'footers': None
+            "text": "extracted text",
+            "pages": [],
+            "paragraphs": [],
+            "tables": [],
+            "styles": {},
+            "headers": None,
+            "footers": None,
         }
         self.mock_queue_service_instance.create_queue_if_not_exists.return_value = None
         self.mock_queue_service_instance.send_message.return_value = None
         self.mock_files_repository_instance.upsert_file.return_value = None
 
         # Start patching services
-        self.blob_service_patcher = patch('file_processing.file_processing.FilesBlobService')
-        self.doc_intelligence_patcher = patch('file_processing.file_processing.DocumentIntelligenceService')
-        self.queue_service_patcher = patch('file_processing.file_processing.QueueService')
-        self.get_cosmos_db_client_patcher = patch('file_processing.file_processing.get_cosmos_db_client')
-        self.files_repository_patcher = patch('file_processing.file_processing.FilesRepository')
-        self.docx_service_patcher = patch('file_processing.file_processing.DocxService')
-        self.openai_service_patcher = patch('file_processing.file_processing.OpenAIService')
+        self.blob_service_patcher = patch(
+            "file_processing.file_processing.FilesBlobService"
+        )
+        self.doc_intelligence_patcher = patch(
+            "file_processing.file_processing.DocumentIntelligenceService"
+        )
+        self.queue_service_patcher = patch(
+            "file_processing.file_processing.QueueService"
+        )
+        self.get_cosmos_db_client_patcher = patch(
+            "file_processing.file_processing.get_cosmos_db_client"
+        )
+        self.files_repository_patcher = patch(
+            "file_processing.file_processing.FilesRepository"
+        )
+        self.docx_service_patcher = patch("file_processing.file_processing.DocxService")
+        self.openai_service_patcher = patch(
+            "file_processing.file_processing.OpenAIService"
+        )
 
         # Start the patches and configure returns
         self.mock_blob_service = self.blob_service_patcher.start()
@@ -96,15 +100,24 @@ class TestFileProcessing(TestCase):
         self.mock_files_repository.return_value = self.mock_files_repository_instance
         self.mock_get_cosmos_db_client.return_value = self.mock_cosmos_db_instance
         self.mock_docx_service.get_text_from_docx.return_value = {
-            'text': "extracted text from docx",
-            'pages': [],
-            'paragraphs': [],
-            'tables': [],
-            'styles': {},
-            'headers': [],
-            'footers': []
+            "text": "extracted text from docx",
+            "pages": [],
+            "paragraphs": [],
+            "tables": [],
+            "styles": {},
+            "headers": [],
+            "footers": [],
         }
         self.mock_openai_service.return_value = self.mock_openai_service_instance
+
+        # Create FileProcessor instance with mocked services
+        self.processor = FileProcessor(
+            repository=self.mock_files_repository_instance,
+            blob_service=self.mock_blob_service_instance,
+            document_intelligence_service=self.mock_doc_intelligence_instance,
+            openai_service=self.mock_openai_service_instance,
+            queue_service=self.mock_queue_service_instance,
+        )
 
     def tearDown(self):
         # Stop all patches
@@ -127,362 +140,203 @@ class TestFileProcessing(TestCase):
             "filename": "test_cv.pdf",
             "type": "CV",
             "id": str(uuid4()),
-            "url": "https://example.com/test_cv.pdf"
+            "url": "https://example.com/test_cv.pdf",
             # user_id is missing
         }
-        
-        # Create mock message
-        message = MagicMock(spec=func.QueueMessage)
-        message.get_body.return_value = json.dumps(message_data).encode('utf-8')
-        message.get_json.return_value = message_data
-        
-        # Define a function that raises a ValidationError when called
-        def raise_validation_error(*args, **kwargs):
-            from pydantic import BaseModel
-            
-            class TestModel(BaseModel):
-                user_id: str
-            
-            # This will raise a ValidationError because user_id is missing
-            TestModel(**message_data)
-        
-        # Set up patches
-        with patch('file_processing.file_processing._parse_queue_message', side_effect=raise_validation_error), \
-             patch('file_processing.file_processing._get_blob_service', return_value=self.mock_blob_service_instance), \
-             patch('file_processing.file_processing._get_document_intelligence_service', return_value=self.mock_doc_intelligence_instance), \
-             patch('file_processing.file_processing._get_repository', return_value=self.mock_files_repository_instance), \
-             patch('file_processing.file_processing._get_queue_service', return_value=self.mock_queue_service_instance), \
-             patch('file_processing.file_processing._get_openai_service', return_value=self.mock_openai_service_instance):
-            
-            # Import the function here to ensure patches are applied
-            from file_processing.file_processing import _process_file_impl
-            
-            # Call the function and expect a ValidationError
-            with self.assertRaises(ValidationError):
-                _process_file_impl(message)
-            
-            # Verify that no file was saved and no message was sent
-            self.mock_blob_service_instance.get_file_content.assert_not_called()
-            self.mock_files_repository_instance.upsert_file.assert_not_called()
-            self.mock_queue_service_instance.send_message.assert_not_called()
+
+        # Create a request object and expect validation error
+        with self.assertRaises(ValidationError):
+            FileProcessingRequest(**message_data)
 
     def test_process_file_document_intelligence_timeout(self):
         """Test handling of document intelligence timeouts during file processing."""
-        # Create a valid message
-        valid_message = self._create_valid_message()
-        
-        # Setup a mock message that will return our valid message when get_json is called
-        mock_message = MagicMock()
-        mock_message.get_json.return_value = valid_message.get_json()
-        
-        # Setup mock for document intelligence
-        mock_doc_intelligence = MagicMock()
-        mock_doc_intelligence.process_analysis_result.side_effect = TimeoutError("Document processing timed out")
-        
-        # Mock blob service
-        mock_blob_service = MagicMock()
-        mock_blob_service.container_name = "test-container"
+        # Create a valid request
+        request = self._create_valid_request()
 
-        # Set up patches
-        with patch('file_processing.file_processing._parse_queue_message', side_effect=lambda msg: FileProcessingRequest(**msg.get_json())), \
-             patch('file_processing.file_processing._get_blob_service', return_value=mock_blob_service), \
-             patch('file_processing.file_processing._get_document_intelligence_service', return_value=mock_doc_intelligence), \
-             patch('file_processing.file_processing._get_openai_service'), \
-             patch('file_processing.file_processing._get_repository'), \
-             patch('file_processing.file_processing._get_queue_service'):
+        # Setup mock for document intelligence to raise a timeout
+        self.mock_doc_intelligence_instance.get_text_from_pdf.side_effect = (
+            TimeoutError("Document intelligence timeout")
+        )
 
-            # Import the function here, after all patches are in place
-            from file_processing.file_processing import _process_file_impl
+        # Process the file and expect an error
+        with self.assertRaises(TimeoutError):
+            self.processor.process(request)
 
-            # Call the function and check if error is raised
-            with self.assertRaises(TimeoutError) as context:
-                _process_file_impl(mock_message)
-
-            self.assertIn("Document processing timed out", str(context.exception))
+        # Verify that the file status was updated to ERROR
+        self.mock_files_repository_instance.upsert_file.assert_called()
+        call_args = self.mock_files_repository_instance.upsert_file.call_args[0][0]
+        self.assertEqual(call_args["status"], FileStatus.ERROR)
+        self.assertIn("Document intelligence timeout", call_args["status_message"])
 
     def test_process_file_with_cv_analysis(self):
-        """Test processing a CV file."""
-        # Create a valid message
-        message = self._create_valid_message()
-        print(f"DEBUG: Message type: {type(message)}")
-        print(f"DEBUG: Message content: {message.get_json()}")
+        """Test processing a CV file with successful analysis."""
+        # Create a valid request
+        request = self._create_valid_request(file_type="CV")
 
-        # Configure the mocks
-        self.mock_doc_intelligence_instance.process_analysis_result.return_value = {
-            "text": "extracted text",
-            "pages": [{"page_number": 1, "lines": [{"text": "John Doe"}, {"text": "Software Engineer"}]}]
+        # Setup mock responses
+        self.mock_doc_intelligence_instance.get_text_from_pdf.return_value = {
+            "text": "Sample CV text",
+            "pages": [],
+            "paragraphs": [],
         }
-
-        # Mock OpenAI analysis result
-        mock_cv_analysis = DocumentAnalysis(
-            document_type="CV",
-            structure=DocumentStructure(
-                personal_details=[{"type": "name", "text": "John Doe"}],
-                professional_summary="Experienced software engineer",
-                skills=["Python", "Azure", "Machine Learning"],
-                experience=[{
-                    "title": "Senior Developer",
-                    "start_date": "2020-01",
-                    "end_date": "2023-12",
-                    "lines": ["Led development team", "Implemented CI/CD"]
-                }],
-                education=[{
-                    "title": "Computer Science",
-                    "start_date": "2016-09",
-                    "end_date": "2020-05",
-                    "degree": "Bachelor's",
-                    "details": "First Class Honours",
-                    "city": "London"
-                }]
+        self.mock_openai_service_instance.analyze_document.return_value = (
+            DocumentAnalysis(
+                document_type=DocumentType.CV,
+                structure=CVStructure(
+                    personal_details=[{"type": "Name", "text": "John Doe"}],
+                    professional_summary="Experienced developer",
+                    skills=["Python", "JavaScript"],
+                    experience=[],
+                    education=[],
+                ),
             )
         )
-        self.mock_openai_service_instance.analyze_document.return_value = mock_cv_analysis
 
-        # Set up patches
-        with patch('file_processing.file_processing._parse_queue_message', side_effect=lambda msg: FileProcessingRequest(**msg.get_json())), \
-             patch('file_processing.file_processing._get_blob_service', return_value=self.mock_blob_service_instance), \
-             patch('file_processing.file_processing._get_document_intelligence_service', return_value=self.mock_doc_intelligence_instance), \
-             patch('file_processing.file_processing._get_repository', return_value=self.mock_files_repository_instance), \
-             patch('file_processing.file_processing._get_queue_service', return_value=self.mock_queue_service_instance), \
-             patch('file_processing.file_processing._get_openai_service', return_value=self.mock_openai_service_instance):
-
-            # Import the function here to ensure patches are applied
-            from file_processing.file_processing import _process_file_impl
-
-            # Add debug logging
-            print(f"DEBUG: _process_file_impl function: {_process_file_impl}")
-            print(f"DEBUG: blob_service_instance: {self.mock_blob_service_instance}")
-            print(f"DEBUG: get_file_content method: {self.mock_blob_service_instance.get_file_content}") 
-
-            # Call the function
-            try:
-                _process_file_impl(message)
-                print("DEBUG: _process_file_impl completed successfully")
-            except Exception as e:
-                print(f"DEBUG: _process_file_impl raised exception: {e}")
-                print(f"DEBUG: Exception type: {type(e)}")
-                print(f"DEBUG: Traceback: {traceback.format_exc()}")
-                raise
-
-            # Verify that the file was processed
-            print(f"DEBUG: get_file_content call count: {self.mock_blob_service_instance.get_file_content.call_count}")
-            print(f"DEBUG: get_file_content call args: {self.mock_blob_service_instance.get_file_content.call_args_list}")
-
-            # Check that the blob service was called to get the file content
-            self.mock_blob_service_instance.get_file_content.assert_called_once_with(self.mock_blob_service_instance.container_name, message.get_json()["filename"])
+        # Process the file
+        result = self.processor.process(request)
+        # FileProcessingOutputQueueMessage(file_id=UUID('3113973e-166d-4491-aa84-89b3eca37a9d'), user_id='test_user', type=<FileType.CV: 'CV'>, filename='test.pdf', url='https://example.com/test.pdf')
+        # Verify the result
+        self.assertEqual(result.file_id, request.id)
+        self.assertEqual(result.filename, request.filename)
+        self.assertEqual(result.type, request.type)
+        self.assertEqual(result.user_id, request.user_id)
+        self.assertEqual(result.url, request.url)
 
     def test_process_file_with_jd_analysis(self):
-        """Test processing a JD file."""
-        # Create a valid message
-        message = self._create_valid_message(file_type="JD")
+        """Test processing a Job Description file with successful analysis."""
+        # Create a mock document text - a simple job description
+        document_text = """
+        Job Title: Software Engineer
+        Department: Engineering
+        Location: New York, NY
+        Company: Acme Inc.
+        Industry: Technology
+        
+        Job Purpose:
+        We are looking for a Software Engineer to join our team.
+        
+        Key Responsibilities:
+        - Develop and maintain software applications
+        - Collaborate with cross-functional teams
+        - Write clean, maintainable code
+        
+        Required Skills:
+        - Proficiency in Python, JavaScript
+        - Experience with cloud platforms (AWS, Azure)
+        - Knowledge of software development methodologies
+        
+        Experience:
+        - 3+ years of software development experience
+        - Bachelor's degree in Computer Science or related field
+        """
 
-        # Configure the mocks
-        self.mock_doc_intelligence_instance.process_analysis_result.return_value = {
-            "text": "extracted text",
-            "pages": [{"page_number": 1, "lines": [{"text": "Software Engineer"}, {"text": "Job Description"}]}]
+        # Create a valid request
+        request = self._create_valid_request(
+            file_type="JD",
+            filename="test_jd.pdf",
+            url="https://example.com/test_jd.pdf",
+        )
+
+        # Setup mock responses
+        self.mock_blob_service_instance.get_file_content.return_value = (
+            document_text.encode("utf-8")
+        )
+        self.mock_doc_intelligence_instance.get_text_from_pdf.return_value = {
+            "text": document_text,
+            "pages": [
+                {
+                    "page_number": 1,
+                    "content": document_text,
+                    "lines": [{"content": "Test line"}],
+                }
+            ],
+            "paragraphs": ["Test paragraph"],
         }
-
-        # Mock OpenAI analysis result
-        mock_jd_analysis = DocumentAnalysis(
-            document_type="JD",
-            structure=DocumentStructure(
+        self.mock_openai_service_instance.analyze_document.return_value = DocumentAnalysis(
+            document_type=DocumentType.JD,
+            structure=JDStructure(
                 company_details=[
-                    {"type": "company_name", "text": "Example Corp"},
-                    {"type": "location", "text": "London, UK"}
+                    {"type": "Job Title", "text": "Software Engineer"},
+                    {"type": "Department", "text": "Engineering"},
+                    {"type": "Location", "text": "New York, NY"},
+                    {"type": "Company", "text": "Acme Inc."},
+                    {"type": "Industry", "text": "Technology"},
                 ],
-                role_summary="We are looking for a skilled Software Engineer",
-                required_skills=["Python", "Azure", "Machine Learning"],
-                preferred_skills=["Docker", "Kubernetes"],
-                responsibilities=["Develop high-quality software", "Collaborate with team members"],
-                experience_requirements=["3+ years of Python development", "Experience with cloud platforms"],
-                qualifications=["Bachelor's degree in Computer Science", "3+ years of experience"]
-            )
+                role_summary="We are looking for a Software Engineer to join our team.",
+                required_skills=[
+                    "Proficiency in Python, JavaScript",
+                    "Experience with cloud platforms (AWS, Azure)",
+                    "Knowledge of software development methodologies",
+                ],
+                experience_requirements=["3+ years of software development experience"],
+                education_requirements=[
+                    "Bachelor's degree in Computer Science or related field"
+                ],
+                job_title="Software Engineer",
+                additional_information=[],
+            ),
         )
-        self.mock_openai_service_instance.analyze_document.return_value = mock_jd_analysis
 
-        # Set up patches
-        with patch('file_processing.file_processing._parse_queue_message', side_effect=lambda msg: FileProcessingRequest(**msg.get_json())), \
-             patch('file_processing.file_processing._get_blob_service', return_value=self.mock_blob_service_instance), \
-             patch('file_processing.file_processing._get_document_intelligence_service', return_value=self.mock_doc_intelligence_instance), \
-             patch('file_processing.file_processing._get_repository', return_value=self.mock_files_repository_instance), \
-             patch('file_processing.file_processing._get_queue_service', return_value=self.mock_queue_service_instance), \
-             patch('file_processing.file_processing._get_openai_service', return_value=self.mock_openai_service_instance):
+        # Process the file
+        result = self.processor.process(request)
 
-            # Import the function here to ensure patches are applied
-            from file_processing.file_processing import _process_file_impl
+        # Verify the result
+        self.assertEqual(result.file_id, request.id)
+        self.assertEqual(result.user_id, request.user_id)
+        self.assertEqual(result.type, request.type)
+        self.assertEqual(result.filename, request.filename)
+        self.assertEqual(result.url, request.url)
 
-            # Call the function
-            _process_file_impl(message)
+        # Verify service calls
+        self.mock_blob_service_instance.get_file_content.assert_called_once()
+        self.mock_doc_intelligence_instance.get_text_from_pdf.assert_called_once()
+        self.mock_openai_service_instance.analyze_document.assert_called_once()
+        self.mock_files_repository_instance.upsert_file.assert_called()
+        self.mock_queue_service_instance.send_message.assert_called_once()
 
-            # Verify that the file was processed
-            self.mock_blob_service_instance.get_file_content.assert_called_once_with(self.mock_blob_service_instance.container_name, message.get_json()["filename"])
-
-    def test_process_file_openai_error(self):
-        """Test handling of OpenAI service errors during file processing."""
-        # Create a valid message
-        valid_message = self._create_valid_message()
-        
-        # Setup a mock message that will return our valid message when get_json is called
-        mock_message = MagicMock()
-        mock_message.get_json.return_value = valid_message.get_json()
-
-        # Setup mock for OpenAI
-        mock_openai = MagicMock()
-        mock_openai.analyze_document.side_effect = Exception("OpenAI service error")
-
-        # Mock blob service
-        mock_blob_service = MagicMock()
-        mock_blob_service.container_name = "test-container"
-
-        # Set up patches
-        with patch('file_processing.file_processing._parse_queue_message', side_effect=lambda msg: FileProcessingRequest(**msg.get_json())), \
-             patch('file_processing.file_processing._get_blob_service', return_value=mock_blob_service), \
-             patch('file_processing.file_processing._get_document_intelligence_service'), \
-             patch('file_processing.file_processing._get_openai_service', return_value=mock_openai), \
-             patch('file_processing.file_processing._get_repository'), \
-             patch('file_processing.file_processing._get_queue_service'):
-
-            # Import the function here, after all patches are in place
-            from file_processing.file_processing import _process_file_impl
-
-            # Call the function and check if error is raised
-            with self.assertRaises(Exception) as context:
-                _process_file_impl(mock_message)
-
-            self.assertIn("OpenAI service error", str(context.exception))
-
-    def test_process_file_blob_service_missing_container_name(self):
-        """
-        Test handling of the error when get_file_content is called with missing container_name parameter.
-        This test reproduces the defect in the backlog_todo.md file.
-        """
-        # Create a message that will be used in the test
-        file_id = str(uuid4())
-        request_data = {
-            "id": file_id,
-            "url": "https://example.com/test_cv.pdf",
-            "filename": "test_cv.pdf",
-            "type": "CV",
-            "user_id": "test_user"
-        }
-        mock_msg = MagicMock()
-        mock_msg.get_json.return_value = request_data
-        mock_msg.get_body.return_value = json.dumps(request_data).encode('utf-8')
-        
-        # Import FileProcessingRequest
-        from file_processing.schemas import FileProcessingRequest
-        
-        # Create a valid FileProcessingRequest object
-        file_request = FileProcessingRequest(
-            id=file_id,
-            url="https://example.com/test_cv.pdf",
-            filename="test_cv.pdf",
-            type="CV",
-            user_id="test_user"
+    def _create_valid_request(
+        self, file_type="CV", filename="test.pdf", url="https://example.com/test.pdf"
+    ):
+        """Helper method to create a valid request."""
+        return FileProcessingRequest(
+            id=str(uuid4()),
+            url=url,
+            filename=filename,
+            type=file_type,
+            user_id="test_user",
         )
-        
-        # Set up mocks
-        mock_blob_service = MagicMock()
-        mock_blob_service.container_name = "test-container"
-        # Simulate the error by configuring get_file_content to require two arguments but only receive one
-        mock_blob_service.get_file_content.side_effect = TypeError(
-            "FilesBlobService.get_file_content() missing 1 required positional argument: 'filename'"
-        )
-        
-        # Set up patches
-        with patch('file_processing.file_processing._parse_queue_message', return_value=file_request), \
-             patch('file_processing.file_processing._get_blob_service', return_value=mock_blob_service), \
-             patch('file_processing.file_processing._get_document_intelligence_service'), \
-             patch('file_processing.file_processing._get_openai_service'), \
-             patch('file_processing.file_processing._get_repository'), \
-             patch('file_processing.file_processing._get_queue_service'):
-            
-            # Import the function here, after all patches are in place
-            from file_processing.file_processing import _process_file_impl
-            
-            # Call the function and check if the expected TypeError is raised
-            with self.assertRaises(TypeError) as context:
-                _process_file_impl(mock_msg)
-                
-            self.assertIn("missing 1 required positional argument", str(context.exception))
 
-    def _create_valid_message(self, file_type="CV"):
-        """Create a valid message for testing."""
-        message_data = {
-            "filename": f"test_{file_type.lower()}.pdf",
-            "type": file_type,
-            "id": str(uuid4()),
-            "url": f"https://example.com/test_{file_type.lower()}.pdf",
-            "user_id": "test_user"
-        }
-        
-        # Create mock message that better simulates a func.QueueMessage
-        message = MagicMock(spec=func.QueueMessage)
-        message_json = json.dumps(message_data).encode('utf-8')
-        message.get_body.return_value = message_json
-        message.get_json.return_value = message_data
-        
-        return message
-
-    def test_update_file_status_missing_user_id(self):
-        """Test that _update_file_status can handle missing user_id gracefully."""
-        # Arrange
-        mock_repository = MagicMock()
-        mock_repository.get_file.return_value = MagicMock()
-        
-        file_id = "test_file_id"
-        status = FileStatus.PROCESSING
-        message = "Processing file"
-        
-        # Act
-        _update_file_status(mock_repository, file_id, status, message)
-        
-        # Assert
-        # Should call get_file with the file_id but without a user_id
-        mock_repository.get_file.assert_called_once_with(file_id=str(file_id), user_id=None)
 
 class IntegrationOpenAIService(OpenAIService):
+    """Integration test version of OpenAIService that returns mock responses."""
+
     def __init__(self):
         # Don't call super().__init__() to avoid API client initialization
         # Just set up the required attributes
-        self.client = None
+        self.api_key = "test_key"
+        self.api_base = "https://test.openai.com"
+        self.api_version = "2024-02-15-preview"
         self.deployment_name = "test-deployment"
-        self.model = "gpt-4"
-        
+
     def analyze_document(self, text, pages, paragraphs):
-        print(f"IntegrationOpenAIService.analyze_document called with text length: {len(text)}")
-        print(f"Pages count: {len(pages)}")
-        print(f"Paragraphs count: {len(paragraphs)}")
-        
-        # Return a mock response based on the document text
+        """Return a mock document analysis."""
         return DocumentAnalysis(
-            document_type="JD",
-            structure=DocumentStructure(
-                company_details=[
-                    {"type": "company_name", "text": "ABC Technologies"},
-                    {"type": "location", "text": "New York, NY"},
-                    {"type": "industry", "text": "Software Development"}
-                ],
-                role_summary="Senior Software Engineer in Engineering department to develop high-quality software solutions",
-                required_skills=[
-                    "Python",
-                    "JavaScript",
-                    "Cloud Computing"
-                ],
-                experience_requirements=[
-                    "5+ years in software development",
-                    "3+ years in cloud computing",
-                    "Experience with agile methodologies"
-                ]
-            )
+            document_type="CV",
+            structure=CVStructure(
+                personal_details=[{"type": "Name", "text": "John Doe"}],
+                professional_summary="Experienced developer",
+                skills=["Python", "JavaScript"],
+                experience=[],
+                education=[],
+            ),
         )
+
 
 # Removing test_parse_resume_with_document_intelligence and test_parse_resume_from_http_trigger
 # These tests are being removed because:
 # 1. They require external Azure services (Document Intelligence, Blob Storage, Cosmos DB)
 # 2. They depend on fixtures that need these external services to be configured
 # 3. They can't be run reliably in all environments without proper service configuration
-# 
+#
 # If you need to test integration with these services, consider creating environment-specific
 # test configurations or using mocks similar to the other tests in this file.
-

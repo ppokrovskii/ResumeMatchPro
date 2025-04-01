@@ -1,52 +1,57 @@
-import os
-import azure.functions as func
-import logging
-import json
 import base64
+import json
+import logging
+import os
 import re
 from uuid import uuid4
 
+import azure.functions as func
+from file_upload.schemas import (
+    FileUploadOutputQueueMessage,
+    FileUploadRequest,
+    FileUploadResponse,
+    FileUploadResponses,
+)
 from pydantic import ValidationError
-
+from shared.blob_service import FilesBlobService
 from shared.db_service import get_cosmos_db_client
 from shared.files_repository import FilesRepository
-from shared.queue_service import QueueService
-from file_upload.schemas import FileUploadOutputQueueMessage, FileUploadRequest, FileUploadResponse, FileUploadResponses
-from shared.blob_service import FilesBlobService
 from shared.models import FileMetadataDb, FileStatus
+from shared.queue_service import QueueService
 from shared.user_repository import UserRepository
 
 # create blueprint
 file_upload_bp = func.Blueprint()
 
-@file_upload_bp.route(route="files/upload", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+
+@file_upload_bp.route(
+    route="files/upload", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS
+)
 def files_upload(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
+    logging.info("Python HTTP trigger function processed a request.")
     files_blob_service = FilesBlobService()
     cosmos_db_client = get_cosmos_db_client()
     files_repository = FilesRepository(cosmos_db_client)
     user_repository = UserRepository(cosmos_db_client)
     return _files_upload(req, files_blob_service, files_repository, user_repository)
 
-def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, files_repository: FilesRepository, user_repository: UserRepository) -> func.HttpResponse:
-    try:
-        # Log all headers for debugging
-        logging.info("Request headers:")
-        for header, value in req.headers.items():
-            if header.lower() not in ['authorization', 'x-ms-client-principal']:
-                logging.info(f"{header}: {value}")
-            else:
-                logging.info(f"{header}: [REDACTED]")
 
+def _files_upload(
+    req: func.HttpRequest,
+    files_blob_service: FilesBlobService,
+    files_repository: FilesRepository,
+    user_repository: UserRepository,
+) -> func.HttpResponse:
+    try:
         # Log request details
-        logging.info("Files list type: %s", type(req.files.get('content', [])))
-        logging.info("Files list content: %s", req.files.get('content', []))
+        logging.info("Files list type: %s", type(req.files.get("content", [])))
+        logging.info("Files list content: %s", req.files.get("content", []))
         logging.info("Form data: %s", req.form)
         logging.info("Files data: %s", req.files)
 
         # Retrieve file(s) from the request robustly
-        if hasattr(req.files, 'getlist'):
-            input_files = req.files.getlist('content')
+        if hasattr(req.files, "getlist"):
+            input_files = req.files.getlist("content")
         elif isinstance(req.files, list):
             input_files = req.files
         elif req.files:
@@ -59,100 +64,111 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
             return func.HttpResponse(
                 json.dumps("Invalid request: No files provided"),
                 status_code=400,
-                mimetype="application/json"
+                mimetype="application/json",
             )
-        
+
         # Get user_id from B2C claims
-        client_principal = req.headers.get('X-MS-CLIENT-PRINCIPAL')
+        client_principal = req.headers.get("X-MS-CLIENT-PRINCIPAL")
         if not client_principal:
             logging.error("Missing X-MS-CLIENT-PRINCIPAL header")
             return func.HttpResponse(
                 json.dumps("Unauthorized - Missing user claims"),
                 status_code=401,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         try:
             logging.info("Decoding client principal")
-            claims_json = base64.b64decode(client_principal).decode('utf-8')
+            claims_json = base64.b64decode(client_principal).decode("utf-8")
             claims = json.loads(claims_json)
             logging.info(f"Claims structure: {json.dumps(claims, indent=2)}")
-            
+
             # Ensure user_id is always taken from the token
-            user_id = next((claim['val'] for claim in claims['claims'] 
-                        if claim['typ'] == 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'), None)
-            
+            user_id = next(
+                (
+                    claim["val"]
+                    for claim in claims["claims"]
+                    if claim["typ"]
+                    == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+                ),
+                None,
+            )
+
             if not user_id:
                 logging.error("No user ID found in claims")
                 return func.HttpResponse(
                     json.dumps("Unauthorized - Missing user ID in claims"),
                     status_code=401,
-                    mimetype="application/json"
+                    mimetype="application/json",
                 )
-            
+
             logging.info(f"Found user_id: {user_id}")
-            
+
         except Exception as e:
             logging.error(f"Error decoding claims: {str(e)}")
             logging.error(f"Raw client principal: {client_principal}")
             return func.HttpResponse(
                 json.dumps("Unauthorized - Invalid claims format"),
                 status_code=401,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         # Check if user can upload more files
         try:
             if not user_repository.can_upload_file(user_id):
                 return func.HttpResponse(
-                    json.dumps({
-                        "error": {
-                            "code": "FILE_UPLOAD_LIMIT_REACHED",
-                            "message": "You have reached your file upload limit. Please delete some files before uploading new ones."
+                    json.dumps(
+                        {
+                            "error": {
+                                "code": "FILE_UPLOAD_LIMIT_REACHED",
+                                "message": "You have reached your file upload limit. Please delete some files before uploading new ones.",
+                            }
                         }
-                    }),
+                    ),
                     status_code=403,
-                    mimetype="application/json"
+                    mimetype="application/json",
                 )
         except ValueError as e:
             return func.HttpResponse(
-                json.dumps({
-                    "error": {
-                        "code": "USER_NOT_FOUND",
-                        "message": f"User not found: {str(e)}"
+                json.dumps(
+                    {
+                        "error": {
+                            "code": "USER_NOT_FOUND",
+                            "message": f"User not found: {str(e)}",
+                        }
                     }
-                }),
+                ),
                 status_code=404,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         file_upload_responses = FileUploadResponses()
         # iterate over all files from the request
-        files_list = req.files.get('content', [])
+        files_list = req.files.get("content", [])
         if isinstance(files_list, dict):
             files_list = [files_list]
-            
+
         # Log the files list for debugging
         logging.info(f"Files list type: {type(files_list)}")
         logging.info(f"Files list content: {files_list}")
-        
+
         for input_file in input_files:
             try:
                 # Log input file details for debugging
                 logging.info(f"Input file type: {type(input_file)}")
-                if hasattr(input_file, '__dict__'):
+                if hasattr(input_file, "__dict__"):
                     logging.info(f"Input file attributes: {input_file.__dict__}")
 
                 # Handle each input_file
-                if hasattr(input_file, 'filename') and input_file.filename:
+                if hasattr(input_file, "filename") and input_file.filename:
                     filename = input_file.filename
                     content = input_file.read()
                 elif isinstance(input_file, bytes):
                     # If the file is already bytes, try to get the filename from the original FileStorage
                     fs_obj = None
-                    if hasattr(req.files, 'get'):
-                        fs_obj = req.files.get('content')
-                    if fs_obj and hasattr(fs_obj, 'filename') and fs_obj.filename:
+                    if hasattr(req.files, "get"):
+                        fs_obj = req.files.get("content")
+                    if fs_obj and hasattr(fs_obj, "filename") and fs_obj.filename:
                         filename = fs_obj.filename
                     else:
                         filename = None
@@ -161,12 +177,12 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
                     # For other formats
                     filename = None
                     content = input_file
-                    if hasattr(input_file, 'name'):
+                    if hasattr(input_file, "name"):
                         filename = input_file.name
-                    elif 'filename' in req.form:
-                        filename = req.form['filename']
-                    elif hasattr(input_file, 'headers'):
-                        content_disp = input_file.headers.get('Content-Disposition', '')
+                    elif "filename" in req.form:
+                        filename = req.form["filename"]
+                    elif hasattr(input_file, "headers"):
+                        content_disp = input_file.headers.get("Content-Disposition", "")
                         m = re.search('filename="([^"]+)"', content_disp)
                         if m:
                             filename = m.group(1)
@@ -177,29 +193,29 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
                     return func.HttpResponse(
                         json.dumps("Invalid request: Filename not provided"),
                         status_code=400,
-                        mimetype="application/json"
+                        mimetype="application/json",
                     )
-                    
+
                 # Remove any user_id extraction from request payload or parameters
                 request_dict = {
                     "user_id": user_id,  # Ensure user_id is from token
                     "type": req.form.get("type"),
                     "filename": filename,
-                    "content": content
+                    "content": content,
                 }
                 file_upload_request = FileUploadRequest(**request_dict)
             except ValidationError as e:
                 return func.HttpResponse(
                     json.dumps("Invalid request: " + str(e)),
                     status_code=400,
-                    mimetype="application/json"
+                    mimetype="application/json",
                 )
-        
+
             # upload file to blob storage
             blob_url = files_blob_service.upload_blob(
                 container_name=files_blob_service.container_name,
-                filename=file_upload_request.filename, 
-                content=file_upload_request.content
+                filename=file_upload_request.filename,
+                content=file_upload_request.content,
             )
             # Save file metadata to database
             try:
@@ -210,9 +226,11 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
                     user_id=user_id,
                     url=blob_url,
                     status=FileStatus.UPLOADED,
-                    status_message="File uploaded successfully, waiting for processing"
+                    status_message="File uploaded successfully, waiting for processing",
                 )
-                file_metadata = files_repository.upsert_file(file_metadata.model_dump(mode="json"))
+                file_metadata = files_repository.upsert_file(
+                    file_metadata.model_dump(mode="json")
+                )
                 # Increment the user's file count after successful upload
                 user_repository.increment_files_count(user_id)
             except ValidationError as e:
@@ -220,34 +238,40 @@ def _files_upload(req: func.HttpRequest, files_blob_service: FilesBlobService, f
                 return func.HttpResponse(
                     json.dumps({"error": "Internal Server Error", "details": str(e)}),
                     status_code=500,
-                    mimetype="application/json"
-                )        
+                    mimetype="application/json",
+                )
             # send to queue 'processing-queue'
-            queue_service = QueueService(connection_string=os.getenv("AZURE_STORAGE_CONNECTION_STRING"))
+            queue_service = QueueService(
+                connection_string=os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+            )
             queue_service.create_queue_if_not_exists("processing-queue")
-            file_upload_queue_message = FileUploadOutputQueueMessage(**file_metadata.model_dump())
+            file_upload_queue_message = FileUploadOutputQueueMessage(
+                **file_metadata.model_dump()
+            )
             msg = file_upload_queue_message.model_dump_json()
             queue_service.send_message("processing-queue", msg)
-            
+
             # Add response
-            file_upload_responses.files.append(FileUploadResponse(
-                filename=file_metadata.filename,
-                url=file_metadata.url,
-                type=file_metadata.type,
-                user_id=file_metadata.user_id,
-                status=file_metadata.status,
-                status_message=file_metadata.status_message
-            ))
-        
+            file_upload_responses.files.append(
+                FileUploadResponse(
+                    filename=file_metadata.filename,
+                    url=file_metadata.url,
+                    type=file_metadata.type,
+                    user_id=file_metadata.user_id,
+                    status=file_metadata.status,
+                    status_message=file_metadata.status_message,
+                )
+            )
+
         return func.HttpResponse(
             file_upload_responses.model_dump_json(),
             status_code=200,
-            mimetype="application/json"
+            mimetype="application/json",
         )
     except Exception as e:
         logging.error(f"Unexpected error in file upload: {str(e)}", exc_info=True)
         return func.HttpResponse(
             json.dumps({"error": "Internal Server Error", "details": str(e)}),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )
