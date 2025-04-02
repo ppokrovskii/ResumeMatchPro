@@ -173,14 +173,14 @@ def _get_files(
             status_code=200,
         )
     except ValidationError as e:
-        logging.error(f"Validation error: {str(e)}")
+        logging.exception(f"Validation error: {str(e)}")
         return func.HttpResponse(
             body=json.dumps({"error": str(e)}),
             mimetype="application/json",
             status_code=400,
         )
     except Exception as e:
-        logging.error(f"Error getting files: {str(e)}")
+        logging.exception(f"Error getting files: {str(e)}")
         return func.HttpResponse(
             body=json.dumps({"error": "Internal Server Error"}),
             mimetype="application/json",
