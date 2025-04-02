@@ -5,7 +5,7 @@ import os
 import sys
 from pathlib import Path
 from unittest import mock
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, Mock
 from uuid import uuid4
 
 import azure.functions as func
@@ -25,11 +25,14 @@ from shared.models import (
 )
 from shared.openai_service.models import (
     CVStructure,
-    DocumentAnalysis,
-    DocumentStructure,
-    DocumentType,
     ExperienceBlock,
     PersonalDetail,
+)
+from user_files.exceptions import (
+    FileNotFoundError,
+    PermissionDeniedError,
+    UnauthorizedError,
+    ValidationError,
 )
 from user_files.user_files import (
     _delete_file,
@@ -333,12 +336,11 @@ def test_delete_file_logic_not_found():
     )
 
     # Call the function
-    response = _delete_file(req, mock_blob_service, mock_files_repository)
+    with pytest.raises(FileNotFoundError) as context:
+        response = _delete_file(req, mock_blob_service, mock_files_repository)
 
-    # Assert response
-    assert response.status_code == 404
-    error_response = json.loads(response.get_body())
-    assert error_response["error"] == "File not found"
+    assert str(context.value).startswith("File")
+    assert str(context.value).endswith("not found")
 
     # Verify no delete calls were made
     mock_blob_service.delete_blob.assert_not_called()
@@ -357,10 +359,9 @@ def test_delete_file_logic_missing_params():
     # Mock the get_claims method
     req1.get_claims = mock.Mock(return_value={"sub": "user-123"})
 
-    response = _delete_file(req1, mock_blob_service, mock_files_repository)
-    assert response.status_code == 400
-    error_response = json.loads(response.get_body())
-    assert error_response["error"] == "file_id is required"
+    with pytest.raises(ValidationError) as context:
+        response = _delete_file(req1, mock_blob_service, mock_files_repository)
+    assert str(context.value) == "file_id is required"
 
     # Verify no service calls were made
     mock_blob_service.assert_not_called()
@@ -383,12 +384,9 @@ def test_delete_file_unauthorized():
     )
 
     # Call the function
-    response = _delete_file(req, mock_blob_service, mock_files_repository)
-
-    # Assert response
-    assert response.status_code == 401
-    error_response = json.loads(response.get_body())
-    assert error_response["error"] == "Unauthorized - Missing user claims"
+    with pytest.raises(UnauthorizedError) as context:
+        response = _delete_file(req, mock_blob_service, mock_files_repository)
+    assert str(context.value) == "Missing user claims"
 
     # Verify no service calls were made
     mock_blob_service.assert_not_called()
@@ -442,15 +440,9 @@ def test_delete_file_forbidden():
     )
 
     # Call the function
-    response = _delete_file(req, mock_blob_service, mock_files_repository)
-
-    # Assert response
-    assert response.status_code == 403
-    error_response = json.loads(response.get_body())
-    assert (
-        error_response["error"]
-        == "Unauthorized - You don't have permission to delete this file"
-    )
+    with pytest.raises(PermissionDeniedError) as context:
+        response = _delete_file(req, mock_blob_service, mock_files_repository)
+    assert str(context.value) == "You don't have permission to delete this file"
 
     # Verify no delete calls were made
     mock_blob_service.delete_blob.assert_not_called()
