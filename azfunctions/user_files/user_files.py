@@ -66,6 +66,7 @@ def get_files(req: func.HttpRequest) -> func.HttpResponse:
         response = _get_files(req, files_repository)
         return response
     except Exception as e:
+        logging.exception(f"Error in get_files wrapper: {str(e)}")
         logging.error(f"Error in get_files wrapper: {str(e)}")
         return func.HttpResponse(
             body=json.dumps({"error": "Internal Server Error"}),

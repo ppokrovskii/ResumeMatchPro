@@ -94,15 +94,10 @@ resource "azurerm_monitor_metric_alert" "error_traces_alert" {
 
     criteria {
         metric_namespace = "Microsoft.Insights/components"
-        metric_name = "traces/count"
+        metric_name = "requests/failed"
         aggregation = "Count"
         operator = "GreaterThan"
         threshold = 0
-        dimension {
-            name = "severityLevel"
-            operator = "Include"
-            values = ["3"]  # Error level
-        }
     }
 
     action {

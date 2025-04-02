@@ -5,7 +5,7 @@
       "samplingSettings": {
         "isEnabled": true,
         "excludedTypes": "Request",
-        "includedTypes": "Exception"
+        "includedTypes": "Exception,Trace"
       },
       "enableLiveMetrics": true,
       "enableDependencyTracking": true,
@@ -19,13 +19,8 @@
     "logLevel": {
       "default": "Information",
       "Host.Results": "Error",
-      "Function": "Information",
-      "Host.Aggregator": "Information",
-      "azure": "Error",
-      "azure.core": "Error",
-      "azure.cosmos": "Error",
-      "azure.storage": "Error",
-      "azure.identity": "Error"
+      "Function": "Error",
+      "Host.Aggregator": "Information"
     }
   },
   "extensionBundle": {
