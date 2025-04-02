@@ -64,16 +64,14 @@ resource "azurerm_monitor_metric_alert" "exceptions_alert" {
     description = "Alert when exceptions or errors occur in the application"
     severity = 2
     frequency = "PT1M"
-    window_size = "PT5M"
+    window_size = "PT1M"
 
-    dynamic_criteria {
+    criteria {
         metric_namespace = "Microsoft.Insights/components"
-        metric_name = "exceptions/server"
+        metric_name = "requests/failed"
         aggregation = "Count"
         operator = "GreaterThan"
-        alert_sensitivity = "High"
-        evaluation_total_count = 1
-        evaluation_failure_count = 1
+        threshold = 0
     }
 
     action {

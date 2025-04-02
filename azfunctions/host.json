@@ -3,9 +3,9 @@
   "logging": {
     "applicationInsights": {
       "samplingSettings": {
-        "isEnabled": true,
-        "excludedTypes": "",
-        "includedTypes": "Request,Exception,Trace,Dependencies"
+        "isEnabled": false,
+        "excludedTypes": "Request",
+        "includedTypes": "Exception,Trace,Dependencies,CustomEvents"
       },
       "enableLiveMetrics": true,
       "enableDependencyTracking": true,
@@ -21,7 +21,11 @@
       "Host.Results": "Error",
       "Function": "Error",
       "Host.Aggregator": "Information"
-    }
+    },
+    "console": {
+      "isEnabled": true
+    },
+    "fileLoggingMode": "always"
   },
   "extensionBundle": {
     "id": "Microsoft.Azure.Functions.ExtensionBundle",

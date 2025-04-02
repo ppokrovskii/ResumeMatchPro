@@ -59,6 +59,11 @@ resource "azurerm_linux_function_app" "resumematchpro" {
         "AZURE_STORAGE_CONNECTION_STRING" = azurerm_storage_account.storage.primary_connection_string
         "AzureWebJobsStorage" = azurerm_storage_account.storage.primary_connection_string
         
+        "APPINSIGHTS_SAMPLING_PERCENTAGE" = "100"
+        "APPLICATIONINSIGHTS_ENABLE_AGENT" = "true"
+        "APPLICATIONINSIGHTS_ROLE_NAME" = "${var.project_name}-${terraform.workspace}-function-app"
+        "APPLICATIONINSIGHTS_ENABLE_ADAPTIVE_SAMPLING" = "false"
+        
         "AZURE_OPENAI_API_KEY" = var.AZURE_OPENAI_API_KEY
         "AZURE_OPENAI_ENDPOINT" = var.AZURE_OPENAI_ENDPOINT
         "AZURE_OPENAI_DEPLOYMENT_NAME" = var.AZURE_OPENAI_DEPLOYMENT_NAME
