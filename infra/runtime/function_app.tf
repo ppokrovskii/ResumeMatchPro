@@ -7,6 +7,12 @@ resource "azurerm_linux_function_app" "resumematchpro" {
     storage_account_name      = azurerm_storage_account.storage.name
     storage_account_access_key = azurerm_storage_account.storage.primary_access_key
 
+    tags = {
+        "hidden-link: /app-insights-conn-string"         = azurerm_application_insights.ResumeMatchProInsights.connection_string
+        "hidden-link: /app-insights-instrumentation-key" = azurerm_application_insights.ResumeMatchProInsights.instrumentation_key
+        "hidden-link: /app-insights-resource-id"         = azurerm_application_insights.ResumeMatchProInsights.id
+    }
+
     site_config {
         application_stack {
             python_version = "3.11"
@@ -16,6 +22,9 @@ resource "azurerm_linux_function_app" "resumematchpro" {
             allowed_origins = split(",", var.MAIN_FRONTEND_URLS)
             support_credentials = true
         }
+
+        application_insights_connection_string = azurerm_application_insights.ResumeMatchProInsights.connection_string
+        application_insights_key = azurerm_application_insights.ResumeMatchProInsights.instrumentation_key
     }
 
     auth_settings_v2 {
@@ -38,17 +47,15 @@ resource "azurerm_linux_function_app" "resumematchpro" {
 
     app_settings = {
         "FUNCTIONS_WORKER_RUNTIME" = "python"
-        "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.ResumeMatchProInsights.instrumentation_key
-        "APPINSIGHTS_ENABLED" = "true"
-        "APPINSIGHTS_SNAPSHOTFEATURE_VERSION" = "1.0"
-        "APPINSIGHTS_DISABLE_QUICKPULSE" = "false"
-        "APPINSIGHTS_ENABLE_AGENT" = "true"
-        "APPINSIGHTS_ENABLE_LOGGING" = "true"
-        "APPINSIGHTS_ENABLE_PERFORMANCE_COUNTERS" = "true"
-        "APPINSIGHTS_ENABLE_REQUESTS" = "true"
-        "APPINSIGHTS_ENABLE_DEPENDENCY_TRACKING" = "true"
-        "APPINSIGHTS_ENABLE_EXCEPTION_TRACKING" = "true"
-        "APPINSIGHTS_ENABLE_METRICS" = "true"
+        "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.ResumeMatchProInsights.connection_string
+        "WEBSITE_ENABLE_SYNC_UPDATE_SITE" = "true"
+        "ApplicationInsightsAgent_EXTENSION_VERSION" = "~3"
+        "XDT_MicrosoftApplicationInsights_Mode" = "Recommended"
+        "APPINSIGHTS_PROFILERFEATURE_VERSION" = "1.0.0"
+        "DiagnosticServices_EXTENSION_VERSION" = "~3"
+        "InstrumentationEngine_EXTENSION_VERSION" = "disabled"
+        "SnapshotDebugger_EXTENSION_VERSION" = "disabled"
+        "XDT_MicrosoftApplicationInsights_BaseExtensions" = "disabled"
         "AZURE_STORAGE_CONNECTION_STRING" = azurerm_storage_account.storage.primary_connection_string
         "AzureWebJobsStorage" = azurerm_storage_account.storage.primary_connection_string
         
@@ -73,7 +80,6 @@ resource "azurerm_linux_function_app" "resumematchpro" {
 
     lifecycle {
         ignore_changes = [
-            app_settings["APPINSIGHTS_INSTRUMENTATIONKEY"],
             app_settings["AzureWebJobsStorage"]
         ]
     }

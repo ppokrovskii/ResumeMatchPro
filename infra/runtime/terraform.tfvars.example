@@ -14,3 +14,8 @@ BACKEND_B2C_CLIENT_ID = "your-backend-b2c-client-id"
 # CORS Configuration
 MAIN_FRONTEND_URLS = "http://localhost:3000,https://app.resumematchpro.com"
 LANDING_FRONTEND_URLS = "http://localhost:3001,https://resumematchpro.com" 
+
+# Telegram alert bot
+TELEGRAM_BOT_TOKEN = "123213123:q31231r3"
+TELEGRAM_CHAT_ID = 12312323
+TELEGRAM_FUNCTION_KEY = slnfksenfkejnf

@@ -104,3 +104,25 @@ variable "DIRECTORY_ID" {
     description = "The directory (tenant) ID of the Azure AD B2C tenant"
     type        = string
 }
+
+variable "TELEGRAM_BOT_TOKEN" {
+    description = "Telegram bot token"
+    type        = string
+}
+
+variable "TELEGRAM_CHAT_ID" {
+    description = "Telegram chat ID"
+    type        = string
+}
+
+variable "TELEGRAM_FUNCTION_KEY" {
+    description = "Function key for the Telegram alert function"
+    type        = string
+    sensitive   = true
+}
+
+variable "log_analytics_workspace_suffix" {
+    description = "Suffix for the Log Analytics workspace resource group"
+    type        = string
+    default     = "67b47b80-3f39-4bdc-b105-bd41ecdbd866_managed"
+}

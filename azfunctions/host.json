@@ -4,14 +4,23 @@
     "applicationInsights": {
       "samplingSettings": {
         "isEnabled": true,
-        "excludedTypes": "Request"
+        "excludedTypes": "Request",
+        "includedTypes": "Exception"
+      },
+      "enableLiveMetrics": true,
+      "enableDependencyTracking": true,
+      "enablePerformanceCountersCollection": true,
+      "httpAutoCollectionOptions": {
+        "enableHttpTriggerExtendedInfoCollection": true,
+        "enableW3CDistributedTracing": true,
+        "enableResponseHeaderInjection": true
       }
     },
     "logLevel": {
-      "default": "Warning",
+      "default": "Information",
       "Host.Results": "Error",
       "Function": "Information",
-      "Host.Aggregator": "Error",
+      "Host.Aggregator": "Information",
       "azure": "Error",
       "azure.core": "Error",
       "azure.cosmos": "Error",
