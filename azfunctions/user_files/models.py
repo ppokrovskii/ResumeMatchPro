@@ -1,21 +1,18 @@
 from enum import Enum
-from typing import List, Optional, Dict, Any
-from uuid import UUID, uuid4
-from openai import BaseModel
-from pydantic import Field
+from typing import Any, List, Optional
 
-from shared.models import FileStatus
+from openai import BaseModel
 
 
 class FileType(str, Enum):
     CV = "CV"
     JD = "JD"
-    
-    
+
+
 class UserFilesRequest(BaseModel):
     user_id: str
     type: Optional[FileType] = None
-    
+
 
 class TableCell(BaseModel):
     text: str
@@ -54,7 +51,7 @@ class ResumeStructure(BaseModel):
     skills: List[str]
     experience: List[ExperienceEntry]
     education: List[Any]
-    additional_information: List[str]
+    additional_information: Optional[List[str]] = None
 
 
 class File(BaseModel):
@@ -72,4 +69,3 @@ class File(BaseModel):
 
 class UserFilesResponse(BaseModel):
     files: List[File] = []
-    

@@ -1,7 +1,7 @@
+# ruff: noqa: F401
 import base64
 import json
 import logging
-import os
 
 import azure.functions as func
 from pydantic import ValidationError
@@ -9,18 +9,18 @@ from shared.blob_service import FilesBlobService
 from shared.db_service import get_cosmos_db_client
 from shared.files_repository import FilesRepository
 from shared.models import FileType
-from shared.openai_service.models import DocumentAnalysis
+
 from user_files.models import (
-    ExperienceEntry,
     File,
-    Line,
-    Page,
-    PersonalDetail,
     ResumeStructure,
-    TableCell,
     UserFilesRequest,
     UserFilesResponse,
 )
+
+
+# This function is unused and should be highlighted by Ruff
+def dummy_function():
+    return "Hello, world!"
 
 
 def get_user_id_from_claims(req: func.HttpRequest) -> str:
