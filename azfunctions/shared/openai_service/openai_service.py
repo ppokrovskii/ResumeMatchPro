@@ -105,7 +105,7 @@ class OpenAIService:
 
     def match_cv_and_jd(self, cv_text: str, jd_text: str):
         prompt = f"""Analyze the provided CV and JD to determine the suitability of the candidate for the specified job position. 
-        call store_matching_result function to store the result.
+        you MUST call store_matching_result function to store the result.
         
         Instructions:
         Extract and List Key Requirements from the JD: Identify and categorize the essential qualifications, skills, and experience levels mentioned in the job description. This should include, but not be limited to, technical skills, soft skills, education requirements, and years of relevant experience.
@@ -146,11 +146,13 @@ class OpenAIService:
             tool_calls = response_message.tool_calls
 
             if not tool_calls:
-                raise ValueError("No tool calls received in the response")
+                raise ValueError(
+                    f"No tool calls received in the response: {response_message}"
+                )
 
             if len(tool_calls) > 1:
                 raise ValueError(
-                    f"Expected only one tool call but got {len(tool_calls)}"
+                    f"Expected only one tool call but got {len(tool_calls)} in response: {response_message}"
                 )
 
             tool_call = tool_calls[0]
@@ -158,7 +160,7 @@ class OpenAIService:
 
             if not function_args:
                 raise ValueError(
-                    f"Expected function_args in tool call but got {function_args}"
+                    f"Expected function_args in tool call but got {function_args} in response: {response_message}"
                 )
             try:
                 result = MatchingResultModel.from_json(function_args)
@@ -188,8 +190,9 @@ class OpenAIService:
                 function_args = tool_call.function.arguments
                 result = MatchingResultModel.from_json(function_args)
             except Exception as e:
-                logging.error(f"Error matching CV and JD: {str(e)}")
-                raise
+                raise ValueError(
+                    f"Error matching CV and JD: {str(e)} in response: {response_message}"
+                )
             return result
 
         except Exception as e:

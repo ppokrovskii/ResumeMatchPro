@@ -9,7 +9,6 @@ from shared.blob_service import FilesBlobService
 from shared.db_service import get_cosmos_db_client
 from shared.files_repository import FilesRepository
 from shared.models import FileType
-
 from user_files.models import (
     File,
     ResumeStructure,
