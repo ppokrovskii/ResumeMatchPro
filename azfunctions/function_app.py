@@ -12,12 +12,12 @@ load_dotenv()
 sys.path.append(str(Path(__file__).parent))
 
 # Import all function modules to register their blueprints
-from file_processing.file_processing import file_processing_bp
-from file_upload.file_upload import file_upload_bp
-from matching.matching import matching_bp
-from matching_results.matching_results import matching_results_bp
-from user_files.user_files import user_files_bp
-from users.users import users_bp
+# from file_processing.file_processing import file_processing_bp
+# from file_upload.file_upload import file_upload_bp
+# from matching.matching import matching_bp
+# from matching_results.matching_results import matching_results_bp
+# from user_files.user_files import user_files_bp
+# from users.users import users_bp
 
 # Create the app with explicit function names
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
