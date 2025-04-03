@@ -68,31 +68,7 @@ resource "azurerm_monitor_metric_alert" "exceptions_alert" {
 
     criteria {
         metric_namespace = "Microsoft.Insights/components"
-        metric_name = "requests/failed"
-        aggregation = "Count"
-        operator = "GreaterThan"
-        threshold = 0
-    }
-
-    action {
-        action_group_id = azurerm_monitor_action_group.telegram_alerts.id
-    }
-
-    enabled = true
-}
-
-resource "azurerm_monitor_metric_alert" "error_traces_alert" {
-    name = "${var.project_name}-${terraform.workspace}-error-traces-alert"
-    resource_group_name = azurerm_resource_group.rg.name
-    scopes = [azurerm_application_insights.ResumeMatchProInsights.id]
-    description = "Alert when error traces are detected"
-    severity = 2
-    frequency = "PT1M"
-    window_size = "PT5M"
-
-    criteria {
-        metric_namespace = "Microsoft.Insights/components"
-        metric_name = "requests/failed"
+        metric_name = "exceptions/count"
         aggregation = "Count"
         operator = "GreaterThan"
         threshold = 0

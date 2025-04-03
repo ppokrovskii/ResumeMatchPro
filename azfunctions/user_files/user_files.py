@@ -28,11 +28,6 @@ from user_files.models import (
 )
 
 
-# This function is unused and should be highlighted by Ruff
-def dummy_function():
-    return "Hello, world!"
-
-
 def _extract_user_id(req: func.HttpRequest) -> str:
     """Extract and validate user ID from request"""
     client_principal = req.headers.get("X-MS-CLIENT-PRINCIPAL")
@@ -104,14 +99,10 @@ def _get_files(
                     file_json["job_title"] = structure.job_title
 
             files_response.append(file_json)
+        except PydanticValidationError as e:
+            raise ValidationError(f"Invalid file metadata format: {str(e)}")
         except Exception as e:
-            # Log the error but continue processing other files
-            logging.error(f"Error processing file metadata: {str(e)}")
-            try:
-                file_json = file_metadata.model_dump(mode="json")
-                files_response.append(file_json)
-            except Exception as ex:
-                logging.error(f"Failed to include file in response: {str(ex)}")
+            raise BlobStorageError(f"Failed to process file metadata: {str(e)}")
 
     response = UserFilesResponse(files=files_response)
     return func.HttpResponse(

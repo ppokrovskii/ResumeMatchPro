@@ -63,6 +63,10 @@ resource "azurerm_linux_function_app" "resumematchpro" {
         "APPLICATIONINSIGHTS_ENABLE_AGENT" = "true"
         "APPLICATIONINSIGHTS_ROLE_NAME" = "${var.project_name}-${terraform.workspace}-function-app"
         "APPLICATIONINSIGHTS_ENABLE_ADAPTIVE_SAMPLING" = "false"
+        "APPLICATIONINSIGHTS_ENABLE_OPENTELEMETRY" = "true"
+        "APPLICATIONINSIGHTS_ENABLE_LOGGING" = "true"
+        "APPLICATIONINSIGHTS_ENABLE_METRICS" = "true"
+        "APPLICATIONINSIGHTS_ENABLE_TRACING" = "true"
         
         "AZURE_OPENAI_API_KEY" = var.AZURE_OPENAI_API_KEY
         "AZURE_OPENAI_ENDPOINT" = var.AZURE_OPENAI_ENDPOINT

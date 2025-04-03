@@ -574,12 +574,9 @@ def test_get_file_missing_file_id(repository):
         route_params={},  # Missing file_id
         headers={"X-MS-CLIENT-PRINCIPAL": client_principal},
     )
-    resp = _get_file(req, repository)
-    assert resp.status_code == 400, f"Expected 400, got {resp.status_code}"
-    data = json.loads(resp.get_body().decode())
-    assert "file_id is required" in data.get("error", ""), (
-        "Missing error message for missing file_id"
-    )
+    with pytest.raises(ValidationError) as context:
+        resp = _get_file(req, repository)
+    assert str(context.value) == "file_id is required"
 
 
 @pytest.mark.external_services
@@ -593,12 +590,9 @@ def test_get_file_missing_claims(repository):
         route_params={"file_id": file_id},
         headers={},  # Missing X-MS-CLIENT-PRINCIPAL header
     )
-    resp = _get_file(req, repository)
-    assert resp.status_code == 401, f"Expected 401, got {resp.status_code}"
-    data = json.loads(resp.get_body().decode())
-    assert "Missing user claims" in data.get("error", ""), (
-        "Expected missing claims error message"
-    )
+    with pytest.raises(UnauthorizedError) as context:
+        resp = _get_file(req, repository)
+    assert str(context.value) == "Missing user claims"
 
 
 @pytest.mark.external_services
@@ -614,12 +608,10 @@ def test_get_file_not_found(repository):
         route_params={"file_id": file_id},
         headers={"X-MS-CLIENT-PRINCIPAL": client_principal},
     )
-    resp = _get_file(req, repository)
-    assert resp.status_code == 404, f"Expected 404, got {resp.status_code}"
-    data = json.loads(resp.get_body().decode())
-    assert "File not found" in data.get("error", ""), (
-        "Expected file not found error message"
-    )
+    with pytest.raises(FileNotFoundError) as context:
+        resp = _get_file(req, repository)
+    assert str(context.value).startswith("File")
+    assert str(context.value).endswith("not found")
 
 
 @pytest.mark.external_services
@@ -637,12 +629,10 @@ def test_get_file_unauthorized(repository, blob_service, sample_file_content):
         route_params={"file_id": file_id},
         headers={"X-MS-CLIENT-PRINCIPAL": client_principal},
     )
-    resp = _get_file(req, repository)
-    assert resp.status_code == 404, f"Expected 404, got {resp.status_code}"
-    data = json.loads(resp.get_body().decode())
-    assert "File not found" in data.get("error", ""), (
-        "Expected file not found error message"
-    )
+    with pytest.raises(FileNotFoundError) as context:
+        resp = _get_file(req, repository)
+    assert str(context.value).startswith("File")
+    assert str(context.value).endswith("not found")
 
 
 @pytest.mark.external_services
@@ -704,13 +694,12 @@ def test_download_file_not_found(repository, blob_service):
         headers={"X-MS-CLIENT-PRINCIPAL": encoded_claims},
         body=None,
     )
-
-    response = _download_file(
-        req, files_repository=repository, files_blob_service=blob_service
-    )
-
-    assert response.status_code == 404
-    assert json.loads(response.get_body())["error"] == "File not found"
+    with pytest.raises(FileNotFoundError) as context:
+        resp = _download_file(
+            req, files_blob_service=blob_service, files_repository=repository
+        )
+    assert str(context.value).startswith("File")
+    assert str(context.value).endswith("not found")
 
 
 @pytest.mark.external_services
@@ -723,13 +712,11 @@ def test_download_file_unauthorized(repository, blob_service):
         headers={},
         body=None,
     )
-
-    response = _download_file(req, repository, blob_service)
-
-    assert response.status_code == 401
-    assert (
-        json.loads(response.get_body())["error"] == "Unauthorized - Missing user claims"
-    )
+    with pytest.raises(UnauthorizedError) as context:
+        resp = _download_file(
+            req, files_blob_service=blob_service, files_repository=repository
+        )
+    assert str(context.value) == "Missing user claims"
 
 
 @pytest.mark.external_services
@@ -756,14 +743,11 @@ def test_download_file_forbidden(repository, blob_service, sample_file_metadata)
         headers={"X-MS-CLIENT-PRINCIPAL": encoded_claims},
         body=None,
     )
-
-    # Use the correct parameter order
-    response = _download_file(req, blob_service, repository)
-
-    # When the file exists but user doesn't have permission, it should return 403
-    assert response.status_code == 403
-    error_response = json.loads(response.get_body())
-    assert "don't have permission" in error_response["error"]
+    with pytest.raises(PermissionDeniedError) as context:
+        resp = _download_file(
+            req, files_blob_service=blob_service, files_repository=repository
+        )
+    assert str(context.value) == "You don't have permission to access this file"
 
 
 @pytest.fixture

@@ -3,7 +3,9 @@ from typing import Optional
 from uuid import UUID
 
 from azure.cosmos import DatabaseProxy, PartitionKey
+from azure.cosmos.exceptions import CosmosHttpResponseError
 from shared.models import FileMetadataDb
+from user_files.exceptions import PermissionDeniedError
 
 
 class FilesRepository:
@@ -102,11 +104,10 @@ class FilesRepository:
 
             file = FileMetadataDb(**items[0])
             if file.user_id != user_id:
-                raise PermissionError("You don't have permission to access this file")
-
+                raise PermissionDeniedError(
+                    "You don't have permission to access this file"
+                )
             return file
-        except PermissionError:
-            raise
-        except Exception as e:
-            logging.error(f"Error getting file by ID: {str(e)}")
-            return None
+
+        except CosmosHttpResponseError as e:
+            raise e
