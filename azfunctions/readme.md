@@ -7,6 +7,7 @@
 - Node.js and npm
 - Azure Functions Core Tools
 - Azurite (Azure Storage Emulator)
+- uv (Python package manager)
 
 ### Installation Steps
 
@@ -23,6 +24,17 @@
 2. Install Azurite (Azure Storage Emulator):
 ```powershell
 npm install -g azurite
+```
+
+3. Install uv (Python package manager):
+```bash
+# Windows (PowerShell)
+Invoke-WebRequest -Uri "https://astral.sh/uv/install.ps1" -OutFile "install-uv.ps1"
+.\install-uv.ps1
+Remove-Item install-uv.ps1
+
+# Linux/Mac
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 ### Configuration
@@ -62,7 +74,29 @@ azurite
 cd azfunctions
 ```
 
-3. Start the Functions host:
+3. Set up the development environment:
+```powershell
+# Create virtual environment
+uv venv .venv
+
+# Activate virtual environment
+# Windows
+.venv\Scripts\Activate.ps1
+# Linux/Mac
+source .venv/bin/activate
+
+# Install dependencies from pyproject.toml
+uv pip install .
+
+# Install development dependencies
+uv pip install ".[dev]"
+
+# Generate requirements.txt and requirements.lock
+uv pip compile pyproject.toml -o requirements.txt
+uv pip compile pyproject.toml --generate-hashes -o requirements.lock
+```
+
+4. Start the Functions host:
 ```powershell
 func start
 ```
@@ -70,12 +104,48 @@ func start
 ### Accessing the Functions
 - Local endpoint: `http://localhost:7071`
 - API routes: `http://localhost:7071/api/{route}`
-- Available routes:
-  - `POST /api/files/upload`: Upload files
-  - `GET /api/files`: Get user files
-  - `POST /api/matching`: Match resume
-  - `GET /api/matching/results`: Get matching results
-  - `GET /api/auth_test`: Test authentication
+
+### Development Workflow
+
+1. Make changes to your code
+2. Run tests:
+```bash
+# Run all tests
+pytest
+
+# Run specific test
+pytest tests/test_queue_service.py -v
+```
+
+3. When adding new dependencies:
+```bash
+# Add a runtime dependency
+uv pip add package-name
+
+# Add a development dependency
+uv pip add --dev package-name
+
+# After adding dependencies, regenerate requirements files
+uv pip compile pyproject.toml -o requirements.txt
+uv pip compile pyproject.toml --generate-hashes -o requirements.lock
+```
+
+4. Commit and push your changes:
+```bash
+git add .
+git commit -m "Your commit message"
+git push origin develop
+```
+
+5. Watch GitHub Actions until successful completion
+
+### Important Notes
+
+1. Always commit both `requirements.txt` and `requirements.lock` files
+2. Use `requirements.lock` for local development to ensure consistent dependencies
+3. CI/CD uses `requirements.txt` for deployment to Azure Functions
+4. When adding new dependencies, always regenerate both files
+5. The lock file is platform-specific, so it's only used locally
 
 ## Cosmos DB Emulator
 To install it: https://learn.microsoft.com/en-us/azure/cosmos-db/how-to-develop-emulator?tabs=windows%2Ccsharp&pivots=api-nosql
