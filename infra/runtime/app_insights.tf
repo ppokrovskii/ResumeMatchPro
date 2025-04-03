@@ -81,30 +81,6 @@ resource "azurerm_monitor_metric_alert" "exceptions_alert" {
     enabled = true
 }
 
-resource "azurerm_monitor_metric_alert" "http_500_alert" {
-    name = "${var.project_name}-${terraform.workspace}-http-500-alert"
-    resource_group_name = azurerm_resource_group.rg.name
-    scopes = [azurerm_application_insights.ResumeMatchProInsights.id]
-    description = "Alert when HTTP 500 errors occur"
-    severity = 2
-    frequency = "PT1M"
-    window_size = "PT5M"
-
-    criteria {
-        metric_namespace = "Custom/HttpStatus"
-        metric_name = "http_500_count"
-        aggregation = "Count"
-        operator = "GreaterThan"
-        threshold = 0
-    }
-
-    action {
-        action_group_id = azurerm_monitor_action_group.telegram_alerts.id
-    }
-
-    enabled = true
-}
-
 output "APP_INSIGHTS_INSTRUMENTATION_KEY" {
     value = azurerm_application_insights.ResumeMatchProInsights.instrumentation_key
     sensitive = true
