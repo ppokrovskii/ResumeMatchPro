@@ -114,16 +114,29 @@ jobs:
         find . -type f -not -path "*/\.*" -not -path "*/__pycache__/*"
         popd
 
+    - name: 'Create Deployment Package'
+      run: |
+        pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+        # Create a clean deployment package
+        zip -r ../deployment.zip . -x "*.git*" "*.venv*" "*.pytest_cache*" "*.mypy_cache*" "*.coverage*" "*.pyc" "__pycache__/*"
+        popd
+
+    - name: 'Verify ZIP Package'
+      run: |
+        echo "=== ZIP Package Contents ==="
+        unzip -l ./${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/../deployment.zip
+
     - name: 'Deploy to Azure Functions'
       uses: Azure/functions-action@v1
       id: fa
       with:
         app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-        package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+        package: ./${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/../deployment.zip
         publish-profile: ${{ secrets.AZFUNCTIONS_PUBLISHING_PROFILE }}
         scm-do-build-during-deployment: true
         enable-oryx-build: true
         respect-funcignore: true
+      continue-on-error: false
 
     - name: 'Post Deployment Check'
       if: success()
