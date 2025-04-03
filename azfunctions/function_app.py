@@ -23,12 +23,23 @@ from users.users import users_bp
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 # Register all blueprints with explicit function names
-app.register_functions(file_upload_bp)
-app.register_functions(file_processing_bp)
-app.register_functions(matching_bp)
-app.register_functions(user_files_bp)
-app.register_functions(matching_results_bp)
-app.register_functions(users_bp)
+# app.register_functions(file_upload_bp)
+# app.register_functions(file_processing_bp)
+# app.register_functions(matching_bp)
+# app.register_functions(user_files_bp)
+# app.register_functions(matching_results_bp)
+# app.register_functions(users_bp)
+
+
+@app.function_name(name="ResumeMatchProTelegramAlert")
+@app.route(route="telegram-webhook")
+def main(req: func.HttpRequest) -> func.HttpResponse:
+    try:
+        alert = req.get_json()
+        return func.HttpResponse(f"Alert handled: {alert}", status_code=200)
+    except Exception as e:
+        return func.HttpResponse(f"Error: {e}", status_code=500)
+
 
 # Log application startup
 logging.info("Function app initialized and blueprints registered")
