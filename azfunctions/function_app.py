@@ -40,7 +40,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         # return func.HttpResponse(f"Alert handled: {alert}", status_code=200)
     except Exception as e:
         logging.exception(f"logging.exception: {e}")
-        return func.HttpResponse(f"Error: {e}", status_code=500)
+        raise e
+        # return func.HttpResponse(f"Error: {e}", status_code=500)
 
 
 # Log application startup
