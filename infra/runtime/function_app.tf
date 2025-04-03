@@ -19,12 +19,9 @@ resource "azurerm_linux_function_app" "resumematchpro" {
         }
         
         cors {
-            allowed_origins = split(",", var.MAIN_FRONTEND_URLS)
+            allowed_origins = split(",", var.MAIN_FRONTEND_URLS) 
             support_credentials = true
         }
-
-        application_insights_connection_string = azurerm_application_insights.ResumeMatchProInsights.connection_string
-        application_insights_key = azurerm_application_insights.ResumeMatchProInsights.instrumentation_key
 
         app_service_logs {
             disk_quota_mb = 50
