@@ -36,6 +36,7 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 def main(req: func.HttpRequest) -> func.HttpResponse:
     try:
         alert = req.get_json()
+        logging.exception(f"logging.exception: {alert}")
         return func.HttpResponse(f"Alert handled: {alert}", status_code=200)
     except Exception as e:
         return func.HttpResponse(f"Error: {e}", status_code=500)
