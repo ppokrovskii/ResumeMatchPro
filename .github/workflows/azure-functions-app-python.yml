@@ -51,6 +51,12 @@ jobs:
         curl -LsSf https://astral.sh/uv/install.sh | sh
         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
+    - name: 'Generate requirements.txt'
+      run: |
+        pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+        uv pip compile pyproject.toml -o requirements.txt
+        popd
+
     - name: 'Validate Python Installation'
       run: |
         python --version
