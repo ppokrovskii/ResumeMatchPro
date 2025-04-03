@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import uuid
@@ -19,6 +20,12 @@ if connection_string:
 class AppInsightsLoggerAdapter(logging.LoggerAdapter):
     """Custom LoggerAdapter that properly formats custom dimensions for App Insights."""
 
+    def _convert_to_string(self, value: Any) -> str:
+        """Convert any value to a string format suitable for custom dimensions."""
+        if isinstance(value, (dict, list)):
+            return json.dumps(value)
+        return str(value)
+
     def process(self, msg: str, kwargs: Dict[str, Any]) -> tuple[str, Dict[str, Any]]:
         """Process the logging message and kwargs to inject custom dimensions."""
         # Initialize or get existing custom dimensions
@@ -27,9 +34,17 @@ class AppInsightsLoggerAdapter(logging.LoggerAdapter):
         if "custom_dimensions" not in kwargs["extra"]:
             kwargs["extra"]["custom_dimensions"] = {}
 
-        # Add our context (like request_id) to custom dimensions
+        # Convert all values in custom dimensions to strings
+        custom_dims = kwargs["extra"]["custom_dimensions"]
+        kwargs["extra"]["custom_dimensions"] = {
+            k: self._convert_to_string(v) for k, v in custom_dims.items()
+        }
+
+        # Add our context (like request_id) to custom dimensions, converting to strings
         if self.extra:
-            kwargs["extra"]["custom_dimensions"].update(self.extra)
+            kwargs["extra"]["custom_dimensions"].update(
+                {k: self._convert_to_string(v) for k, v in self.extra.items()}
+            )
 
         return msg, kwargs
 
