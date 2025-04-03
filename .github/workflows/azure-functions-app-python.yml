@@ -58,14 +58,34 @@ jobs:
           echo "pyproject.toml not found"
           exit 1
         fi
+        if [ ! -f "function_app.py" ]; then
+          echo "function_app.py not found"
+          exit 1
+        fi
+        if [ ! -f "host.json" ]; then
+          echo "host.json not found"
+          exit 1
+        fi
         popd
 
     - name: 'Generate requirements.txt'
       run: |
         pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-        # Generate requirements.txt from pyproject.toml
-        pip install -q pip-tools
-        pip-compile pyproject.toml -o requirements.txt
+        # Install pip-tools with error handling
+        if ! pip install -q pip-tools; then
+          echo "Failed to install pip-tools"
+          exit 1
+        fi
+        # Generate requirements.txt with error handling
+        if ! pip-compile pyproject.toml -o requirements.txt; then
+          echo "Failed to generate requirements.txt"
+          exit 1
+        fi
+        # Verify requirements.txt was created
+        if [ ! -f "requirements.txt" ]; then
+          echo "requirements.txt was not generated"
+          exit 1
+        fi
         popd
 
     - name: 'Validate Python Installation'
@@ -83,13 +103,16 @@ jobs:
         pip install -r requirements.txt --target=".python_packages/lib/site-packages"
         popd
 
-    - name: 'List Deployment Files'
+    - name: 'Verify Deployment Package'
       run: |
+        pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+        echo "=== Deployment Package Structure ==="
+        ls -la
+        echo "=== Requirements.txt Content ==="
+        cat requirements.txt
         echo "=== Function App Files ==="
-        find './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}' -type f -not -path "*/\.*" -not -path "*/__pycache__/*"
-        
-        echo "=== Python Packages ==="
-        ls -la './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/.python_packages/lib/site-packages'
+        find . -type f -not -path "*/\.*" -not -path "*/__pycache__/*"
+        popd
 
     - name: 'Deploy to Azure Functions'
       uses: Azure/functions-action@v1
