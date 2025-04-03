@@ -1,6 +1,7 @@
 # ruff: noqa: F401
 import base64
 import json
+import logging
 import uuid
 
 import azure.functions as func
@@ -25,6 +26,8 @@ from user_files.models import (
     UserFilesRequest,
     UserFilesResponse,
 )
+
+logger = logging.getLogger("azure.functions")
 
 
 def _extract_user_id(req: func.HttpRequest) -> str:
@@ -236,15 +239,13 @@ user_files_bp = func.Blueprint()
 def get_files(req: func.HttpRequest) -> func.HttpResponse:
     """Top-level API endpoint for getting files"""
     request_id = get_request_id(req)
-    logger = get_logger_with_context(request_id, "user_files")
-
     try:
         cosmos_db_client = get_cosmos_db_client()
         files_repository = FilesRepository(cosmos_db_client)
         response = _get_files(req, files_repository)
         return response
     except Exception as e:
-        logger.exception("Error getting files")
+        logging.exception("Error in get_files", extra={"request_id": request_id})
         error_body, status = create_error_response(e)
         return func.HttpResponse(
             body=json.dumps(error_body),
@@ -257,31 +258,14 @@ def get_files(req: func.HttpRequest) -> func.HttpResponse:
 def delete_file(req: func.HttpRequest) -> func.HttpResponse:
     """Top-level API endpoint for deleting files"""
     request_id = get_request_id(req)
-    logger = get_logger_with_context(request_id)
-
     try:
         files_blob_service = FilesBlobService()
         cosmos_db_client = get_cosmos_db_client()
         files_repository = FilesRepository(cosmos_db_client)
         response = _delete_file(req, files_blob_service, files_repository)
         return response
-    except (
-        UnauthorizedError,
-        ValidationError,
-        FileNotFoundError,
-        PermissionDeniedError,
-    ) as e:
-        logger.exception(
-            "Authorization, validation, or permission error", exc_info=True
-        )
-        error_body, status = create_error_response(e)
-        return func.HttpResponse(
-            body=json.dumps(error_body),
-            mimetype="application/json",
-            status_code=status,
-        )
     except Exception as e:
-        logger.exception("Unexpected error deleting file", exc_info=True)
+        logging.exception("Error in delete_file", extra={"request_id": request_id})
         error_body, status = create_error_response(e)
         return func.HttpResponse(
             body=json.dumps(error_body),
@@ -294,30 +278,13 @@ def delete_file(req: func.HttpRequest) -> func.HttpResponse:
 def get_file(req: func.HttpRequest) -> func.HttpResponse:
     """Top-level API endpoint for getting a single file"""
     request_id = get_request_id(req)
-    logger = get_logger_with_context(request_id)
-
     try:
         cosmos_db_client = get_cosmos_db_client()
         files_repository = FilesRepository(cosmos_db_client)
         response = _get_file(req, files_repository)
         return response
-    except (
-        UnauthorizedError,
-        ValidationError,
-        FileNotFoundError,
-        PermissionDeniedError,
-    ) as e:
-        logger.exception(
-            "Authorization, validation, or permission error", exc_info=True
-        )
-        error_body, status = create_error_response(e)
-        return func.HttpResponse(
-            body=json.dumps(error_body),
-            mimetype="application/json",
-            status_code=status,
-        )
     except Exception as e:
-        logger.exception("Unexpected error getting file", exc_info=True)
+        logging.exception("Error in get_file", extra={"request_id": request_id})
         error_body, status = create_error_response(e)
         return func.HttpResponse(
             body=json.dumps(error_body),
@@ -330,30 +297,14 @@ def get_file(req: func.HttpRequest) -> func.HttpResponse:
 def download_file(req: func.HttpRequest) -> func.HttpResponse:
     """Top-level API endpoint for downloading files"""
     request_id = get_request_id(req)
-    logger = get_logger_with_context(request_id)
-
     try:
         files_blob_service = FilesBlobService()
         cosmos_db_client = get_cosmos_db_client()
         files_repository = FilesRepository(cosmos_db_client)
         response = _download_file(req, files_blob_service, files_repository)
         return response
-    except (
-        UnauthorizedError,
-        ValidationError,
-        FileNotFoundError,
-        PermissionDeniedError,
-        BlobStorageError,
-    ) as e:
-        logger.exception("Authorization, validation, or storage error", exc_info=True)
-        error_body, status = create_error_response(e)
-        return func.HttpResponse(
-            body=json.dumps(error_body),
-            mimetype="application/json",
-            status_code=status,
-        )
     except Exception as e:
-        logger.exception("Unexpected error downloading file", exc_info=True)
+        logging.exception("Error in download_file", extra={"request_id": request_id})
         error_body, status = create_error_response(e)
         return func.HttpResponse(
             body=json.dumps(error_body),

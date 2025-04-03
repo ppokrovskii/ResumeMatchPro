@@ -1,12 +1,10 @@
+import logging
 import os
 import sys
 from pathlib import Path
 
 import azure.functions as func
 from dotenv import load_dotenv
-
-# Import the shared logger
-from shared.logger import logger
 
 load_dotenv()
 
@@ -33,4 +31,4 @@ app.register_functions(matching_results_bp)
 app.register_functions(users_bp)
 
 # Log application startup
-logger.info("Function app initialized and blueprints registered")
+logging.info("Function app initialized and blueprints registered")

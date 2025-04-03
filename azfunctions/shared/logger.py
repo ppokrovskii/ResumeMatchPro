@@ -6,6 +6,8 @@ from typing import Any, Dict, Optional
 
 import azure.functions as func
 from azure.monitor.opentelemetry import configure_azure_monitor
+from opentelemetry import trace
+from opentelemetry.trace import get_current_span
 
 # Configure Azure Monitor only if we have the connection string
 connection_string = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
@@ -34,6 +36,18 @@ class AppInsightsLoggerAdapter(logging.LoggerAdapter):
         if "custom_dimensions" not in kwargs["extra"]:
             kwargs["extra"]["custom_dimensions"] = {}
 
+        # Add trace context if available
+        current_span = get_current_span()
+        if current_span:
+            trace_id = current_span.get_span_context().trace_id
+            span_id = current_span.get_span_context().span_id
+            kwargs["extra"]["custom_dimensions"].update(
+                {
+                    "trace_id": format(trace_id, "032x"),
+                    "span_id": format(span_id, "016x"),
+                }
+            )
+
         # Convert all values in custom dimensions to strings
         custom_dims = kwargs["extra"]["custom_dimensions"]
         kwargs["extra"]["custom_dimensions"] = {
@@ -50,16 +64,14 @@ class AppInsightsLoggerAdapter(logging.LoggerAdapter):
 
 
 def setup_logger(name: str = "resumematchpro") -> logging.Logger:
-    """Initialize a logger with the given name.
-
-    Ensures logs propagate to the root logger for OpenTelemetry to pick them up,
-    while maintaining our custom logger hierarchy for organization.
-    """
+    """Initialize a logger with the given name."""
     # Get the root logger first - this is what OpenTelemetry hooks into
     root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
 
     # Get our custom logger
     logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
 
     # Ensure logs propagate up to root
     logger.propagate = True
@@ -77,12 +89,24 @@ def get_logger_with_context(
     )
     logger = logging.getLogger(logger_name)
 
-    # Add request ID to log context if provided
+    # Add request ID and other context to log context if provided
+    extra = {}
     if request_id:
-        extra = {"request_id": request_id}
-        logger = AppInsightsLoggerAdapter(logger, extra)
+        extra["request_id"] = request_id
 
-    return logger
+    # Get current span context if available
+    current_span = get_current_span()
+    if current_span:
+        trace_id = current_span.get_span_context().trace_id
+        span_id = current_span.get_span_context().span_id
+        extra.update(
+            {
+                "trace_id": format(trace_id, "032x"),
+                "span_id": format(span_id, "016x"),
+            }
+        )
+
+    return AppInsightsLoggerAdapter(logger, extra)
 
 
 def get_request_id(req: func.HttpRequest) -> str:

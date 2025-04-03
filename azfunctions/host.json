@@ -1,18 +1,13 @@
 {
   "version": "2.0",
   "logging": {
+    "logLevel": {
+      "default": "Information",
+      "azure.functions": "Information"
+    },
     "applicationInsights": {
       "samplingSettings": {
-        "isEnabled": false,
-        "excludedTypes": "Request"
-      },
-      "enableLiveMetrics": true,
-      "enableDependencyTracking": true,
-      "enablePerformanceCountersCollection": true,
-      "httpAutoCollectionOptions": {
-        "enableHttpTriggerExtendedInfoCollection": true,
-        "enableW3CDistributedTracing": true,
-        "enableResponseHeaderInjection": true
+        "isEnabled": false
       }
     }
   },

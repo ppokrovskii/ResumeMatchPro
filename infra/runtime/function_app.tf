@@ -25,6 +25,11 @@ resource "azurerm_linux_function_app" "resumematchpro" {
 
         application_insights_connection_string = azurerm_application_insights.ResumeMatchProInsights.connection_string
         application_insights_key = azurerm_application_insights.ResumeMatchProInsights.instrumentation_key
+
+        app_service_logs {
+            disk_quota_mb = 50
+            retention_period_days = 7
+        }
     }
 
     auth_settings_v2 {
@@ -49,24 +54,14 @@ resource "azurerm_linux_function_app" "resumematchpro" {
         "FUNCTIONS_WORKER_RUNTIME" = "python"
         "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.ResumeMatchProInsights.connection_string
         "WEBSITE_ENABLE_SYNC_UPDATE_SITE" = "true"
-        "ApplicationInsightsAgent_EXTENSION_VERSION" = "~3"
-        "XDT_MicrosoftApplicationInsights_Mode" = "Recommended"
-        "APPINSIGHTS_PROFILERFEATURE_VERSION" = "1.0.0"
-        "DiagnosticServices_EXTENSION_VERSION" = "~3"
-        "InstrumentationEngine_EXTENSION_VERSION" = "disabled"
-        "SnapshotDebugger_EXTENSION_VERSION" = "disabled"
-        "XDT_MicrosoftApplicationInsights_BaseExtensions" = "disabled"
+        
+        # Non-default logging settings
+        "APPINSIGHTS_SAMPLING_PERCENTAGE" = "100"  # Default is 5
+        "APPLICATIONINSIGHTS_ENABLE_ADAPTIVE_SAMPLING" = "false"  # Default is true
+        "APPLICATIONINSIGHTS_ROLE_NAME" = "${var.project_name}-${terraform.workspace}-function-app"
+        
         "AZURE_STORAGE_CONNECTION_STRING" = azurerm_storage_account.storage.primary_connection_string
         "AzureWebJobsStorage" = azurerm_storage_account.storage.primary_connection_string
-        
-        "APPINSIGHTS_SAMPLING_PERCENTAGE" = "100"
-        "APPLICATIONINSIGHTS_ENABLE_AGENT" = "true"
-        "APPLICATIONINSIGHTS_ROLE_NAME" = "${var.project_name}-${terraform.workspace}-function-app"
-        "APPLICATIONINSIGHTS_ENABLE_ADAPTIVE_SAMPLING" = "false"
-        "APPLICATIONINSIGHTS_ENABLE_OPENTELEMETRY" = "true"
-        "APPLICATIONINSIGHTS_ENABLE_LOGGING" = "true"
-        "APPLICATIONINSIGHTS_ENABLE_METRICS" = "true"
-        "APPLICATIONINSIGHTS_ENABLE_TRACING" = "true"
         
         "AZURE_OPENAI_API_KEY" = var.AZURE_OPENAI_API_KEY
         "AZURE_OPENAI_ENDPOINT" = var.AZURE_OPENAI_ENDPOINT
@@ -83,7 +78,6 @@ resource "azurerm_linux_function_app" "resumematchpro" {
         "ALLOWED_ORIGINS" = var.MAIN_FRONTEND_URLS
 
         # B2C Configuration
-        # "BACKEND_B2C_CLIENT_SECRET" = var.BACKEND_B2C_CLIENT_SECRET
         "ALLOWED_REDIRECT_URIS" = terraform.workspace == "dev" ? "https://oauth.pstmn.io/v1/callback" : ""
     }
 
