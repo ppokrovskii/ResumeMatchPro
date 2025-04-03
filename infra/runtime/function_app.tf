@@ -22,11 +22,6 @@ resource "azurerm_linux_function_app" "resumematchpro" {
             allowed_origins = split(",", var.MAIN_FRONTEND_URLS) 
             support_credentials = true
         }
-
-        app_service_logs {
-            disk_quota_mb = 50
-            retention_period_days = 7
-        }
     }
 
     auth_settings_v2 {
