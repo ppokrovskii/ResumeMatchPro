@@ -243,16 +243,8 @@ def get_files(req: func.HttpRequest) -> func.HttpResponse:
         files_repository = FilesRepository(cosmos_db_client)
         response = _get_files(req, files_repository)
         return response
-    except (UnauthorizedError, ValidationError) as e:
-        logger.exception("Authorization or validation error", exc_info=True)
-        error_body, status = create_error_response(e)
-        return func.HttpResponse(
-            body=json.dumps(error_body),
-            mimetype="application/json",
-            status_code=status,
-        )
     except Exception as e:
-        logger.exception("Unexpected error getting files", exc_info=True)
+        logger.exception("Error getting files")
         error_body, status = create_error_response(e)
         return func.HttpResponse(
             body=json.dumps(error_body),

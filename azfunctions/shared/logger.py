@@ -1,7 +1,7 @@
 import logging
 import os
 import uuid
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import azure.functions as func
 from azure.monitor.opentelemetry import configure_azure_monitor
@@ -16,18 +16,38 @@ if connection_string:
     )
 
 
+class AppInsightsLoggerAdapter(logging.LoggerAdapter):
+    """Custom LoggerAdapter that properly formats custom dimensions for App Insights."""
+
+    def process(self, msg: str, kwargs: Dict[str, Any]) -> tuple[str, Dict[str, Any]]:
+        """Process the logging message and kwargs to inject custom dimensions."""
+        # Initialize or get existing custom dimensions
+        if "extra" not in kwargs:
+            kwargs["extra"] = {}
+        if "custom_dimensions" not in kwargs["extra"]:
+            kwargs["extra"]["custom_dimensions"] = {}
+
+        # Add our context (like request_id) to custom dimensions
+        if self.extra:
+            kwargs["extra"]["custom_dimensions"].update(self.extra)
+
+        return msg, kwargs
+
+
 def setup_logger(name: str = "resumematchpro") -> logging.Logger:
-    """Initialize a logger with the given name."""
+    """Initialize a logger with the given name.
+
+    Ensures logs propagate to the root logger for OpenTelemetry to pick them up,
+    while maintaining our custom logger hierarchy for organization.
+    """
+    # Get the root logger first - this is what OpenTelemetry hooks into
+    root_logger = logging.getLogger()
+
+    # Get our custom logger
     logger = logging.getLogger(name)
 
-    # Only set up the logger if it hasn't been configured yet
-    if not logger.handlers:
-        logger.setLevel(logging.INFO)
-        handler = logging.StreamHandler()
-        handler.setFormatter(
-            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        )
-        logger.addHandler(handler)
+    # Ensure logs propagate up to root
+    logger.propagate = True
 
     return logger
 
@@ -45,7 +65,7 @@ def get_logger_with_context(
     # Add request ID to log context if provided
     if request_id:
         extra = {"request_id": request_id}
-        logger = logging.LoggerAdapter(logger, extra)
+        logger = AppInsightsLoggerAdapter(logger, extra)
 
     return logger
 
@@ -53,7 +73,3 @@ def get_logger_with_context(
 def get_request_id(req: func.HttpRequest) -> str:
     """Extract or generate request ID for tracking."""
     return req.headers.get("x-ms-request-id") or str(uuid.uuid4())
-
-
-# Create a singleton logger instance for application-wide logging
-logger = setup_logger()
