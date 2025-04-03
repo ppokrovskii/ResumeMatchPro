@@ -63,7 +63,7 @@ def create_error_response(error: Exception) -> Tuple[Dict[str, Any], int]:
         return {"error": str(error)}, 404
     elif isinstance(error, PermissionDeniedError):
         return {"error": str(error)}, 403
-    elif isinstance(error, (BlobStorageError, PydanticValidationError)):
+    elif isinstance(error, (BlobStorageError, InternalValidationError)):
         return {"error": str(error)}, 500
     else:
         return {"error": "Internal server error"}, 500
