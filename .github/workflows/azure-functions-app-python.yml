@@ -54,7 +54,12 @@ jobs:
     - name: 'Generate requirements.txt'
       run: |
         pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-        uv pip compile pyproject.toml -o requirements.txt
+        # Generate requirements without platform specific dependencies
+        uv pip compile pyproject.toml --no-deps -o requirements.txt
+        # Add runtime dependencies without their sub-dependencies
+        uv pip compile pyproject.toml --no-deps --all-extras -o requirements-all.txt
+        # Resolve all dependencies on Linux
+        pip install -r requirements-all.txt --dry-run | grep -v "Requirement already satisfied" | cut -d' ' -f1 > requirements.txt
         popd
 
     - name: 'Validate Python Installation'
@@ -89,8 +94,8 @@ jobs:
     - name: 'Install Dependencies'
       run: |
         pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-        # Install dependencies from requirements.txt
-        uv pip install -r requirements.txt --target=".python_packages/lib/site-packages"
+        # Install dependencies from requirements.txt using pip for Azure Functions compatibility
+        pip install -r requirements.txt --target=".python_packages/lib/site-packages"
         popd
 
     - name: 'List Deployment Files'
