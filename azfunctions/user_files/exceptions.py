@@ -1,79 +1,60 @@
-import logging
-import uuid
-from typing import Optional
-
-from azure.functions import HttpRequest
+from typing import Any, Dict, Tuple
 
 
-class UserFilesError(Exception):
-    """Base exception for user files module"""
+class BaseError(Exception):
+    """Base class for all custom exceptions."""
 
-    def __init__(self, message: str, original_error: Optional[Exception] = None):
+    def __init__(self, message: str):
         super().__init__(message)
-        self.original_error = original_error
-        self.error_id = str(uuid.uuid4())
+        self.message = message
 
 
-class UnauthorizedError(UserFilesError):
-    """Raised when user authentication fails"""
+class ValidationError(BaseError):
+    """Raised when input validation fails."""
 
-    pass
-
-
-class FileNotFoundError(UserFilesError):
-    """Raised when requested file is not found"""
-
-    pass
+    def __init__(self, message: str):
+        super().__init__(message)
 
 
-class PermissionDeniedError(UserFilesError):
-    """Raised when user doesn't have required permissions"""
+class UnauthorizedError(BaseError):
+    """Raised when user is not authorized."""
 
-    pass
-
-
-class ValidationError(UserFilesError):
-    """Raised when request validation fails"""
-
-    pass
+    def __init__(self, message: str):
+        super().__init__(message)
 
 
-class BlobStorageError(UserFilesError):
-    """Raised when blob storage operations fail"""
+class FileNotFoundError(BaseError):
+    """Raised when a file is not found."""
 
-    pass
-
-
-def get_request_id(req: HttpRequest) -> str:
-    """Extract or generate request ID for tracking"""
-    return req.headers.get("X-Request-ID") or str(uuid.uuid4())
+    def __init__(self, message: str):
+        super().__init__(message)
 
 
-def get_logger_with_context(request_id: str) -> logging.Logger:
-    """Get a logger with request context"""
-    logger = logging.getLogger(__name__)
-    return logging.LoggerAdapter(logger, {"request_id": request_id})
+class PermissionDeniedError(BaseError):
+    """Raised when user doesn't have permission to access a resource."""
+
+    def __init__(self, message: str):
+        super().__init__(message)
 
 
-def create_error_response(error: Exception, status_code: int = 500) -> dict:
-    """Create standardized error response"""
-    error_mapping = {
-        UnauthorizedError: 401,
-        FileNotFoundError: 404,
-        PermissionDeniedError: 403,
-        ValidationError: 400,
-        BlobStorageError: 500,
-    }
+class BlobStorageError(BaseError):
+    """Raised when there's an error with blob storage operations."""
 
-    status = error_mapping.get(type(error), status_code)
+    def __init__(self, message: str):
+        super().__init__(message)
 
-    error_body = {
-        "error": {
-            "type": type(error).__name__,
-            "message": str(error),
-            "code": status,
-            "id": error.error_id,
-        }
-    }
 
-    return error_body, status
+def create_error_response(error: Exception) -> Tuple[Dict[str, Any], int]:
+    """Create an error response from an exception."""
+    if isinstance(error, ValidationError):
+        return {"error": str(error)}, 400
+    elif isinstance(error, UnauthorizedError):
+        return {"error": str(error)}, 401
+    elif isinstance(error, FileNotFoundError):
+        return {"error": str(error)}, 404
+    elif isinstance(error, PermissionDeniedError):
+        return {"error": str(error)}, 403
+    elif isinstance(error, BlobStorageError):
+        return {"error": str(error)}, 500
+    else:
+        return {"error": "Internal server error"}, 500

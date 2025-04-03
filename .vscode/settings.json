@@ -35,9 +35,7 @@
     "python.testing.nosetestsEnabled": false,
     "python.testing.pytestArgs": [
         ".",
-        "-v",
-        "-m",
-        "external_services"
+        "-v"
     ],
     "python.testing.cwd": "${workspaceFolder}/azfunctions",
     // Language specific settings

@@ -1,7 +1,6 @@
 # ruff: noqa: F401
 import base64
 import json
-import logging
 import uuid
 
 import azure.functions as func
@@ -9,6 +8,7 @@ from pydantic import ValidationError as PydanticValidationError
 from shared.blob_service import FilesBlobService
 from shared.db_service import get_cosmos_db_client
 from shared.files_repository import FilesRepository
+from shared.logger import get_logger_with_context, get_request_id
 from shared.models import FileType
 from user_files.exceptions import (
     BlobStorageError,
@@ -17,8 +17,6 @@ from user_files.exceptions import (
     UnauthorizedError,
     ValidationError,
     create_error_response,
-    get_logger_with_context,
-    get_request_id,
 )
 from user_files.models import (
     File,
@@ -234,7 +232,7 @@ user_files_bp = func.Blueprint()
 def get_files(req: func.HttpRequest) -> func.HttpResponse:
     """Top-level API endpoint for getting files"""
     request_id = get_request_id(req)
-    logger = get_logger_with_context(request_id)
+    logger = get_logger_with_context(request_id, "user_files")
 
     try:
         cosmos_db_client = get_cosmos_db_client()

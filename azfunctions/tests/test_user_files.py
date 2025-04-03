@@ -42,17 +42,15 @@ from user_files.user_files import (
     user_files_bp,
 )
 
-# Configure logging
+# Setup logging once
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,  # Use INFO level for tests
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     stream=sys.stdout,
 )
 
-# Ensure all loggers propagate to root
-for name in logging.root.manager.loggerDict:
-    logging.getLogger(name).propagate = True
-    logging.getLogger(name).setLevel(logging.DEBUG)
+# Get logger for this module
+logger = logging.getLogger(__name__)
 
 # add project root to sys.path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -73,17 +71,35 @@ def client():
     return app.test_client()
 
 
-@pytest.fixture
-def repository():
-    # Create a Cosmos DB client and initialize the repository
+@pytest.fixture(scope="session")
+def cosmos_client():
+    """Create a Cosmos DB client for the test session."""
     client = CosmosClient(
         url=os.getenv("COSMOS_URL"),
         credential=os.getenv("COSMOS_KEY"),
         connection_verify=False,  # Skip SSL verification for emulator
     )
-    # Create database if not exists
-    database = client.create_database_if_not_exists(os.getenv("COSMOS_DB_NAME"))
-    return FilesRepository(database)
+    return client
+
+
+@pytest.fixture(scope="session")
+def database(cosmos_client):
+    """Create a test database for the session."""
+    return cosmos_client.create_database_if_not_exists(os.getenv("COSMOS_DB_NAME"))
+
+
+@pytest.fixture
+def repository(database):
+    """Create a repository instance for each test."""
+    repo = FilesRepository(database)
+
+    # Clean up only after the test
+    yield repo
+
+    try:
+        repo.delete_all()
+    except Exception as e:
+        logger.warning(f"Failed to clean up database after test: {e}")
 
 
 @pytest.fixture
@@ -134,7 +150,6 @@ def sample_file_metadata(repository, blob_service, sample_file_content):
         print(f"Error cleaning up test file: {e}")
 
 
-@pytest.mark.external_services
 def test_delete_file_integration(repository, blob_service, sample_file_metadata):
     # Create mock B2C claims
     mock_claims = {
@@ -461,7 +476,6 @@ def create_mock_claims(user_id: str) -> str:
     return base64.b64encode(json.dumps(claims).encode()).decode()
 
 
-@pytest.mark.external_services
 def test_get_file_success(repository, blob_service, sample_file_content):
     # Create a unique filename
     filename = f"test_cv_{uuid4()}.pdf"
@@ -562,7 +576,6 @@ def test_get_file_success(repository, blob_service, sample_file_content):
     assert set(result.keys()).issubset(expected_fields)
 
 
-@pytest.mark.external_services
 def test_get_file_missing_file_id(repository):
     user_id = "test_user"
     client_principal = create_mock_claims(user_id)
@@ -579,7 +592,6 @@ def test_get_file_missing_file_id(repository):
     assert str(context.value) == "file_id is required"
 
 
-@pytest.mark.external_services
 def test_get_file_missing_claims(repository):
     file_id = "some_file_id"
     req = func.HttpRequest(
@@ -595,7 +607,6 @@ def test_get_file_missing_claims(repository):
     assert str(context.value) == "Missing user claims"
 
 
-@pytest.mark.external_services
 def test_get_file_not_found(repository):
     user_id = "test_user"
     file_id = "nonexistent_file"
@@ -614,7 +625,6 @@ def test_get_file_not_found(repository):
     assert str(context.value).endswith("not found")
 
 
-@pytest.mark.external_services
 def test_get_file_unauthorized(repository, blob_service, sample_file_content):
     # In this test, we're trying to access a file with a different user ID
     # Since the file doesn't exist in the database for this test, it will return 404
@@ -635,7 +645,6 @@ def test_get_file_unauthorized(repository, blob_service, sample_file_content):
     assert str(context.value).endswith("not found")
 
 
-@pytest.mark.external_services
 def test_download_file_success(repository, blob_service, sample_file_metadata):
     # Create mock B2C claims
     mock_claims = {
@@ -670,7 +679,6 @@ def test_download_file_success(repository, blob_service, sample_file_metadata):
     assert response.headers["Content-Type"] == "text/plain"
 
 
-@pytest.mark.external_services
 def test_download_file_not_found(repository, blob_service):
     user_id = str(uuid4())
     non_existent_file_id = str(uuid4())
@@ -702,7 +710,6 @@ def test_download_file_not_found(repository, blob_service):
     assert str(context.value).endswith("not found")
 
 
-@pytest.mark.external_services
 def test_download_file_unauthorized(repository, blob_service):
     # Create mock request without claims header
     req = func.HttpRequest(
@@ -719,7 +726,6 @@ def test_download_file_unauthorized(repository, blob_service):
     assert str(context.value) == "Missing user claims"
 
 
-@pytest.mark.external_services
 def test_download_file_forbidden(repository, blob_service, sample_file_metadata):
     # Create a different user ID to attempt unauthorized access
     different_user_id = str(uuid4())
@@ -1020,7 +1026,6 @@ def structured_file_metadata(
     return repository.upsert_file(file_metadata.model_dump(mode="json"))
 
 
-@pytest.mark.external_services
 def test_get_file_with_structure(repository, blob_service, sample_file_content):
     # Create a unique filename
     filename = f"test_cv_{uuid4()}.pdf"
@@ -1110,7 +1115,6 @@ def test_get_file_with_structure(repository, blob_service, sample_file_content):
     assert len(structure["experience"][0]["lines"]) == 2
 
 
-@pytest.mark.external_services
 def test_get_file_without_structure(repository, blob_service, sample_file_content):
     # Create a unique filename
     filename = f"test_cv_{uuid4()}.pdf"
@@ -1184,7 +1188,6 @@ def test_get_file_without_structure(repository, blob_service, sample_file_conten
     assert len(structure["additional_information"]) == 0
 
 
-@pytest.mark.external_services
 def test_get_file_with_model_structure(repository, blob_service, sample_file_content):
     """Test getting a file where document_analysis is a model instance instead of a dictionary"""
     # Create a unique filename
@@ -1266,7 +1269,6 @@ def test_get_file_with_model_structure(repository, blob_service, sample_file_con
     assert structure["experience"][0]["title"] == "Developer"
 
 
-@pytest.mark.external_services
 def test_get_files_with_null_type(repository, blob_service, sample_file_content):
     # Create a unique filename
     filename = f"test_file_null_type_{uuid4()}.txt"

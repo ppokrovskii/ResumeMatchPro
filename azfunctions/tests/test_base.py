@@ -1,7 +1,9 @@
 import os
 from pathlib import Path
 from unittest import TestCase
+
 from dotenv import load_dotenv
+
 
 class BaseIntegrationTest(TestCase):
     @classmethod
@@ -22,14 +24,14 @@ class BaseIntegrationTest(TestCase):
 
     def _verify_env_vars(self):
         required_vars = [
-            "COSMOS_DB_URL",
-            "COSMOS_DB_KEY",
-            "COSMOS_DB_DATABASE",
-            "AZURE_STORAGE_CONNECTION_STRING"
+            "COSMOS_URL",
+            "COSMOS_KEY",
+            "COSMOS_DB_NAME",
+            "AZURE_STORAGE_CONNECTION_STRING",
         ]
         missing_vars = [var for var in required_vars if not os.getenv(var)]
         if missing_vars:
             raise ValueError(
                 f"Missing required environment variables: {', '.join(missing_vars)}. "
                 "Please check your .env.test file."
-            ) 
+            )
