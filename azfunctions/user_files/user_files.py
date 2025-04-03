@@ -13,6 +13,7 @@ from shared.models import FileType
 from user_files.exceptions import (
     BlobStorageError,
     FileNotFoundError,
+    InternalValidationError,
     PermissionDeniedError,
     UnauthorizedError,
     ValidationError,
@@ -98,16 +99,19 @@ def _get_files(
 
             files_response.append(file_json)
         except PydanticValidationError as e:
-            raise ValidationError(f"Invalid file metadata format: {str(e)}")
+            raise InternalValidationError(f"Invalid file metadata format: {str(e)}")
         except Exception as e:
             raise BlobStorageError(f"Failed to process file metadata: {str(e)}")
 
-    response = UserFilesResponse(files=files_response)
-    return func.HttpResponse(
-        body=response.model_dump_json(),
-        mimetype="application/json",
-        status_code=200,
-    )
+    try:
+        response = UserFilesResponse(files=files_response)
+        return func.HttpResponse(
+            body=response.model_dump_json(),
+            mimetype="application/json",
+            status_code=200,
+        )
+    except PydanticValidationError as e:
+        raise InternalValidationError(f"Invalid response format: {str(e)}")
 
 
 def _delete_file(

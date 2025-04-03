@@ -135,7 +135,6 @@ jobs:
         publish-profile: ${{ secrets.AZFUNCTIONS_PUBLISHING_PROFILE }}
         scm-do-build-during-deployment: true
         enable-oryx-build: true
-        respect-funcignore: true
       continue-on-error: false
 
     - name: 'Post Deployment Check'

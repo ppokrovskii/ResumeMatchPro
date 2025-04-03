@@ -1,5 +1,7 @@
 from typing import Any, Dict, Tuple
 
+from pydantic import ValidationError as PydanticValidationError
+
 
 class BaseError(Exception):
     """Base class for all custom exceptions."""
@@ -11,6 +13,13 @@ class BaseError(Exception):
 
 class ValidationError(BaseError):
     """Raised when input validation fails."""
+
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
+class InternalValidationError(BaseError):
+    """Raised when internal data validation fails (e.g. DB to model mapping)."""
 
     def __init__(self, message: str):
         super().__init__(message)
@@ -54,7 +63,7 @@ def create_error_response(error: Exception) -> Tuple[Dict[str, Any], int]:
         return {"error": str(error)}, 404
     elif isinstance(error, PermissionDeniedError):
         return {"error": str(error)}, 403
-    elif isinstance(error, BlobStorageError):
+    elif isinstance(error, (BlobStorageError, PydanticValidationError)):
         return {"error": str(error)}, 500
     else:
         return {"error": "Internal server error"}, 500
