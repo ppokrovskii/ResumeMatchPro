@@ -60,7 +60,7 @@ def get_logger_with_context(
     logger_name = (
         f"resumematchpro.{blueprint_name}" if blueprint_name else "resumematchpro"
     )
-    logger = setup_logger(logger_name)
+    logger = logging.getLogger(logger_name)
 
     # Add request ID to log context if provided
     if request_id:
@@ -73,3 +73,7 @@ def get_logger_with_context(
 def get_request_id(req: func.HttpRequest) -> str:
     """Extract or generate request ID for tracking."""
     return req.headers.get("x-ms-request-id") or str(uuid.uuid4())
+
+
+# Create a singleton logger instance for application-wide logging
+logger = setup_logger()
