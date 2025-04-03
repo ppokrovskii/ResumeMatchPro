@@ -51,15 +51,21 @@ jobs:
         curl -LsSf https://astral.sh/uv/install.sh | sh
         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
+    - name: 'Validate Project Structure'
+      run: |
+        pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+        if [ ! -f "pyproject.toml" ]; then
+          echo "pyproject.toml not found"
+          exit 1
+        fi
+        popd
+
     - name: 'Generate requirements.txt'
       run: |
         pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-        # Generate requirements without platform specific dependencies
-        uv pip compile pyproject.toml --no-deps -o requirements.txt
-        # Add runtime dependencies without their sub-dependencies
-        uv pip compile pyproject.toml --no-deps --all-extras -o requirements-all.txt
-        # Resolve all dependencies on Linux
-        pip install -r requirements-all.txt --dry-run | grep -v "Requirement already satisfied" | cut -d' ' -f1 > requirements.txt
+        # Generate requirements.txt from pyproject.toml
+        pip install -q pip-tools
+        pip-compile pyproject.toml -o requirements.txt
         popd
 
     - name: 'Validate Python Installation'
@@ -69,27 +75,6 @@ jobs:
           echo "Python installation failed"
           exit 1
         fi
-
-    - name: 'Validate Project Structure'
-      run: |
-        pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-        if [ ! -f "pyproject.toml" ]; then
-          echo "pyproject.toml not found"
-          exit 1
-        fi
-        if [ ! -f "requirements.txt" ]; then
-          echo "requirements.txt not found"
-          exit 1
-        fi
-        if [ ! -f "function_app.py" ]; then
-          echo "function_app.py not found"
-          exit 1
-        fi
-        if [ ! -f "host.json" ]; then
-          echo "host.json not found"
-          exit 1
-        fi
-        popd
 
     - name: 'Install Dependencies'
       run: |
