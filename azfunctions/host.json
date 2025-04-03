@@ -3,7 +3,9 @@
   "logging": {
     "logLevel": {
       "default": "Information",
-      "azure.functions": "Information"
+      "Host": "Error",
+      "Function": "Error",
+      "Host.Aggregator": "Information"
     },
     "applicationInsights": {
       "samplingSettings": {

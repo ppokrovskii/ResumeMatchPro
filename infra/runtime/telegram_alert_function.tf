@@ -8,7 +8,8 @@ resource "azurerm_linux_function_app" "telegram_alert_function" {
 
     app_settings = {
         "FUNCTIONS_WORKER_RUNTIME" = "python"
-        "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.ResumeMatchProInsights.instrumentation_key
+        # "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.ResumeMatchProInsights.instrumentation_key
+        "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.ResumeMatchProInsights.connection_string
         "APPINSIGHTS_ENABLED" = "true"
         "APPINSIGHTS_SNAPSHOTFEATURE_VERSION" = "1.0"
         "APPINSIGHTS_DISABLE_QUICKPULSE" = "false"
