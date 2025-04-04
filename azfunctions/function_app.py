@@ -6,7 +6,6 @@ from pathlib import Path
 import azure.functions as func
 from dotenv import load_dotenv
 from shared.logger import setup_logging
-from shared.telegram_logger import setup_telegram_logging
 
 load_dotenv()
 
@@ -15,11 +14,6 @@ sys.path.append(str(Path(__file__).parent))
 
 # Initialize logging
 setup_logging()
-
-# Add Telegram handler to root logger if function name is available
-function_app_name = os.getenv("TELEGRAM_ALERT_FUNCTION_NAME")
-if function_app_name:
-    setup_telegram_logging(function_app_name)
 
 # Create the app with explicit function names
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
@@ -43,7 +37,7 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 @app.function_name(name="ResumeMatchProDummyFail")
 @app.route(route="dummy-route")
-def main(req: func.HttpRequest) -> func.HttpResponse:
+def resume_match_pro_dummy_fail(req: func.HttpRequest) -> func.HttpResponse:
     try:
         alert = req.get_json()
         raise Exception(f"{alert}")
