@@ -9,7 +9,6 @@ from pydantic import ValidationError as PydanticValidationError
 from shared.blob_service import FilesBlobService
 from shared.db_service import get_cosmos_db_client
 from shared.files_repository import FilesRepository
-from shared.logger import get_logger_with_context, get_request_id
 from shared.models import FileType
 from user_files.exceptions import (
     BlobStorageError,
@@ -238,14 +237,13 @@ user_files_bp = func.Blueprint()
 @user_files_bp.route(route="files", methods=["GET"])
 def get_files(req: func.HttpRequest) -> func.HttpResponse:
     """Top-level API endpoint for getting files"""
-    request_id = get_request_id(req)
     try:
         cosmos_db_client = get_cosmos_db_client()
         files_repository = FilesRepository(cosmos_db_client)
         response = _get_files(req, files_repository)
         return response
     except Exception as e:
-        logging.exception("Error in get_files", extra={"request_id": request_id})
+        logging.exception("Error in get_files")
         error_body, status = create_error_response(e)
         return func.HttpResponse(
             body=json.dumps(error_body),
@@ -257,7 +255,7 @@ def get_files(req: func.HttpRequest) -> func.HttpResponse:
 @user_files_bp.route(route="files/{file_id}", methods=["DELETE"])
 def delete_file(req: func.HttpRequest) -> func.HttpResponse:
     """Top-level API endpoint for deleting files"""
-    request_id = get_request_id(req)
+
     try:
         files_blob_service = FilesBlobService()
         cosmos_db_client = get_cosmos_db_client()
@@ -265,7 +263,7 @@ def delete_file(req: func.HttpRequest) -> func.HttpResponse:
         response = _delete_file(req, files_blob_service, files_repository)
         return response
     except Exception as e:
-        logging.exception("Error in delete_file", extra={"request_id": request_id})
+        logging.exception("Error in delete_file")
         error_body, status = create_error_response(e)
         return func.HttpResponse(
             body=json.dumps(error_body),
@@ -277,14 +275,14 @@ def delete_file(req: func.HttpRequest) -> func.HttpResponse:
 @user_files_bp.route(route="files/{file_id}", methods=["GET"])
 def get_file(req: func.HttpRequest) -> func.HttpResponse:
     """Top-level API endpoint for getting a single file"""
-    request_id = get_request_id(req)
+
     try:
         cosmos_db_client = get_cosmos_db_client()
         files_repository = FilesRepository(cosmos_db_client)
         response = _get_file(req, files_repository)
         return response
     except Exception as e:
-        logging.exception("Error in get_file", extra={"request_id": request_id})
+        logging.exception("Error in get_file")
         error_body, status = create_error_response(e)
         return func.HttpResponse(
             body=json.dumps(error_body),
@@ -296,7 +294,7 @@ def get_file(req: func.HttpRequest) -> func.HttpResponse:
 @user_files_bp.route(route="files/{file_id}/download", methods=["GET"])
 def download_file(req: func.HttpRequest) -> func.HttpResponse:
     """Top-level API endpoint for downloading files"""
-    request_id = get_request_id(req)
+
     try:
         files_blob_service = FilesBlobService()
         cosmos_db_client = get_cosmos_db_client()
@@ -304,7 +302,7 @@ def download_file(req: func.HttpRequest) -> func.HttpResponse:
         response = _download_file(req, files_blob_service, files_repository)
         return response
     except Exception as e:
-        logging.exception("Error in download_file", extra={"request_id": request_id})
+        logging.exception("Error in download_file")
         error_body, status = create_error_response(e)
         return func.HttpResponse(
             body=json.dumps(error_body),

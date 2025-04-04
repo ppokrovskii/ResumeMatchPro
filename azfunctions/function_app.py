@@ -5,15 +5,24 @@ from pathlib import Path
 
 import azure.functions as func
 from dotenv import load_dotenv
-from shared.logger import setup_logger
+from shared.logger import setup_logging
+from shared.telegram_logger import setup_telegram_logging
 
 load_dotenv()
 
 # add project root to sys.path
 sys.path.append(str(Path(__file__).parent))
 
-# Initialize logger
-logger = setup_logger()
+# Initialize logging
+setup_logging()
+
+# Add Telegram handler to root logger if function name is available
+function_app_name = os.getenv("TELEGRAM_ALERT_FUNCTION_NAME")
+if function_app_name:
+    setup_telegram_logging(function_app_name)
+
+# Create the app with explicit function names
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 # Import all function modules to register their blueprints
 # from file_processing.file_processing import file_processing_bp
@@ -22,9 +31,6 @@ logger = setup_logger()
 # from matching_results.matching_results import matching_results_bp
 # from user_files.user_files import user_files_bp
 # from users.users import users_bp
-
-# Create the app with explicit function names
-app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 # Register all blueprints with explicit function names
 # app.register_functions(file_upload_bp)
@@ -35,18 +41,17 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 # app.register_functions(users_bp)
 
 
-@app.function_name(name="ResumeMatchProTelegramAlert")
-@app.route(route="telegram-webhook")
+@app.function_name(name="ResumeMatchProDummyFail")
+@app.route(route="dummy-route")
 def main(req: func.HttpRequest) -> func.HttpResponse:
     try:
         alert = req.get_json()
         raise Exception(f"{alert}")
         # return func.HttpResponse(f"Alert handled: {alert}", status_code=200)
     except Exception as e:
-        logging.exception(f"logging.exception: {e}")
-        raise e
-        # return func.HttpResponse(f"Error: {e}", status_code=500)
+        logging.exception(f"Error handling request: {e}")
+        return func.HttpResponse(f"Error: {e}", status_code=500)
 
 
 # Log application startup
-logging.info("Function app initialized and blueprints registered")
+logging.info("Function app initialized")
