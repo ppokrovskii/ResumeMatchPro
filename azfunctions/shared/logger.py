@@ -16,6 +16,10 @@ class AsyncTelegramWebhookHandler(logging.Handler):
         )
         self.session: Optional[aiohttp.ClientSession] = None
         self.loop = asyncio.get_event_loop()
+        # Set up a formatter for this handler
+        self.setFormatter(
+            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        )
 
     async def _get_session(self) -> aiohttp.ClientSession:
         if self.session is None or self.session.closed:
@@ -25,11 +29,12 @@ class AsyncTelegramWebhookHandler(logging.Handler):
     async def _emit_async(self, record: logging.LogRecord):
         try:
             session = await self._get_session()
-            # Format the record using the default formatter
-            formatted_message = self.format(record)
-            message = {"message": formatted_message}
+            # Format the record using the handler's formatter
+            message = self.format(record)
 
-            async with session.post(self.webhook_url, json=message) as response:
+            async with session.post(
+                self.webhook_url, json={"message": message}
+            ) as response:
                 if response.status not in (200, 201, 202):
                     print(f"Failed to send log to Telegram webhook: {response.status}")
 
