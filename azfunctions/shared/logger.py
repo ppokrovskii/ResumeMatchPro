@@ -32,9 +32,7 @@ class AsyncTelegramWebhookHandler(logging.Handler):
             # Format the record using the handler's formatter
             message = self.format(record)
 
-            async with session.post(
-                self.webhook_url, json={"message": message}
-            ) as response:
+            async with session.post(self.webhook_url, data=message) as response:
                 if response.status not in (200, 201, 202):
                     print(f"Failed to send log to Telegram webhook: {response.status}")
 
