@@ -1,10 +1,7 @@
 import asyncio
-import json
 import logging
 import os
-import traceback
-from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import aiohttp
 
@@ -25,45 +22,10 @@ class AsyncTelegramWebhookHandler(logging.Handler):
             self.session = aiohttp.ClientSession()
         return self.session
 
-    def format_message(self, record: logging.LogRecord) -> Dict[str, Any]:
-        timestamp = datetime.fromtimestamp(record.created).isoformat()
-
-        # Format exception info if present
-        exc_info = None
-        if record.exc_info:
-            exc_info = "".join(traceback.format_exception(*record.exc_info))
-
-        message = {
-            "schemaId": "azureMonitorCommonAlertSchema",
-            "data": {
-                "essentials": {
-                    "alertRule": f"Custom Logger Alert - {record.levelname}",
-                    "severity": "Error"
-                    if record.levelno >= logging.ERROR
-                    else "Warning",
-                    "signalType": "Log",
-                    "monitorCondition": "Fired",
-                    "monitorService": "Custom Logger",
-                    "targetResource": os.getenv("WEBSITE_SITE_NAME", "Unknown"),
-                    "timestamp": timestamp,
-                },
-                "customProperties": {
-                    "LogLevel": record.levelname,
-                    "Logger": record.name,
-                    "Message": record.getMessage(),
-                    "Function": record.funcName,
-                    "LineNumber": record.lineno,
-                    "FilePath": record.pathname,
-                    "StackTrace": exc_info,
-                },
-            },
-        }
-        return message
-
     async def _emit_async(self, record: logging.LogRecord):
         try:
             session = await self._get_session()
-            message = self.format_message(record)
+            message = {"message": self.format(record)}
 
             async with session.post(self.webhook_url, json=message) as response:
                 if response.status not in (200, 201, 202):
