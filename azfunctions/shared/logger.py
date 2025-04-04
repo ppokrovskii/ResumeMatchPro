@@ -3,6 +3,7 @@ import json
 import logging
 import os
 from datetime import datetime
+from email import message
 from typing import Optional
 
 import aiohttp
@@ -27,36 +28,37 @@ class AsyncTelegramWebhookHandler(logging.Handler):
     async def _emit_async(self, record: logging.LogRecord):
         try:
             session = await self._get_session()
-            message = {
-                "schemaId": "azureMonitorCommonAlertSchema",
-                "data": {
-                    "essentials": {
-                        "alertId": f"log-{record.created}",
-                        "alertRule": f"Custom Logger Alert - {record.levelname}",
-                        "severity": "Error"
-                        if record.levelno >= logging.ERROR
-                        else "Warning",
-                        "signalType": "Log",
-                        "monitorCondition": "Fired",
-                        "monitorService": "Custom Logger",
-                        "targetResource": os.getenv("WEBSITE_SITE_NAME", "Unknown"),
-                        "targetResourceType": "Microsoft.Web/sites",
-                        "targetResourceGroup": os.getenv(
-                            "WEBSITE_RESOURCE_GROUP", "Unknown"
-                        ),
-                        "targetResourceName": os.getenv("WEBSITE_SITE_NAME", "Unknown"),
-                        "timestamp": datetime.fromtimestamp(record.created).isoformat(),
-                    },
-                    "alertContext": {
-                        "LogLevel": record.levelname,
-                        "Logger": record.name,
-                        "Message": record.getMessage(),
-                        "Function": record.funcName,
-                        "LineNumber": record.lineno,
-                        "FilePath": record.pathname,
-                    },
-                },
-            }
+            # message = {
+            #     "schemaId": "azureMonitorCommonAlertSchema",
+            #     "data": {
+            #         "essentials": {
+            #             "alertId": f"log-{record.created}",
+            #             "alertRule": f"Custom Logger Alert - {record.levelname}",
+            #             "severity": "Error"
+            #             if record.levelno >= logging.ERROR
+            #             else "Warning",
+            #             "signalType": "Log",
+            #             "monitorCondition": "Fired",
+            #             "monitorService": "Custom Logger",
+            #             "targetResource": os.getenv("WEBSITE_SITE_NAME", "Unknown"),
+            #             "targetResourceType": "Microsoft.Web/sites",
+            #             "targetResourceGroup": os.getenv(
+            #                 "WEBSITE_RESOURCE_GROUP", "Unknown"
+            #             ),
+            #             "targetResourceName": os.getenv("WEBSITE_SITE_NAME", "Unknown"),
+            #             "timestamp": datetime.fromtimestamp(record.created).isoformat(),
+            #         },
+            #         "alertContext": {
+            #             "LogLevel": record.levelname,
+            #             "Logger": record.name,
+            #             "Message": record.getMessage(),
+            #             "Function": record.funcName,
+            #             "LineNumber": record.lineno,
+            #             "FilePath": record.pathname,
+            #         },
+            #     },
+            # }
+            message = str(record)
 
             async with session.post(self.webhook_url, json=message) as response:
                 if response.status not in (200, 201, 202):
