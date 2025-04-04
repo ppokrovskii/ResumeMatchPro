@@ -71,6 +71,9 @@ resource "azurerm_linux_function_app" "resumematchpro" {
 
         # B2C Configuration
         "ALLOWED_REDIRECT_URIS" = terraform.workspace == "dev" ? "https://oauth.pstmn.io/v1/callback" : ""
+
+        # Telegram Alert Function
+        "TELEGRAM_ALERT_FUNCTION_NAME" = azurerm_linux_function_app.telegram_alert_function.name
     }
 
     lifecycle {

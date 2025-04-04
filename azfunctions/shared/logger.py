@@ -9,6 +9,8 @@ from azure.monitor.opentelemetry import configure_azure_monitor
 from opentelemetry import trace
 from opentelemetry.trace import get_current_span
 
+from .telegram_logger import add_telegram_handler
+
 # Configure Azure Monitor only if we have the connection string
 connection_string = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
 if connection_string:
@@ -75,6 +77,11 @@ def setup_logger(name: str = "resumematchpro") -> logging.Logger:
 
     # Ensure logs propagate up to root
     logger.propagate = True
+
+    # Add Telegram handler for errors and exceptions
+    function_app_name = os.getenv("TELEGRAM_ALERT_FUNCTION_NAME")
+    if function_app_name:
+        add_telegram_handler(logger, function_app_name)
 
     return logger
 

@@ -5,11 +5,15 @@ from pathlib import Path
 
 import azure.functions as func
 from dotenv import load_dotenv
+from shared.logger import setup_logger
 
 load_dotenv()
 
 # add project root to sys.path
 sys.path.append(str(Path(__file__).parent))
+
+# Initialize logger
+logger = setup_logger()
 
 # Import all function modules to register their blueprints
 # from file_processing.file_processing import file_processing_bp

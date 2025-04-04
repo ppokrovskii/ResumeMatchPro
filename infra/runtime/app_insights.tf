@@ -26,10 +26,9 @@ resource "azurerm_monitor_action_group" "telegram_alerts" {
     
     webhook_receiver {
         name = "telegram-webhook"
-        service_uri = "https://${azurerm_linux_function_app.telegram_alert_function.name}.azurewebsites.net/api/telegram-webhook?code=${var.TELEGRAM_FUNCTION_KEY}"
+        service_uri = "https://${azurerm_linux_function_app.telegram_alert_function.name}.azurewebsites.net/api/telegram-webhook"
         use_common_alert_schema = true
     }
-
 }
 
 resource "azurerm_monitor_metric_alert" "failed_requests_alert" {
@@ -39,7 +38,9 @@ resource "azurerm_monitor_metric_alert" "failed_requests_alert" {
     description = "Alert when the number of failed requests exceeds a threshold"
     severity = 3
     frequency = "PT1M"
-    window_size = "PT15M"
+    window_size = "PT1M"
+    auto_mitigate = false
+    target_resource_type = "Microsoft.Insights/components"
 
     criteria {
         metric_namespace = "Microsoft.Insights/components"
@@ -54,7 +55,6 @@ resource "azurerm_monitor_metric_alert" "failed_requests_alert" {
     }
 
     enabled = true
-    
 }
 
 resource "azurerm_monitor_metric_alert" "exceptions_alert" {
@@ -65,6 +65,8 @@ resource "azurerm_monitor_metric_alert" "exceptions_alert" {
     severity = 2
     frequency = "PT1M"
     window_size = "PT1M"
+    auto_mitigate = false
+    target_resource_type = "Microsoft.Insights/components"
 
     criteria {
         metric_namespace = "Microsoft.Insights/components"
