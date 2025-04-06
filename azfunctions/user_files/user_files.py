@@ -72,38 +72,13 @@ def _get_files(
     for file_metadata in files_metadata_db:
         try:
             file_json = file_metadata.model_dump(mode="json")
-
-            if (
-                hasattr(file_metadata, "document_analysis")
-                and file_metadata.document_analysis
-                and hasattr(file_metadata.document_analysis, "structure")
-                and file_metadata.document_analysis.structure
-            ):
-                structure = file_metadata.document_analysis.structure
-                file_type = getattr(file_metadata, "type", None)
-
-                if file_type == FileType.CV:
-                    if (
-                        hasattr(structure, "personal_details")
-                        and structure.personal_details
-                    ):
-                        for detail in structure.personal_details:
-                            if (
-                                hasattr(detail, "type")
-                                and detail.type
-                                and detail.type.lower() == "name"
-                            ):
-                                file_json["name"] = detail.text
-                                break
-
-                if hasattr(structure, "job_title") and structure.job_title:
-                    file_json["job_title"] = structure.job_title
-
-            files_response.append(file_json)
+            File(**file_json)
         except PydanticValidationError as e:
-            raise InternalValidationError(f"Invalid file metadata format: {str(e)}")
-        except Exception as e:
-            raise BlobStorageError(f"Failed to process file metadata: {str(e)}")
+            logging.exception(
+                f"Invalid file metadata format for id: {file_json['id']} filename: {file_json['filename']}: {str(e)}"
+            )
+            continue
+        files_response.append(file_json)
 
     try:
         response = UserFilesResponse(files=files_response)
