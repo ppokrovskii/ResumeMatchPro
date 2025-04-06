@@ -70,10 +70,18 @@ def pytest_runtest_setup(item):
 @pytest.fixture(scope="session")
 def cosmos_client():
     # Create a Cosmos DB client for testing
+    from azure.cosmos import CosmosClient
+
     client = CosmosClient(
         url="https://localhost:8081",
         credential="C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
         connection_verify=False,  # Disable SSL verification for local emulator
+        connection_timeout=60,  # 60 seconds timeout
+        retry_total=3,  # Maximum number of retries
+        retry_backoff_max=10,  # Maximum backoff time between retries
+        retry_fixed_interval=1,  # Fixed interval for retries in seconds
+        retry_read=3,  # Number of read retries
+        retry_connect=3,  # Number of connection retries
     )
 
     # Create database if it doesn't exist
@@ -84,6 +92,21 @@ def cosmos_client():
         raise
 
     return client
+
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_database(cosmos_client):
+    """Clean up all containers after all tests complete"""
+    yield
+    try:
+        db = cosmos_client.get_database_client("resumematchpro_test")
+        for container in db.list_containers():
+            try:
+                container.delete_container()
+            except Exception as e:
+                logger.warning(f"Failed to delete container {container.id}: {e}")
+    except Exception as e:
+        logger.warning(f"Failed to clean up database: {e}")
 
 
 @pytest.fixture

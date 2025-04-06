@@ -4,7 +4,6 @@ from pathlib import Path
 from uuid import UUID, uuid4
 
 import pytest
-from azure.cosmos import CosmosClient
 from dotenv import load_dotenv
 
 # Load test environment variables
@@ -18,15 +17,9 @@ from shared.models import FileMetadataDb
 
 
 @pytest.fixture
-def repository():
-    # Create a Cosmos DB client and initialize the repository
-    client = CosmosClient(
-        url=os.getenv("COSMOS_URL"),
-        credential=os.getenv("COSMOS_KEY"),
-        connection_verify=False,  # Skip SSL verification for emulator
-    )
-    # Create database if not exists
-    database = client.create_database_if_not_exists(os.getenv("COSMOS_DB_NAME"))
+def repository(cosmos_client):
+    # Use the session-scoped cosmos_client
+    database = cosmos_client.get_database_client("resumematchpro_test")
     return FilesRepository(database)
 
 
