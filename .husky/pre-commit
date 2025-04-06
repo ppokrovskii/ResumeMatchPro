@@ -21,3 +21,6 @@ fi
 echo "Running Azure Functions tests..."
 # Run tests and exit on failure
 python -m pytest tests/ -v || exit 1
+
+echo "Running uat tests..."
+python -m pytest uat/ -v || exit 1
