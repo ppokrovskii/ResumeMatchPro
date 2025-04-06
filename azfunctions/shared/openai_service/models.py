@@ -32,6 +32,7 @@ class CompanyDetail(BaseModel):
     text: str
 
 
+# Strict model for LLM validation
 class CVStructure(BaseModel):
     personal_details: List[PersonalDetail]
     professional_summary: str
@@ -39,14 +40,40 @@ class CVStructure(BaseModel):
     experience: List[ExperienceBlock]
     education: List[EducationBlock]
     job_title: Optional[str] = None
+    additional_information: Optional[List[str]] = Field(
+        default=None,
+        description="List of strings containing additional information. Each string should be in the format 'Type: Value', e.g. 'Location: Dubai, United Arab Emirates' or 'Languages: English, Russian'",
+    )
+
+
+# Loose model for internal use
+class CVStructureLoose(BaseModel):
+    personal_details: Optional[List[PersonalDetail]] = []
+    professional_summary: Optional[str] = ""
+    skills: Optional[List[str]] = []
+    experience: Optional[List[ExperienceBlock]] = []
+    education: Optional[List[EducationBlock]] = []
+    job_title: Optional[str] = None
     additional_information: Optional[List[str]] = None
 
 
+# Strict model for LLM validation
 class JDStructure(BaseModel):
     company_details: List[CompanyDetail]
     role_summary: str
     required_skills: List[str]
     experience_requirements: List[str]
+    job_title: Optional[str] = None
+    education_requirements: Optional[List[str]] = None
+    additional_information: Optional[List[str]] = None
+
+
+# Loose model for internal use
+class JDStructureLoose(BaseModel):
+    company_details: Optional[List[CompanyDetail]] = []
+    role_summary: Optional[str] = ""
+    required_skills: Optional[List[str]] = []
+    experience_requirements: Optional[List[str]] = []
     job_title: Optional[str] = None
     education_requirements: Optional[List[str]] = None
     additional_information: Optional[List[str]] = None
@@ -83,7 +110,7 @@ class DocumentType(Enum):
 
 class DocumentAnalysis(BaseModel):
     document_type: DocumentType
-    structure: CVStructure | JDStructure
+    structure: CVStructureLoose | JDStructureLoose
 
 
 class JDRequirements(BaseModel):

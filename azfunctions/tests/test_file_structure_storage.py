@@ -12,6 +12,7 @@ from shared.models import (
 )
 from shared.openai_service.models import (
     CVStructure,
+    CVStructureLoose,
     DocumentAnalysis,
     DocumentType,
     PersonalDetail,
@@ -49,7 +50,7 @@ class TestFileStructureStorage(unittest.TestCase):
         Test that file processing correctly stores document_type and structure fields.
         """
         # Create a test CV document analysis with structure
-        cv_structure = CVStructure(
+        cv_structure = CVStructureLoose(
             personal_details=[
                 PersonalDetail(type="Name", text="John Doe"),
                 PersonalDetail(type="Email", text="john@example.com"),

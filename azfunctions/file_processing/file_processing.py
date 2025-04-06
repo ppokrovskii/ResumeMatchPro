@@ -12,7 +12,7 @@ from pydantic import BaseModel, ValidationError
 from shared.blob_service import FilesBlobService
 from shared.db_service import get_cosmos_db_client
 from shared.document_intelligence_service import DocumentIntelligenceService
-from shared.docx_service import DocxService
+from shared.docx_service import DocumentStructure, DocxService
 from shared.files_repository import FilesRepository
 from shared.models import FileMetadataDb, FileStatus
 from shared.openai_service.openai_service import OpenAIService
@@ -125,6 +125,8 @@ class FileProcessor:
         """
         if filename.endswith(".docx"):
             raw_info = DocxService.get_text_from_docx(content)
+            # Convert Pydantic model to dict
+            raw_info = raw_info.model_dump()
         else:
             raw_info = self.document_intelligence_service.get_text_from_pdf(content)
 
@@ -251,7 +253,7 @@ class FileProcessor:
             )
             raise
         except Exception as e:
-            error_msg = f"Error processing file: {str(e)}"
+            error_msg = f"Error processing file {request.filename}: {str(e)}"
             logging.error(error_msg)
             logging.error(f"Error type: {type(e)}")
             logging.error(f"Error traceback: {traceback.format_exc()}")

@@ -23,4 +23,5 @@ echo "Running Azure Functions tests..."
 python -m pytest tests/ -v || exit 1
 
 echo "Running uat tests..."
-python -m pytest uat/ -v || exit 1
+# Run UAT tests including those marked with external_services
+python -m pytest uat/ -v -m "external_services" || exit 1

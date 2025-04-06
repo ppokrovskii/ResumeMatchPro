@@ -16,9 +16,11 @@ load_dotenv(Path(__file__).parent / ".env.test")
 from file_processing.schemas import FileProcessingRequest
 from shared.openai_service.models import (
     CVStructure,
+    CVStructureLoose,
     DocumentAnalysis,
     DocumentType,
     JDStructure,
+    JDStructureLoose,
 )
 from shared.openai_service.openai_service import OpenAIService
 
@@ -182,7 +184,7 @@ class TestFileProcessing(TestCase):
         self.mock_openai_service_instance.analyze_document.return_value = (
             DocumentAnalysis(
                 document_type=DocumentType.CV,
-                structure=CVStructure(
+                structure=CVStructureLoose(
                     personal_details=[{"type": "Name", "text": "John Doe"}],
                     professional_summary="Experienced developer",
                     skills=["Python", "JavaScript"],
@@ -254,7 +256,7 @@ class TestFileProcessing(TestCase):
         }
         self.mock_openai_service_instance.analyze_document.return_value = DocumentAnalysis(
             document_type=DocumentType.JD,
-            structure=JDStructure(
+            structure=JDStructureLoose(
                 company_details=[
                     {"type": "Job Title", "text": "Software Engineer"},
                     {"type": "Department", "text": "Engineering"},

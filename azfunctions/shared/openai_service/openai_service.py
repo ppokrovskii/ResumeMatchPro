@@ -7,8 +7,10 @@ from dotenv import load_dotenv
 from openai import AzureOpenAI
 from shared.openai_service.models import (
     CVStructure,
+    CVStructureLoose,
     DocumentAnalysis,
     JDStructure,
+    JDStructureLoose,
     MatchingResultModel,
 )
 
@@ -38,6 +40,14 @@ class OpenAIService:
         Instructions:
         1. First, determine if this is a CV or JD based on the content and structure.
         2. Based on type call store_cv or store_jd tool providing valid json structure.
+        3. For CVs, ensure to include education information in the following format:
+           - title: Name of the educational institution (required)
+           - start_date: Start date of education (required)
+           - end_date: End date of education (optional)
+           - degree: Degree obtained (optional)
+           - details: Additional details about the education (optional)
+           - city: City where the education took place (optional)
+           If no education information is found, provide an empty list.
 
         Document Text: {text}
         Pages: {pages}
@@ -51,7 +61,7 @@ class OpenAIService:
                 "function": {
                     "name": "store_cv",
                     "description": "Store the analysis of a CV/Resume document structure",
-                    "parameters": CVStructure.model_json_schema(),
+                    "parameters": CVStructure.model_json_schema(),  # Use strict schema for LLM
                 },
             },
             {
@@ -59,7 +69,7 @@ class OpenAIService:
                 "function": {
                     "name": "store_jd",
                     "description": "Store the analysis of a Job Description document structure",
-                    "parameters": JDStructure.model_json_schema(),
+                    "parameters": JDStructure.model_json_schema(),  # Use strict schema for LLM
                 },
             },
         ]
@@ -88,39 +98,77 @@ class OpenAIService:
             logging.info(f"Function called: {function_name}")
             logging.info(f"Function arguments: {json.dumps(function_args, indent=2)}")
 
-            # Determine document type based on which tool was called
+            # Use loose validation when processing the response
             if function_name == "store_cv":
-                return DocumentAnalysis(
-                    document_type="CV", structure=CVStructure(**function_args)
-                )
+                cv_structure = CVStructureLoose(**function_args)
+                return DocumentAnalysis(document_type="CV", structure=cv_structure)
             else:
-                return DocumentAnalysis(
-                    document_type="JD", structure=JDStructure(**function_args)
-                )
+                jd_structure = JDStructureLoose(**function_args)  # Use loose validation
+                return DocumentAnalysis(document_type="JD", structure=jd_structure)
+
         except Exception as e:
-            logging.error(
-                f"Error analyzing document. Full response: {response if 'response' in locals() else 'No response'}"
-            )
+            logging.error(f"Error analyzing document: {str(e)}")
             raise ValueError(f"Error analyzing document: {str(e)}")
 
     def match_cv_and_jd(self, cv_text: str, jd_text: str):
+        # Parse CV and JD text if they are JSON strings
+        try:
+            cv_data = json.loads(cv_text.replace("'", '"'))
+            jd_data = json.loads(jd_text.replace("'", '"'))
+
+            # Format CV data for better readability
+            cv_formatted = f"""
+CV Details:
+Name: {next((detail["text"] for detail in cv_data.get("personal_details", []) if detail["type"] == "Name"), "Not specified")}
+Professional Summary: {cv_data.get("professional_summary", "Not specified")}
+Skills: {", ".join(cv_data.get("skills", []))}
+Experience: {"; ".join(f"{exp.get('title', '')}: {', '.join(exp.get('lines', []))}" for exp in cv_data.get("experience", []))}
+Education: {"; ".join(f"{edu.get('title', '')} ({edu.get('start_date', '')}-{edu.get('end_date', 'Present')})" for edu in cv_data.get("education", []))}
+Additional Information: {", ".join(cv_data.get("additional_information", []))}
+"""
+
+            # Format JD data for better readability
+            jd_formatted = f"""
+Job Description:
+Title: {jd_data.get("job_title", "Not specified")}
+Role Summary: {jd_data.get("role_summary", "Not specified")}
+Required Skills: {", ".join(jd_data.get("required_skills", []))}
+Experience Requirements: {", ".join(jd_data.get("experience_requirements", []))}
+Education Requirements: {", ".join(jd_data.get("education_requirements", []) if jd_data.get("education_requirements") else ["Not specified"])}
+Additional Information: {", ".join(jd_data.get("additional_information", []) if jd_data.get("additional_information") else ["Not specified"])}
+"""
+        except json.JSONDecodeError:
+            # If parsing fails, use the raw text
+            cv_formatted = cv_text
+            jd_formatted = jd_text
+
         prompt = f"""Analyze the provided CV and JD to determine the suitability of the candidate for the specified job position. 
         you MUST call store_matching_result function to store the result.
         
         Instructions:
-        Extract and List Key Requirements from the JD: Identify and categorize the essential qualifications, skills, and experience levels mentioned in the job description. This should include, but not be limited to, technical skills, soft skills, education requirements, and years of relevant experience.
+        1. Extract and List Key Requirements from the JD: Identify and categorize the essential qualifications, skills, and experience levels mentioned in the job description. This should include, but not be limited to, technical skills, soft skills, education requirements, and years of relevant experience.
         
-        Analyze the Candidate's CV: Review the candidate's CV to extract pertinent information regarding their educational background, skill set, professional experience, and any other qualifications relevant to the job description.
+        2. Analyze the Candidate's CV: Review the candidate's CV to extract pertinent information regarding their educational background, skill set, professional experience, and any other qualifications relevant to the job description.
         
-        Match Analysis:
-        Skills Match: Compare the skills listed in the candidate's CV against those required by the job description. Note any direct matches, related or transferable skills, and any skills gaps.
-        Experience Match: Evaluate the candidate's professional experience against the experience requirements specified in the JD. Consider the relevance, duration, and level of the positions previously held by the candidate.
-        Education Match: Assess the candidate's educational qualifications in relation to the educational requirements mentioned in the JD.
-        Calculate overall_match_percentage: Based on the analysis, estimate the percentage match between the candidate's profile and the job requirements. Consider weighting the importance of skills, experience, and education based on the priorities indicated in the JD.
-        overall_match_percentage is mandatory field and should be a float between 0 and 100. For example if candidate has 3 skills out of 5 required skills, overall_match_percentage should be 60.0
+        3. Match Analysis:
+           - Skills Match: Compare the skills listed in the candidate's CV against those required by the job description. Note any direct matches, related or transferable skills, and any skills gaps.
+           - Experience Match: Evaluate the candidate's professional experience against the experience requirements specified in the JD. Consider the relevance, duration, and level of the positions previously held by the candidate.
+           - Education Match: Assess the candidate's educational qualifications in relation to the educational requirements mentioned in the JD.
         
-        CV: {cv_text} 
-        JD: {jd_text}"""
+        4. Calculate overall_match_percentage: Based on the analysis, estimate the percentage match between the candidate's profile and the job requirements. Consider weighting the importance of skills, experience, and education based on the priorities indicated in the JD.
+           - overall_match_percentage MUST be a float between 0 and 100
+           - Example: if candidate has 3 skills out of 5 required skills, overall_match_percentage should be 60.0
+        
+        5. You MUST provide ALL of these fields in your response:
+           - jd_requirements (with skills, experience, and education lists)
+           - candidate_capabilities (with skills, experience, and education lists)
+           - cv_match (with skills_match, experience_match, education_match, and gaps lists)
+           - overall_match_percentage (as a float between 0 and 100)
+        
+        CV: {cv_formatted} 
+        
+        JD: {jd_formatted}"""
+
         messages = [{"role": "user", "content": prompt}]
         tools = [
             {
@@ -134,6 +182,7 @@ class OpenAIService:
         ]
 
         try:
+            # First attempt
             response = self.client.chat.completions.create(
                 model=self.deployment_name,
                 messages=messages,
@@ -162,19 +211,29 @@ class OpenAIService:
                 raise ValueError(
                     f"Expected function_args in tool call but got {function_args} in response: {response_message}"
                 )
+
+            # Add the first response to messages, handling null content
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": response_message.content
+                    or "Processing the matching request...",
+                }
+            )
+
             try:
                 result = MatchingResultModel.from_json(function_args)
-            except KeyError as ke:
-                logging.warning(
-                    f"Error converting json: {function_args} to MatchingResultModel: {str(ke)}"
-                )
-                # add error message to messages and call self.client.chat.completions.create again
+                return result
+            except Exception as e:
+                # Add the validation error to messages
                 messages.append(
                     {
                         "role": "user",
-                        "content": f"Error converting function_args json to MatchingResultModel: {str(ke)}",
+                        "content": f"Error validating the response: {str(e)}. Please ensure the response matches the required schema and all fields are properly formatted. You MUST include: jd_requirements, candidate_capabilities, cv_match, and overall_match_percentage.",
                     }
                 )
+
+                # Second attempt with full message history
                 response = self.client.chat.completions.create(
                     model=self.deployment_name,
                     messages=messages,
@@ -182,18 +241,25 @@ class OpenAIService:
                     tool_choice="auto",
                     max_tokens=1024,
                 )
+
                 response_message = response.choices[0].message
                 tool_calls = response_message.tool_calls
+
                 if not tool_calls:
-                    raise ValueError("No tool calls received in the response")
+                    raise ValueError(
+                        f"No tool calls received in the retry response: {response_message}"
+                    )
+
                 tool_call = tool_calls[0]
                 function_args = tool_call.function.arguments
+
+                if not function_args:
+                    raise ValueError(
+                        f"Expected function_args in retry tool call but got {function_args} in response: {response_message}"
+                    )
+
                 result = MatchingResultModel.from_json(function_args)
-            except Exception as e:
-                raise ValueError(
-                    f"Error matching CV and JD: {str(e)} in response: {response_message}"
-                )
-            return result
+                return result
 
         except Exception as e:
             logging.error(f"Error matching CV and JD: {str(e)}")

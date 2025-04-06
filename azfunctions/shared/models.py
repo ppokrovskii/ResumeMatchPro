@@ -20,6 +20,19 @@ class FileStatus(str, Enum):
     ERROR = "ERROR"
 
 
+class FontStyle(BaseModel):
+    name: Optional[str] = None
+    size: Optional[float] = None
+    bold: Optional[bool] = None
+    italic: Optional[bool] = None
+    underline: Optional[bool] = None
+
+
+class DocumentStyle(BaseModel):
+    name: str
+    font: Optional[FontStyle] = None
+
+
 class Line(BaseModel):
     content: str
 
@@ -32,16 +45,17 @@ class DocumentPage(BaseModel):
     page_number: int
     content: str
     lines: List[Line]
-    tables: Optional[List[List[List[TableCell]]]] = None
+    tables: List[List[List[TableCell]]]
 
 
-class DocumentStyle(BaseModel):
-    name: str
-    font_name: Optional[str] = None
-    font_size: Optional[float] = None
-    is_bold: Optional[bool] = None
-    is_italic: Optional[bool] = None
-    is_underline: Optional[bool] = None
+class DocumentStructure(BaseModel):
+    text: str
+    pages: List[DocumentPage]
+    paragraphs: List[str]
+    tables: List[List[List[TableCell]]]
+    styles: dict[str, DocumentStyle]
+    headers: List[str]
+    footers: List[str]
 
 
 class FileMetadataDb(BaseModel):
