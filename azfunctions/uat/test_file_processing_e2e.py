@@ -9,9 +9,11 @@ import sys
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 from dotenv import load_dotenv
+
 from users.models import UserDb
 
 # Load environment variables from .env.test
@@ -26,20 +28,20 @@ sys.path.insert(0, root_dir)  # Add the root directory to path
 sys.path.insert(0, azfunctions_dir)  # Add the azfunctions directory to path
 
 # Import from the modules directly, not using azfunctions prefix
-from file_processing.file_processing import FileProcessor
-from file_processing.schemas import (
-    FileProcessingRequest,
-)
-from matching.matching import MatchProcessor
 from shared.blob_service import FilesBlobService
 from shared.db_service import get_cosmos_db_client
 from shared.document_intelligence_service import DocumentIntelligenceService
 from shared.files_repository import FilesRepository
 from shared.matching_results_repository import MatchingResultsRepository
-from shared.mock_queue_service import MockQueueService
 from shared.models import FileStatus, FileType
 from shared.openai_service.openai_service import OpenAIService
 from shared.user_repository import UserRepository
+
+from file_processing.file_processing import FileProcessor
+from file_processing.schemas import (
+    FileProcessingRequest,
+)
+from matching.matching import MatchProcessor
 
 # Configure logging
 logging.basicConfig(
@@ -86,9 +88,6 @@ def setup_test_environment():
     files_repository.delete_all()
     matching_results_repository.delete_all()
 
-    # Create queue service
-    queue_service = MockQueueService()
-
     # Create document intelligence service
     document_intelligence_service = DocumentIntelligenceService(
         key=os.environ.get("AZURE_DOCUMENT_INTELLIGENCE_KEY"),
@@ -97,6 +96,8 @@ def setup_test_environment():
 
     # Create OpenAI service
     openai_service = OpenAIService()
+    # pytest mock of queue service
+    queue_service = Mock()
 
     # Create file processor
     processor = FileProcessor(
